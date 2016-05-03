@@ -1,0 +1,13 @@
+November 1996
+-------------
+
+This data comes from the UCI collection
+abalone.names is the original documentation from UCI
+
+Operations to get data into Delve format
+
+1) Substitute , field separators with  white space
+
+2) One prototask (rings) has been defined. It treats the output
+as a continuous variable, even though it only takes on a
+finite range of postive integer values

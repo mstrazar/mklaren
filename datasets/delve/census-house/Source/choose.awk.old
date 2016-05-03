@@ -1,0 +1,434 @@
+BEGIN{
+FS="\t"
+  ind=0;
+#  while(getline line < "fields"){
+#    ind++;
+#     names[line]=ind;
+#  }
+#  close ("fields");i=1;
+#  str="P001000" i;
+#  print names[str];
+}
+
+function divField(fieldStr,from,To,divisor)
+{
+
+  if(divisor==0) {printf("line%d: str=%s: div=0; exit \n",FNR,fieldStr) > "/dev/stderr";
+		  exit;}
+  for(ii=from;ii<=To && ii<=9 ;ii++) {
+    str= fieldStr "000"  ii;
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str) > "/dev/stderr"; exit;}
+    $jj=$jj/divisor;
+  }
+  
+    
+  for(;ii<=To;ii++) {
+    str= fieldStr "00"  ii;
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str) > "/dev/stderr"; exit;}
+    $jj=$jj/divisor;
+  }
+
+    
+}
+
+
+
+{
+  if (NF!=468) next;
+}
+
+$0 ~ /^FIPS/ {
+  for(ind=1;ind<=NF;ind++)
+    names[$ind]=ind;
+}
+
+$0 !~ /^FIPS/  { 
+  which=names["P0010001"]; persons=$which; if(persons==0) next;
+  which=names["P0020001"]; famil=$which;if(famil==0)next;
+  which=names["P0030001"]; housh=$which;if(housh==0)next;
+  which=names["P0050001"]; males=$which;if(males==0)males=1;
+  which=names["P0050002"]; females=$which;if(females==0)females=1;
+  which=names["P0060001"]; whites=$which;if(whites==0)whites=1;
+  which=names["P0060002"]; blacks=$which;
+  which=names["P0060003"]; indians =$which; 
+  which=names["P0060004"]; asians =$which; 
+  which=names["P0060005"]; other =$which; 
+#  printf("\nline%d\t%d pers; %d famil; %d HH-olds; %d males; %d fem; %d whites; %d bla; %d indi; %d asia; %d other\n",FNR,persons,famil,housh,males,females, whites, blacks, indians,  asians, other);
+  if(blacks==0) blacks=1;
+  if(indians==0) indians=1;
+  if(asians==0) asians=1;
+  if(other==0) other=1;
+  under18=0;
+  for(i=1;i<=9;i++){
+    str="P011000" i
+    which=names[str];
+    under18+=$which;
+  }
+  for(i=10;i<=12;i++){
+    str="P01100" i
+    which=names[str];
+    under18+=$which;
+  }
+  if(under18==0) under18=1;
+
+
+
+
+### P4Urban/Rural. Univ=Persons. 1 .. 4
+  divField("P004",1,4,persons);
+  
+### P5 Sex
+divField("P005",1,2,persons);
+    
+### P6 Race 1 .. 5
+divField("P006",1,4,persons);
+
+### P8 Hispanic 1 .. 1
+divField("P008",1,1,persons);
+
+### P11 Age 1 .. 31
+divField("P011",1,31,persons);
+
+
+# P14 Sex by Marital status 2x5
+divField("P014",1,5,males);
+divField("P014",6,10,females);
+
+# P15 HH type and Relation  1..13
+divField("P015",1,13,persons);
+
+
+# P16 HH size and Type 1..10
+divField("P016",1,10,housh);
+
+# P17 Persons in Families 1..1
+divField("P017",1,1,persons);
+
+# P18 Age of HH Members by HH Type 1..10
+divField("P018",1,10,housh);
+ 
+
+# P19 Race by HH type (as % of race)
+divField("P019",1,8,whites); 
+divField("P019",9,16,blacks); 
+divField("P019",17,24,indians); 
+divField("P019",25,32,asians); 
+divField("P019",33,40,other); 
+
+
+# P20 Household Types with Hispanic Householder (as % of total housholds)
+divField("P020",1,8,housh);   
+
+# P21 HouseHold Type and Relation for Persons under 18 (as % of under 18)
+divField("P021",1,9,under18); 
+
+  
+# P24 Age(< or > 60) of HH members(2) by HH size and type(3) (as a %
+# of HH-olds) 
+divField("P024",1,6,housh); 
+
+# P25 Age(< or > 60) of HH members(2) by HH size and type(3) (as a %
+# of HH-olds) 
+divField("P025",1,6,housh); 
+
+# P26 HH-old Type 
+divField("P026",1,2,housh); 
+
+
+# P27 HH-old Type and Size 1..13
+divField("P027",1,13,housh); 
+
+# ----------------------------------------------------------------------
+
+
+
+# H1 Housing Units 
+  which=names["H0010001"]; houses=$which; if(houses==0) next;
+#  printf("houses %d->%d->%d\n",which,$which,vacant);
+  which=names["H0020001"]; occupied=$which;if(occupied==0)occupied=1;
+  which=names["H0020002"]; vacant=$which;
+  if(vacant==0)vacant=1;
+#  printf("vacant %d->%d->%d\n",which,$which,vacant);
+  which=names["H0030001"]; ownOcc=$which;if(ownOcc==0)ownOcc=1;
+#  printf("ownOcc %d->%d->%d\n",which,$which,ownOcc);
+  which=names["H0030002"]; rentOcc=$which;if(rentOcc==0)rentOcc=1;
+#  printf("rentOcc %d->%d->%d\n",which,$which,vacant);
+  which=names["H0360001"]; specOwnOcc=$which;
+#  printf("specOwnOcc %d->%d->%d\n",which,$which,vacant);
+  which=names["H0360002"]; specOwnOcc+=$which;
+#  printf("specOwnOcc %d->%d->%d\n",which,$which,vacant);
+  if(specOwnOcc==0)specOwnOcc=1;
+  
+
+#printf("line=%d\t%d houses; %d occu; %d vac; %d OwnOcc; %d rentOc\n",FNR,houses,occupied,vacant,ownOcc,rentOcc);
+
+
+
+# H2 Occupancy Status
+divField("H002",1,2,houses);
+  
+# H3 Tenure 
+divField("H003",1,2,houses); 
+
+# H4 Urban/Rural
+divField("H004",1,4,houses); 
+
+
+# H5 Vacancy Status
+divField("H005",1,6,vacant); 
+
+# H6 Boarded-up status (as % of vacant)
+divField("H006",1,2,houses); 
+
+# H7 Usual Home elsewhere (as % of vacant)
+divField("H007",1,2,houses); 
+
+# H8 Race of HH-older (as % of occupied)
+divField("H008",1,2,occupied); 
+
+# H9 - tenure by race of HH-older (as % of owner/renter occupied)
+divField("H009",1,5,ownOcc); 
+divField("H009",6,10,rentOcc); 
+
+# H10 Hispanic origin of HH-older by race of HH-older (as % of occupied)  
+divField("H010",1,10,occupied); 
+  
+# H11 Tenure by race of HH-older (as % of owner/renter occupied)
+divField("H011",1,5,ownOcc); 
+divField("H011",6,10,rentOcc); 
+  
+
+
+# H12 Tenure by age (as % of o/r occ)
+divField("H012",1,7,ownOcc); 
+divField("H012",8,14,rentOcc);   
+  
+# H13 % of housing units (HU) with x rooms
+divField("H013",1,9,houses);   
+  
+# H14 Should I change aggregate rooms to average room per HU?
+
+# H15 Aggre rooms by tenure as an average num of rooms per ren/own
+# occupied
+divField("H015",1,1,ownOcc);
+divField("H015",2,2,rentOcc);
+    
+
+# H16 aggre rooms by vacancy status as % of vacant
+divField("H016",1,6,vacant); 
+  for(ii=1;ii<=6;ii++) {
+    str="H016000" ii;
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+    
+    $jj=$jj/vacant;
+  }
+
+# H17 Persons in Units as a % of occup with x persons in
+divField("H017",1,7,occupied); 
+
+# H18 Tenure by persons occupied (as a % of occ/rent HU)
+divField("H018",1,7,ownOcc);
+divField("H018",8,14,rentOcc);  
+
+
+# H20 Aggre persons by tenure (as a % of total persons in Occ HU - H19)
+
+  str="H0190001";
+  jj=names[str];
+  if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+  tot=$jj;if(tot==0)tot=1;
+divField("H020",1,2,tot); 
+
+# H21 Persons per room as % of occ HU
+divField("H021",1,5,occupied); 
+
+# H22 Persons per room by tenure (as % of own/rent occ HU)
+divField("H022",1,5,ownOcc);
+divField("H022",6,10,rentOcc);  
+
+# H23 value as a % of specOwnOcc HU
+divField("H023",1,10,specOwnOcc); 
+  
+# H24 Aggre Value as an average
+divField("H024",1,1,specOwnOcc); 
+
+# H26 Agrre by race of HH-older (as average value per each HH-older) 
+# Must be done before we change the counts H25
+
+  for(ii=1;ii<=5;ii++){
+    str="H026000" ii;
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+    str="H025000" ii;
+    jj1=names[str];
+    if(jj1==0) {printf("jj1=0; str=%s\n",str); exit;}
+    if($jj1==0)jj1=1 ;else jj1=$jj1;
+    $jj=$jj/jj1;
+  }
+   
+  
+# H25 Race of HH-older (as % of spec Owner Occ HU)
+divField("H025",1,5,specOwnOcc); 
+
+# H28 Aggre value by Hispanic origin (as aver value per HH-oder)
+
+  for(ii=1;ii<=2;ii++){
+    str="H028000" ii;
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+    str="H027000" ii;
+    jj1=names[str];
+    if(jj1==0) {printf("jj1=0; str=%s\n",str); exit;}
+    if($jj1==0)jj1=1 ;else jj1=$jj1;
+    $jj=$jj/jj1;
+  }
+    
+# H27 Hispanic Origin of HH-older (as % of specOwnOcc)
+divField("H027",1,2,specOwnOcc); 
+  
+# H29 Aggregate value by units in structure as average price per unit
+# of given size. Must get Num of units from H43 (collapse H43.4-.8)
+
+  for(ii=1;ii<=3;ii++) {
+    str="H029000" ii;
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+    str="H043000" ii;
+    jj1=names[str];
+    if(jj1==0) {printf("jj1=0; str=%s\n",str); exit;}
+    if($jj1==0)jj1=1 ;else jj1=$jj1;
+    $jj=$jj/jj1
+  }
+#collapse H43 for 3 or more
+  tot=0;
+  for(ii=4;ii<=8;ii++){
+    str="H043000" ii;
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+    tot+=$jj;
+  }
+  if(tot==0)tot=1;
+  str="H0290004";
+  jj=names[str];
+  if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+  $jj/=tot;
+# get the rest  
+    str="H0290005";
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+    str="H0430009";
+    jj1=names[str];
+    if(jj1==0) {printf("jj1=0; str=%s\n",str); exit;}
+    if($jj1==0)jj1=1 ;else jj1=$jj1;
+    $jj=$jj/jj1
+    str="H0290006";
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+    str="H0430010";
+    jj1=names[str];
+    if(jj1==0) {printf("jj1=0; str=%s\n",str); exit;}
+    if($jj1==0)jj1=1 ;else jj1=$jj1;
+    $jj=$jj/jj1
+
+
+
+  
+  which=names["H0300001"]; specVacForRent=$which; 
+  which=names["H0300002"]; specVacForSale=$which;
+  which=names["H0300003"]; specVacOther=$which;
+  if(specVacForRent==0)specVacForRent=1;
+  if(specVacForSale==0)specVacForSale=1;
+  if(specVacForOther==0)specVacForOther=1;
+  
+
+  which=names["H0340001"];specRentOcc=$which;
+  which=names["H0340002"];
+  specRentOcc+=$which;
+  if(specRentOcc==0)specRentOcc=1;
+
+
+# H30 Vacancy status (as % of all vacant)
+divField("H030",1,3,vacant); 
+
+# H31 Aggregate price asked (as average)
+divField("H032",1,1,specVacForSale); 
+
+# H32 Contract rent (as percentage of total specrentoccu)
+  which=names["H0320017"]; specRentOccCash=specRentOcc-$which;
+  if(specRentOccCash==0) specRentOccCash=1;
+
+  divField("H032",1,17,specRentOcc); 
+
+# H33 Agrre contract rent as average      
+divField("H033",1,1,specRentOccCash);   
+
+
+# H35 Aggre contract rent by race of HH-older
+
+  for(ii=1;ii<=5;ii++){
+    str="H035000" ii;
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+    str="H034000" ii;
+    jj1=names[str];
+    if(jj1==0) {printf("jj1=0; str=%s\n",str); exit;}
+    if($jj1==0)jj1=1 ;else jj1=$jj1;
+    $jj=$jj/jj1;
+  }
+
+
+# H34 Race of HHolde as a % of specRentOccCash
+divField("H034",1,5,specRentOccCash); 
+
+# H37 Contract rent by Hisp (as aver per HH-older of H/NH origin)
+  for(ii=1;ii<=2;ii++){
+    str="H037000" ii;
+    jj=names[str];
+    if(jj==0) {printf("jj=0; str=%s\n",str); exit;}
+    str="H036000" ii;
+    jj1=names[str];
+    if(jj1==0) {printf("jj1=0; str=%s\n",str); exit;}
+    if($jj1==0)jj1=1 ;else jj1=$jj1;
+    $jj=$jj/jj1;
+  }
+
+
+# H36 Hispanic Origin of HHolde as a % of specRentOccCash
+divField("H036",1,2,specRentOccCash); 
+
+# H38 Aggre rent asked (as average per VacantFor Rent)
+divField("H038",1,1,specVacForRent); 
+
+# H39 Age of HH-lder (< or > 65) by meals included and cash rent
+  divField("H039",1,2,specRentOccCash); 
+  tot=specRentOcc-specRentOccCash;
+  if(tot==0)tot=1;
+  divField("H039",3,3,tot); 
+  divField("H039",4,5,specRentOccCash); 
+  divField("H039",6,6,tot); 
+
+# H40 Vac-cy status by dur-ion of vac-cy (as % of all vacant)
+divField("H040",1,9,vacant); 
+
+# H41 Units in structure (as % of housing units in structures of size x)
+divField("H041",1,10,houses); 
+
+# H42 Units in vacant structures (as % of vacant units in structures
+# of size x)
+divField("H042",1,10,vacant); 
+
+# H43 Tenure by units in structure (as percent of ownOcc)
+divField("H043",1,10,ownOcc); 
+divField("H043",11,20,rentOcc); 
+
+# H44 Agrregate persons by tenure by units in structure (as ave person
+# per HU) 
+divField("H044",1,10,ownOcc); 
+divField("H044",11,20,rentOcc); 
+
+{  for(i=1;i<=NF;i++) printf("%8.7f\t",$i);
+  printf("\n");}
+}

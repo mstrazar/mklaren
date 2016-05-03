@@ -1,0 +1,8 @@
+getRaw b 1,3,6
+getRaw c 2,3,4,5,6,7,8
+getRaw g 2,3,4,5
+getRaw p 2,3,4,5,6
+getRaw q 2,3
+getRaw r 2,3
+getRaw u 2,3,4,5
+paste b c g p q r u | nawk ' { for (i=1; i <= NF ; ++i) printf("%s ", $i); printf("\n") }' > dat

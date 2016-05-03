@@ -4,6 +4,7 @@ from scipy.sparse.linalg import norm as spnorm
 from os import environ
 from os.path import join, dirname, realpath
 from hashlib import md5
+from gzip import open as gzopen
 
 
 BLITZER_PATH = join(dirname(realpath(__file__)), "blitzer")
@@ -44,7 +45,7 @@ def load_keys(dataset="books"):
 
 
     for split in ["train", "test"]:
-        fp        = open(join(BLITZER_PATH, dataset, split))
+        fp        = gzopen(join(BLITZER_PATH, dataset, split))
         linecount = 0
         line      = fp.readline()
         while line:
@@ -100,7 +101,7 @@ def load_blitzer(dataset="books", n=None, max_features=None, tol=1e-5):
         y_test = zeros((n, ), dtype=int)
 
     for split, X, y in zip(["train", "test"], [X_train, X_test], [y_train, y_test]):
-        fp        = open(join(BLITZER_PATH, dataset, split))
+        fp        = gzopen(join(BLITZER_PATH, dataset, split))
         linecount = 0
         line      = fp.readline()
         while line:
@@ -149,7 +150,6 @@ def load_blitzer(dataset="books", n=None, max_features=None, tol=1e-5):
              "data_test": X_test, "target_test": y_test,
              "labels": labelsd}
 
-
 # Wrappers for instances of the dataset
 def load_books(n=None, max_features=None):
     return load_blitzer(dataset="books", n=n, max_features=max_features)
@@ -162,36 +162,6 @@ def load_kitchen(n=None, max_features=None):
 
 def load_electronics(n=None, max_features=None):
     return load_blitzer(dataset="electronics", n=n, max_features=max_features)
-
-
-if __name__ == "__main__":
-
-    from os import makedirs
-    from os.path import join, exists
-    from pickle import dump, HIGHEST_PROTOCOL
-
-    indir = "/Users/martin/Teaching/PR/vaje/06_linearna_regresija/data"
-
-    for dset, load in zip(["books", "kitchen", "dvd", "electronics"],
-            [load_books, load_kitchen, load_dvd, load_electronics]):
-
-        data = load(max_features=4000)
-
-        outdir = join(indir, dset)
-        if not exists(outdir):
-            makedirs(outdir)
-
-        for name in "data", "target", "data_test", "target_test":
-            arr   = data[name]
-            fname = join(outdir, name + ".pkl")
-            dump(arr, open(fname, "wb"), protocol=HIGHEST_PROTOCOL)
-
-        fname = join(outdir, "features.txt")
-        labels = [val+"\n" for ky, val in sorted(data["labels"].items())]
-        fp = open(fname, "wt")
-        fp.writelines(labels)
-        fp.close()
-
 
 
 

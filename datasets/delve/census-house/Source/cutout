@@ -1,0 +1,4 @@
+for i in *.dat
+do
+cut --fields 1-2,4- $i > $i.1
+done
