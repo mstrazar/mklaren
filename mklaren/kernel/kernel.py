@@ -63,6 +63,10 @@ def sigmoid_kernel(x1, x2, a=1, c=0):
 
 def exponential_kernel(x1, x2, sigma=2.0, gamma=None):
     """
+
+    Also known as RBF kernel.
+        rbf_kernel
+
     :param x1:
         Data point(s) 1 shape(n_samples, n_features).
     :param x2:
@@ -88,6 +92,9 @@ def exponential_kernel(x1, x2, sigma=2.0, gamma=None):
                 K[i, j] = np.exp(-gamma * np.linalg.norm(x - y, ord=2)**2)
         return K
     return np.exp(-gamma  * np.linalg.norm(x1 - x2, ord=2)**2)
+
+rbf_kernel = exponential_kernel
+
 
 
 def random_kernel(n):
