@@ -41,11 +41,15 @@ class Nystrom:
         self.K_SS    = K[inxs, inxs]
         self.K_XS    = K[:, inxs]
         if len(inxs) > 1:
-            self.K_SS_i  = inv(K[inxs, :][:, inxs])
+            self.K_SS_i = inv(K[inxs, :][:, inxs])
+            R = sqrtm(self.K_SS_i)
+            self.G = self.K_XS.dot(R)
         else:
-            self.K_SS_i  = array([[1.0 / K[inxs[0], inxs[0]]],])
-        R = sqrtm(self.K_SS_i)
-        self.G = self.K_XS.dot(R)
+            self.K_SS_i = array([1.0 / K[inxs[0], inxs[0]]])
+            R = self.K_SS_i**0.5
+            R = R.reshape((1, 1))
+            self.G = self.K_XS.reshape((K.shape[0], 1)).dot(R)
+            self.G = self.G.reshape((K.shape[0], 1))
         self.trained = True
 
 

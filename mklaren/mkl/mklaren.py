@@ -657,6 +657,8 @@ class Mklaren:
                 Kts  = K(X, K.data[inxs])
                 if len(Kts.shape) == 1:
                     Kts = Kts.reshape((Kts.shape[0], 1))
+                if len(Tny.shape) == 1:
+                    Tny = Tny.reshape((Tny.shape[0], 1))
                 Gt   = Tny.dot(Kts.T).T
                 Gt   = (Gt - gbar) / gnorm
                 Gt   = Gt * 1.0/sqrt(self.lbd + 1.0)
