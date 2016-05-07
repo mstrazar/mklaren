@@ -639,7 +639,7 @@ class Mklaren:
 
 
     def predict(self, Xs):
-        """
+        """Predict responses for test samples.
 
         Each of the kernel low rank approximation has got its corresponding
         primal regression coefficients stored.
