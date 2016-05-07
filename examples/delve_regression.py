@@ -131,7 +131,7 @@ for cv in range(cv_iter):
                         best_lambda = lbd
 
                 # Fit model with best hyperparameters
-                model = Mclass(lbd=best_lambda, rank=rank*len(Ks), **kwargs)
+                model = Mclass(lbd=best_lambda, rank=effective_rank, **kwargs)
                 model.fit(Ks, y_tr)
                 yp    = model.predict([X_te for k in Ks])
                 score = var(y_te - yp)**0.5
