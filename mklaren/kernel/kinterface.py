@@ -74,25 +74,23 @@ class Kinterface:
                 r = r.ravel()
             return r
 
-        def __call__(self, i, j):
+
+        def __call__(self, x, y):
             """
             Mimic a callable kernel function.
-            :param i:
-                Index.
-            :param j:
-                Index.
+            :param x:
+                Object in Hilbert space of kernel.
+            :param y:
+                Object in Hilbert space of kernel.
             :return:
-                Value of the kernel.
+                Value of the kernel for x, y.
             """
-            return self[i, j]
+            return self.kernel(x, y, **self.kernel_args)
 
 
         def diag(self):
             """
             :return
-                Diagonal of the kernel.
+                Diagonal of the kernel matrix.
             """
             return array([self[i, i] for i in xrange(self.shape[0])]).ravel()
-
-
-
