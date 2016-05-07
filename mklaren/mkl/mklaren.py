@@ -1,3 +1,19 @@
+"""
+The Mklaren algorithm (Multiple kernel learning with least-angle regression) perform simultaneous low-rank approximation of multiple kernel learning using least-angle regression.
+
+    M. Strazar and T. Curk, "Learning the kernel matrix via predictive low-rank approximations", arXiv Prepr. arXiv1601.04366, 2016.
+
+
+Given :math:`p` kernel matrices :math:`\mathbf{K}_1, \mathbf{K}_2, ..., \mathbf{K}_p`,  and a vector of targets :math:`\mathbf{y} \in \mathbb{R}^n`,
+learn Cholesky factors :math:`\mathbf{G}_1, \mathbf{G}_2, ..., \mathbf{G}_p`, and a regression line :math:`\mathbf{\mu} \in \mathbb{R}^n`.
+
+The regression line is learned in the union of normalized spans of Cholesky factors using least-angle regression.
+The main advantage of the approach is the efficiency due to simultaneous MKL and low-rank approximations. The computational complexity is
+
+.. math ::
+    O(K^3 + pnK^2 \delta^2)
+"""
+
 from ..util.la import safe_divide as div, outer_product, safe_func, qr
 from ..kernel.kinterface import Kinterface
 from ..projection.nystrom import Nystrom
@@ -11,38 +27,29 @@ ssqrt = lambda x: safe_func(x, f=sqrt, val=0)
 
 class Mklaren:
     """
-        Cholesky with side information and least angle delve for MKL.
-        Pivots are selected based on QR decomposition.
+    :ivar beta: (``numpy.ndarray``) Regression coefficients.
 
-        Attributes
-            rank : total rank when combining all kernels.
-            lbd  : Regularization parameter.
-            nu   : learning rate.
-            delta: Look-ahead columns per each kernel.
-            lar_grad_bound: Bound on the gradient in the LAR step.
-            debug: Run in debug mode.
-            startegy: Choose between LAR and stagewise stragegy.
+    :ivar G: (``numpy.ndarray``) Stacked Cholesky factors.
 
-        Attributes after fitting
-            trained: True if model is trained.
-            beta: Regression weight vector (first column is model bias).
-            Ga:   Input space induced by a subset of kernels.
-            Ga_mask: Indices of columns corresponding to each kernel.
-            bias:  Model bias.
+    :ivar G_mask: (``numpy.ndarray``) Indicator array of kernel order in ``G``.
+
+    :ivar Ks: (``Kinterface``) Kernels in the model.
+
+    :ivar bias: (``float``) Intercept term.
+
+    :ivar regr: (``numpy.ndarray``) Regression line.
     """
 
     def __init__(self, rank, lbd=0, delta=10, debug=False):
         """
-        :param rank:
-            Maximum allowed rank.
-        :param eps
-            Tolerance parameter.
-        :param lbd:
-            L2 (ridge) regularization parameter.
-        :param nu:
-            Learning rate for LAR delve.
-        :param delta:
-            Number of look-ahead steps.
+        :param rank: (``int``) Maximum allowed rank of the combined feature space.
+
+        :param lbd: (``float``) L2 (ridge) regularization parameter.
+
+        :param delta: (``int``)  Number of look-ahead steps.
+
+        :param debug: (``bool``) Display debugging information.
+
         """
         self.rank      = rank
         self.lbd       = lbd
@@ -55,12 +62,11 @@ class Mklaren:
 
     def fit(self, Ks, y):
         """
-        :param Ks:
-            List of kernel matrices / functions.
-        :param y:
-            Target vector.
-        :return:
-            Set G and active set.
+        Learn low-rank approximations and regression line for kernel matrices or Kinterfaces.
+
+        :param Ks: (``list``) of (``numpy.ndarray``) or of (``Kinterface``) to be aligned.
+
+        :param y: (``numpy.ndarray``) Regression targets.
         """
 
         # Reshape y
@@ -137,7 +143,7 @@ class Mklaren:
         gbar_inner  = zeros((rank, ))
         gnorm_inner = zeros((rank, ))
 
-        # Iterate until reaching maximum rank if the delve input space
+        # Iterate until reaching maximum rank if the regression input space
         for xk in xrange(rank):
 
             # Select best (kernel, pivot) based on correlation with the
@@ -202,7 +208,7 @@ class Mklaren:
             D[ina] = D[ina] - (G[ina, k]**2)
             D[i]   = 0
 
-            # Add newly created column to delve input space
+            # Add newly created column to regression input space
             # Store transform for individual g
             g                   = G[:, k]
             gbar_inner[xk]      = g.mean()
@@ -227,7 +233,7 @@ class Mklaren:
                                      residual=residual, A = A, ina=[0],
                                      a_vec=a_vec, c_vec=c_vec)
 
-                # Update delve line and residual
+                # Update regression line and residual
                 regr     = regr + grad * bisec
                 residual = residual - grad * bisec
 
@@ -491,7 +497,7 @@ class Mklaren:
             Inactive set to index c_vec, a_vec.
         :param single
             Select minimal absolute value, do not discard negatives. Used when
-            repairing the delve line when new ("random") column is added.
+            repairing the regression line when new ("random") column is added.
         :return:
             gamma: gradient
             pivot: pivot index
@@ -634,15 +640,13 @@ class Mklaren:
 
     def predict(self, Xs):
         """
-        Perform "Nystrom trick" for each kernel and reshuffle to get a correct
-        ordering and infer weights.
 
         Each of the kernel low rank approximation has got its corresponding
-        primal delve coefficients stored.
+        primal regression coefficients stored.
 
-        :param inxs:
-            Index of the predicted set.
-        :return:
+        :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
+
+        :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
         assert self.trained
         regr = zeros((Xs[0].shape[0], 1)) + self.bias
@@ -667,6 +671,15 @@ class Mklaren:
 
 
     def __call__(self, i, j):
+        """
+        Access portions of the combined kernel matrix at indices i, j.
+
+        :param i: (``int``) or (``numpy.ndarray``) Index/indices of data points(s).
+
+        :param j: (``int``) or (``numpy.ndarray``) Index/indices of data points(s).
+
+        :return:  (``numpy.ndarray``) Value of the kernel matrix for i, j.
+        """
         assert self.trained
         if isinstance(i, ndarray):
             i = i.astype(int).ravel()
@@ -676,5 +689,12 @@ class Mklaren:
 
 
     def __getitem__(self, item):
+        """
+        Access portions of the kernel matrix generated by ``kernel``.
+
+        :param item: (``tuple``) pair of: indices or list of indices or (``numpy.ndarray``) or (``slice``) to address portions of the kernel matrix.
+
+        :return:  (``numpy.ndarray``) Value of the kernel matrix for item.
+        """
         assert self.trained
         return self.G[item[0], 1:].dot(self.G[item[1], 1:].T)
