@@ -37,6 +37,7 @@ class Kinterface:
 
             :param item: (``tuple``) pair of: indices or list of indices or (``numpy.ndarray``) or (``slice``) to address portions of the kernel matrix.
 
+            :return:  (``numpy.ndarray``) Value of the kernel matrix for item.
             """
             assert isinstance(item, tuple)
             assert len(item) == 2
@@ -81,7 +82,9 @@ class Kinterface:
             Mimic a callable kernel function.
 
             :param x: (``numpy.ndarray``) Data point.
+
             :param y: (``numpy.ndarray``) Data point.
+
             :return:  (``float``) Value of the kernel for x, y.
             """
             return self.kernel(x, y, **self.kernel_args)
