@@ -1,3 +1,22 @@
+"""
+
+Th  e Nystrom method learns a low-rank approximation of the kernel by evaluating the kernel function at a subset of data points.
+
+    C. Williams and M. Seeger, "Using the Nystrom method to speed up kernel machines," in Proceedings of the 14th Annual Conference on Neural Information Processing Systems, 2001, no. EPFL-CONF.161322, pp. 682-688.
+
+
+Given a kernel matrix :math:`\mathbf{K} \in \mathbb{R}^{n\ x\ n}` and an active set :math:`\mathcal{A}`, the kernel matrix is approximated as
+
+.. math::
+    \mathbf{\hat{K}} = \mathbf{K}(:, \mathcal{A}) \mathbf{K}^{-1}(\mathcal{A}, \mathcal{A}) \mathbf{K}(:, \mathcal{A})^T
+
+or in terms of :math:`\mathbf{G}`:
+
+.. math::
+    \mathbf{G} = \mathbf{K}(:, \mathcal{A}) \mathbf{K}^{-1/2}(\mathcal{A}, \mathcal{A})
+"""
+
+
 from ..kernel.kinterface import Kinterface
 from sklearn.kernel_approximation import Nystroem
 from numpy import array
@@ -8,14 +27,21 @@ from scipy.linalg import sqrtm
 class Nystrom:
 
     """
-        Standard Nystrom method implementation.
-        Inducing inputs can be given or selected randomly.
+    :ivar K: (``Kinterface``) or (``numpy.ndarray``) the kernel matrix.
+
+    :ivar active_set_: The selected avtive set of indices.
+
+    :ivar K_SS_i: (``numpy.ndarray``) the inverse kernel of the active set.
+
+    :ivar K_XS: (``numpy.ndarray``) the kernel of the active set and the full data set.
+
+    :ivar G: (``numpy.ndarray``) Low-rank approximation.
     """
 
 
     def __init__(self, rank=10):
         """
-        :return:
+        :param rank: (``int``) Maximal decomposition rank.
         """
         self.trained = False
         self.rank = rank
@@ -25,11 +51,9 @@ class Nystrom:
         """
         Fit approximation to the kernel function / matrix.
 
-        :param K:
-            Kernel matrix / kernel interface.
-        :param inxs:
-            Inducing inputs. If None, select randomly, else use specified inputs
-            and override ranks.
+        :param K: (``numpy.ndarray``) or of (``Kinterface``). The kernel to be approximated with G.
+
+        :param inxs: (``list``) A predefined active set. If None, it is selected randomly, else use specified inputs and override the ``rank`` setting.
         """
         self.n       = K.shape[0]
         if inxs is None:
@@ -54,14 +78,14 @@ class Nystrom:
 
 
     def predict(self, X=None, inxs=None):
-        """
-        :param X:
-            Test samples in the input space.
-        :param inxs
-            Indices in the training data.
-        :return:
-            Predicted values of the kernel function against all training
-            inputs.
+        """ Predict values of the kernel for a test set.
+
+        :param X:  (``numpy.ndarray``)  Test samples in the input space.
+
+        :param inxs: (``list``) The active set.
+
+        :return: (``numpy.ndarray``)  Predicted values of the kernel function against all training inputs.
+
         """
         if X is None and inxs is None:
             # Full approximation
@@ -85,8 +109,9 @@ class NystromScikit:
 
     def __init__(self, rank=10, random_state=42):
         """
-        :param rank:
-        :return:
+        :param rank: (``int``) Maximal decomposition rank.
+
+        :param random_state: (``int``) Random generator seed.
         """
         self.trained = False
         self.rank = rank
@@ -97,10 +122,9 @@ class NystromScikit:
         """
         Fit approximation to the kernel function / matrix.
 
-        :param K:
-            Kernel matrix / kernel interface.
-        :param y:
-            Target matrix.
+        :param K: (``numpy.ndarray``) or of (``Kinterface``). The kernel to be approximated with G.
+
+        :param y: (``numpy.ndarray``) Class labels :math:`y_i \in {-1, 1}` or regression targets.
         """
         assert isinstance(K, Kinterface)
 
