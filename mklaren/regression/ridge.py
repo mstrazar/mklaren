@@ -1,3 +1,10 @@
+"""
+A Ridge regression in the feature space induced by multiple kernel low-rank approximations.
+
+Implemented for Nystrom and Cholesky-type decompositions.
+"""
+
+
 from ..mkl.align import Align, AlignLowRank
 from ..mkl.alignf import Alignf, AlignfLowRank
 from ..mkl.uniform import UniformAlignment, UniformAlignmentLowRank
@@ -17,6 +24,9 @@ from numpy.linalg import inv, norm
 
 
 class RidgeMKL:
+    """A MKL model in a transductive setting (test points are presented at training time).
+
+    """
 
     mkls = {
         "align": Align,
@@ -38,16 +48,13 @@ class RidgeMKL:
 
     def __init__(self, lbd=0, method="align", method_init_args={}, low_rank=False):
         """
-        Ridge delve using MKL methods.
+        :param method: (``string``) "align", "alignf", or "uniform", MKL method to be used.
 
-        :param lbd:
-            Ridge (L2) regularization parameter.
-        :param method:
-            Name of MKL method, must be in self.mkls.
-        :param low_rank
-            Use a low-rank approximation.
-        :param method_init_args:
-            Kwargs for the MKL method.
+        :param low_rank: (``bool``) Use low-rank approximations.
+
+        :param method_init_args: (``dict``) Initialization arguments for the MKL methods.
+
+        :param lbd: (``float``) L2-regularization.
         """
 
         self.method  = method
@@ -69,15 +76,13 @@ class RidgeMKL:
 
 
     def fit(self, Ks, y, holdout=None):
-        """
-        Fit MKL models according to target vector.
+        """Learn weights for kernel matrices or Kinterfaces.
 
-        :param Ks:
-            List of kernel interfaces/matrices.
-        :param y:
-            Target vector.
-        :param holdout:
-            Hold-out index set.
+        :param Ks: (``list``) of (``numpy.ndarray``) or of (``Kinterface``) to be aligned.
+
+        :param y: (``numpy.ndarray``) Class labels :math:`y_i \in {-1, 1}` or regression targets.
+
+        :param holdout: (``list``) List of indices to exlude from alignment.
         """
 
         # Expand kernel interfaces to kernel matrices
@@ -124,12 +129,11 @@ class RidgeMKL:
 
     def predict(self, inxs):
         """
-        Predict values for data on inxs.
+        Predict values for data on indices inxs (transcductive setting).
 
-        :param inxs:
-            Indexes of samples to be predicted.
-        :return:
-            Vector with predictions.
+        :param inxs: (``list``) Indices of samples to be used for prediction.
+
+        :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
         assert self.trained
 
@@ -144,14 +148,7 @@ class RidgeMKL:
 class RidgeLowRank:
 
     """
-        Use kernel low-rank approximations and ridge regression.
-        Implemented for Nystrom and Cholesky-type decompositions.
-
-        Attributes and methods assumed to be provided by models:
-            Essentially:
-                model.active_set_       # Active set of examples
-                model.G                 # Low-rank factors
-
+    :ivar reg_model: (``sklearn.linear_model.Ridge``) regression model from Scikit.
     """
 
     # Static list of methods and their types
@@ -167,23 +164,19 @@ class RidgeLowRank:
 
 
     def __init__(self, method_init_args=None,
-                 method="icd", lbd=0, max_rank=100, rank=10, normalize=False):
+                 method="icd", lbd=0, rank=10, normalize=False):
         """
         Initialize object.
 
-        :param method:
-            Low-rank method.
-        :param max_rank:
-            Maximum expected rank. Required for the caching mechanism.
-        :param rank
-            Initial rank to be computed.
-        :param normalize:
-            Normalize data in Ridge model.
-        :param method_init_args:
-            Initialization arguments for the low-rank approximation models.
-        :param lbd:
-            L2-regularization.
-        :return:
+        :param method: (``string``) "icd", "csi", or "nystrom", low-rank method to be used.
+
+        :param rank: (``int``) Maximal decomposition rank.
+
+        :param normalize: (``bool``) Normalize data in Ridge model.
+
+        :param method_init_args: (``dict``) Initialization arguments for the low-rank approximation models.
+
+        :param lbd: (``float``) L2-regularization.
         """
         self.method     = method
         self.trained    = False
@@ -204,7 +197,6 @@ class RidgeLowRank:
 
         # Initialize low-rank and regression model
         self.rank       = rank
-        self.max_rank   = max_rank
         self.lr_models  = dict()
         self.reg_model  = Ridge(alpha=lbd, normalize=normalize)
 
@@ -213,11 +205,11 @@ class RidgeLowRank:
         """
         Fit multiple kernel functions.
 
-        :param Ks  list, [Kinterface]:
-            List of kernel interfaces.
-        :param method_args:
-            Arguments to the fit method.
-        :return:
+        :param Ks: (``list``) of (``Kinterface``): List of kernel interfaces.
+
+        :param y: (``numpy.ndarray``) Class labels :math:`y_i \in {-1, 1}` or regression targets.
+
+        :param method_args: (``dict``) Arguments to the fit method of the kernel approximation method.
         """
 
         # Store kernels
@@ -263,13 +255,11 @@ class RidgeLowRank:
 
 
     def predict(self, Xs):
-        """
-        Predict labels for new samples Xs using the trained regression model.
+        """Predict responses for test samples.
 
-        :param Xs:
-            Data in original input space. Repeated once for each kernel.
-        :return:
-            Predicted responses.
+        :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
+
+        :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
         assert self.trained
         Gs = []
