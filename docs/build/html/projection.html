@@ -1,0 +1,396 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Kernel low-rank approximations &mdash; mklaren 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="mklaren 1.0.0 documentation" href="index.html" />
+    <link rel="next" title="Multiple kernel learning methods" href="mkl.html" />
+    <link rel="prev" title="Kernel functions and utilities" href="kernel.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="kernel-low-rank-approximations">
+<h1>Kernel low-rank approximations<a class="headerlink" href="#kernel-low-rank-approximations" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-mklaren.projection.icd">
+<span id="incomplete-cholesky-decomposition"></span><h2>Incomplete Cholesky Decomposition<a class="headerlink" href="#module-mklaren.projection.icd" title="Permalink to this headline">¶</a></h2>
+<p>Incomplete Cholesky Decomposition (CSI) learns low-rank kernel matrix approximation with pivot selection based on lower-bound of the gain of approximation error.</p>
+<blockquote>
+<div><ol class="upperalpha simple" start="19">
+<li>Fine and K. Scheinberg, Efficient SVM Training Using Low-Rank Kernel Representations, J. Mach. Learn. Res., vol. 2, pp. 243-264, 2001.</li>
+</ol>
+</div></blockquote>
+<p>Given a kernel matrix <span class="math">\(\mathbf{K} \in \mathbb{R}^{n\ x\ n}\)</span> find a low-rank approximation <span class="math">\(\mathbf{G} \in \mathbb{R}^{n\ x\ k}\)</span>.</p>
+<div class="math">
+\[\hat{\mathbf{K}} = \mathbf{G}\mathbf{G}^T\]</div>
+<dl class="class">
+<dt id="mklaren.projection.icd.ICD">
+<em class="property">class </em><code class="descclassname">mklaren.projection.icd.</code><code class="descname">ICD</code><span class="sig-paren">(</span><em>rank</em>, <em>eps=1e-10</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.icd.ICD" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><strong>G</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Low-rank approximation.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="mklaren.projection.icd.ICD.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>rank</em>, <em>eps=1e-10</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.icd.ICD.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>rank</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>) Maximal decomposition rank.</li>
+<li><strong>eps</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>)  Tolerance lower bound.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mklaren.projection.icd.ICD.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>i</em>, <em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.icd.ICD.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access portions of the combined kernel matrix at indices i, j.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>i</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>) or (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Index/indices of data points(s).</li>
+<li><strong>j</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>) or (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Index/indices of data points(s).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Value of the kernel matrix for i, j.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mklaren.projection.icd.ICD.__getitem__">
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.icd.ICD.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access portions of the kernel matrix generated by <code class="docutils literal"><span class="pre">kernel</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> &#8211; (<code class="docutils literal"><span class="pre">tuple</span></code>) pair of: indices or list of indices or (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) or (<code class="docutils literal"><span class="pre">slice</span></code>) to address portions of the kernel matrix.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Value of the kernel matrix for item.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mklaren.projection.icd.ICD.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>K</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.icd.ICD.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Learn a low-rank kernel approximation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>K</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) or of (<code class="docutils literal"><span class="pre">Kinterface</span></code>). The kernel to be approximated with G.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mklaren.projection.csi">
+<span id="cholesky-with-side-information"></span><h2>Cholesky with Side Information<a class="headerlink" href="#module-mklaren.projection.csi" title="Permalink to this headline">¶</a></h2>
+<p>Cholesky with Side Information (CSI) learns low-rank kernel matrix approximation with respect ot regression targets or class labels.</p>
+<blockquote>
+<div><ol class="upperalpha simple" start="6">
+<li><ol class="first upperalpha" start="18">
+<li>Bach and M. I. Jordan, &#8220;Predictive low-rank decomposition for kernel methods,&#8221; Proceedings of the 22nd international conference on Machine learning - ICML 2005. ACM Press, New York, New York, USA, pp. 33-40, 2005.</li>
+</ol>
+</li>
+</ol>
+</div></blockquote>
+<p>Given a kernel matrix <span class="math">\(\mathbf{K} \in \mathbb{R}^{n\ x\ n}\)</span> and the targets <span class="math">\(\mathbf{y} \in \mathbb{R}^{n}\)</span>, find a low-rank approximation <span class="math">\(\mathbf{G} \in \mathbb{R}^{n\ x\ k}\)</span>.</p>
+<div class="math">
+\[\hat{\mathbf{K}} = \mathbf{G}\mathbf{G}^T\]</div>
+<p>The implementation is based on the MATLAB/octave code provided by authors. It assumes an <code class="docutils literal"><span class="pre">octave</span></code> executable in the systems path and the <code class="docutils literal"><span class="pre">oct2py</span></code> Python module.</p>
+<dl class="class">
+<dt id="mklaren.projection.csi.CSI">
+<em class="property">class </em><code class="descclassname">mklaren.projection.csi.</code><code class="descname">CSI</code><span class="sig-paren">(</span><em>rank=40</em>, <em>kappa=0.99</em>, <em>centering=1</em>, <em>delta=40</em>, <em>eps=0.0001</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.csi.CSI" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>G</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Low-rank approximation.</li>
+<li><strong>Q</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) QR decomposition of <code class="docutils literal"><span class="pre">G</span></code> (Q matrix).</li>
+<li><strong>R</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) QR decomposition of <code class="docutils literal"><span class="pre">G</span></code> (R matrix).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="mklaren.projection.csi.CSI.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>rank=40</em>, <em>kappa=0.99</em>, <em>centering=1</em>, <em>delta=40</em>, <em>eps=0.0001</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.csi.CSI.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>rank</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>) Maximal decomposition rank.</li>
+<li><strong>kappa</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) Trade-off accuracy vs. predictive gain.</li>
+<li><strong>centering</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>)  0 or 1, Centering of the kernel matrix.</li>
+<li><strong>delta</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>) Number of look-ahead columns.</li>
+<li><strong>eps</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>)  Tolerance lower bound.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mklaren.projection.csi.CSI.__call__">
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>i</em>, <em>j</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.csi.CSI.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access portions of the combined kernel matrix at indices i, j.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>i</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>) or (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Index/indices of data points(s).</li>
+<li><strong>j</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>) or (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Index/indices of data points(s).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Value of the kernel matrix for i, j.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mklaren.projection.csi.CSI.__getitem__">
+<code class="descname">__getitem__</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.csi.CSI.__getitem__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access portions of the kernel matrix generated by <code class="docutils literal"><span class="pre">kernel</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>item</strong> &#8211; (<code class="docutils literal"><span class="pre">tuple</span></code>) pair of: indices or list of indices or (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) or (<code class="docutils literal"><span class="pre">slice</span></code>) to address portions of the kernel matrix.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Value of the kernel matrix for item.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mklaren.projection.csi.CSI.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>K</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.csi.CSI.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Learn a low-rank kernel approximation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>K</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) or of (<code class="docutils literal"><span class="pre">Kinterface</span></code>). The kernel to be approximated with G.</li>
+<li><strong>y</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Class labels <span class="math">\(y_i \in {-1, 1}\)</span> or regression targets.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mklaren.projection.nystrom">
+<span id="the-nystrom-approximation"></span><h2>The Nystrom approximation<a class="headerlink" href="#module-mklaren.projection.nystrom" title="Permalink to this headline">¶</a></h2>
+<p>Th  e Nystrom method learns a low-rank approximation of the kernel by evaluating the kernel function at a subset of data points.</p>
+<blockquote>
+<div><ol class="upperalpha simple" start="3">
+<li>Williams and M. Seeger, &#8220;Using the Nystrom method to speed up kernel machines,&#8221; in Proceedings of the 14th Annual Conference on Neural Information Processing Systems, 2001, no. EPFL-CONF.161322, pp. 682-688.</li>
+</ol>
+</div></blockquote>
+<p>Given a kernel matrix <span class="math">\(\mathbf{K} \in \mathbb{R}^{n\ x\ n}\)</span> and an active set <span class="math">\(\mathcal{A}\)</span>, the kernel matrix is approximated as</p>
+<div class="math">
+\[\mathbf{\hat{K}} = \mathbf{K}(:, \mathcal{A}) \mathbf{K}^{-1}(\mathcal{A}, \mathcal{A}) \mathbf{K}(:, \mathcal{A})^T\]</div>
+<p>or in terms of <span class="math">\(\mathbf{G}\)</span>:</p>
+<div class="math">
+\[\mathbf{G} = \mathbf{K}(:, \mathcal{A}) \mathbf{K}^{-1/2}(\mathcal{A}, \mathcal{A})\]</div>
+<dl class="class">
+<dt id="mklaren.projection.nystrom.Nystrom">
+<em class="property">class </em><code class="descclassname">mklaren.projection.nystrom.</code><code class="descname">Nystrom</code><span class="sig-paren">(</span><em>rank=10</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.nystrom.Nystrom" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>K</strong> &#8211; (<code class="docutils literal"><span class="pre">Kinterface</span></code>) or (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) the kernel matrix.</li>
+<li><strong>active_set</strong> &#8211; The selected avtive set of indices.</li>
+<li><strong>K_SS_i</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) the inverse kernel of the active set.</li>
+<li><strong>K_XS</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) the kernel of the active set and the full data set.</li>
+<li><strong>G</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Low-rank approximation.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="mklaren.projection.nystrom.Nystrom.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>rank=10</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.nystrom.Nystrom.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rank</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>) Maximal decomposition rank.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mklaren.projection.nystrom.Nystrom.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>K</em>, <em>inxs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.nystrom.Nystrom.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit approximation to the kernel function / matrix.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>K</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) or of (<code class="docutils literal"><span class="pre">Kinterface</span></code>). The kernel to be approximated with G.</li>
+<li><strong>inxs</strong> &#8211; (<code class="docutils literal"><span class="pre">list</span></code>) A predefined active set. If None, it is selected randomly, else use specified inputs and override the <code class="docutils literal"><span class="pre">rank</span></code> setting.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mklaren.projection.nystrom.Nystrom.predict">
+<code class="descname">predict</code><span class="sig-paren">(</span><em>X=None</em>, <em>inxs=None</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.projection.nystrom.Nystrom.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict values of the kernel for a test set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>X</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Test samples in the input space.</li>
+<li><strong>inxs</strong> &#8211; (<code class="docutils literal"><span class="pre">list</span></code>) The active set.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Predicted values of the kernel function against all training inputs.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Kernel low-rank approximations</a><ul>
+<li><a class="reference internal" href="#module-mklaren.projection.icd">Incomplete Cholesky Decomposition</a></li>
+<li><a class="reference internal" href="#module-mklaren.projection.csi">Cholesky with Side Information</a></li>
+<li><a class="reference internal" href="#module-mklaren.projection.nystrom">The Nystrom approximation</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="kernel.html" title="previous chapter">Kernel functions and utilities</a></li>
+      <li>Next: <a href="mkl.html" title="next chapter">Multiple kernel learning methods</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/projection.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Martin Stražar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+      |
+      <a href="_sources/projection.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

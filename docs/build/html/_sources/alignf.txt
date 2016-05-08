@@ -1,0 +1,19 @@
+.. automodule:: mklaren.mkl.alignf
+
+    .. autoclass:: Alignf
+        :members:
+
+        .. automethod:: __init__
+
+        .. automethod:: __call__
+
+        .. automethod:: __getitem__
+    
+    .. autoclass:: AlignfLowRank
+        :members:
+        
+        .. automethod:: __init__
+
+        .. automethod:: __call__
+
+        .. automethod:: __getitem__

@@ -1,0 +1,15 @@
+.. automodule:: mklaren.mkl.uniform
+
+    .. autoclass:: UniformAlignment
+        :members:
+
+        .. automethod:: __call__
+
+        .. automethod:: __getitem__
+    
+    .. autoclass:: UniformAlignmentLowRank
+        :members:
+
+        .. automethod:: __call__
+
+        .. automethod:: __getitem__

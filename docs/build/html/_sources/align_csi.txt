@@ -1,0 +1,8 @@
+.. automodule:: mklaren.mkl.align_csi
+
+    .. autoclass:: AlignCSI
+        :members:
+
+        .. automethod:: __call__
+
+        .. automethod:: __getitem__

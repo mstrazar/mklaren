@@ -1,0 +1,391 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Linear algebra utility functions &mdash; mklaren 1.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="mklaren 1.0.0 documentation" href="index.html" />
+    <link rel="prev" title="Multiple kernel regression" href="regression.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mklaren.util.la">
+<span id="linear-algebra-utility-functions"></span><h1>Linear algebra utility functions<a class="headerlink" href="#module-mklaren.util.la" title="Permalink to this headline">¶</a></h1>
+<p>Linear algebra utility functions.</p>
+<dl class="function">
+<dt id="mklaren.util.la.cosine_similarity">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">cosine_similarity</code><span class="sig-paren">(</span><em>A</em>, <em>B</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.cosine_similarity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cosine similarity between matrices <span class="math">\(\mathbf{A}\)</span> and <span class="math">\(\mathbf{B}\)</span> defined in terms of the Frobenius product</p>
+<div class="math">
+\[\dfrac{&lt;\mathbf{A}, \mathbf{B}&gt;_F} {&lt;\mathbf{A}, \mathbf{A}&gt;_F &lt;\mathbf{B}, \mathbf{B}&gt;_F}\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+<li><strong>B</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">float</span></code>) Cosine similarity value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.cosine_similarity_low_rank">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">cosine_similarity_low_rank</code><span class="sig-paren">(</span><em>a</em>, <em>b</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.cosine_similarity_low_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cosine similarity between matrices from outer products of vectors <span class="math">\(\mathbf{a}\)</span> and <span class="math">\(\mathbf{b}\)</span>:</p>
+<div class="math">
+\[\mathbf{A} = \mathbf{aa}^T\]</div>
+<div class="math">
+\[\mathbf{B} = \mathbf{bb}^T\]</div>
+<div class="math">
+\[\dfrac{&lt;\mathbf{A}, \mathbf{B}&gt;_F} {&lt;\mathbf{A}, \mathbf{A}&gt;_F &lt;\mathbf{B}, \mathbf{B}&gt;_F}\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">float</span></code>) Cosine similarity value.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.cosine_similarity_low_rank_multi">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">cosine_similarity_low_rank_multi</code><span class="sig-paren">(</span><em>G</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.cosine_similarity_low_rank_multi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cosine similarity between matrices from outer products of matrix <span class="math">\(\mathbf{G}\)</span> and vector <span class="math">\(\mathbf{y}\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>G</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Low-rank matrix.</li>
+<li><strong>y</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Column vector.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">float</span></code>) Cosine similarity (kernel alignment).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.covariance_full_rank">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">covariance_full_rank</code><span class="sig-paren">(</span><em>K</em>, <em>sigma2</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.covariance_full_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>Complete the kernel/covariance matrix to full rank by adding an indetity matrix.</p>
+<div class="math">
+\[(\mathbf{K} + \sigma^2  \mathbf{I})^{-1}\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>K</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Kernel matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</li>
+<li><strong>sigma2</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) Added covariance.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Modified kernel matrix.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.ensure_symmetric">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">ensure_symmetric</code><span class="sig-paren">(</span><em>K</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.ensure_symmetric" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure a symmetric matrix. Small deviations in symmetry can present obstacles to <code class="docutils literal"><span class="pre">numpy.svd</span></code> used by samplers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>K</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Kernel matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Correction to C up to symmetry.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.fro_prod">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">fro_prod</code><span class="sig-paren">(</span><em>A</em>, <em>B</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.fro_prod" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Frobenius product is an inner product between matrices <span class="math">\(\mathbf{A}\)</span> and <span class="math">\(\mathbf{B}\)</span> of same shape.</p>
+<div class="math">
+\[&lt;\mathbf{A}, \mathbf{B}&gt;_F = \sum_{i, j} \mathbf{A}_{ij} \mathbf{B}_{ij}\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+<li><strong>B</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">float</span></code>) Frobenius product value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.fro_prod_low_rank">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">fro_prod_low_rank</code><span class="sig-paren">(</span><em>A</em>, <em>B</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.fro_prod_low_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Frobenius product of kernel matrices induced by linear kernels on <span class="math">\(\mathbf{A}\)</span> and <span class="math">\(\mathbf{B}\)</span>:</p>
+<div class="math">
+\[&lt;\mathbf{AA}^T, \mathbf{BB}^T&gt;_F\]</div>
+<p>Note <span class="math">\(A\)</span> and <span class="math">\(B\)</span> need not be of the same shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+<li><strong>B</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">float</span></code>) Frobenius product value.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.normalize">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">normalize</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.normalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalize <span class="math">\(\mathbf{X}\)</span> to have values between 0 and 1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>X</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Data matrix.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Normalize matrix.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.outer_product">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">outer_product</code><span class="sig-paren">(</span><em>a</em>, <em>b</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.outer_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Outer product between vectors <span class="math">\(\mathbf{a}\)</span> and <span class="math">\(\mathbf{b}\)</span>:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) column vector.</li>
+<li><strong>b</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) column vector.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">float</span></code>) Outer product of the appropriate dimension.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.qr">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">qr</code><span class="sig-paren">(</span><em>A</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.qr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fast QR decomposition.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  A matrix of shape <code class="docutils literal"><span class="pre">(m,</span> <span class="pre">n)</span></code>.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">tuple</span></code>) of (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) orthonormal vectors (Q)  and (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) upper triangular matrix (R).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.safe_divide">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">safe_divide</code><span class="sig-paren">(</span><em>A</em>, <em>b</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.safe_divide" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a safe float division between <span class="math">\(\mathbf{A}\)</span> and <span class="math">\(\mathbf{b}\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Scalar / Matrix.</li>
+<li><strong>b</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Scalar / Matrix.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">float</span></code>) Matrix divided by b if b not zero else 0.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.safe_func">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">safe_func</code><span class="sig-paren">(</span><em>x</em>, <em>f</em>, <em>val=0</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.safe_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate a function defined on positive reals.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) a value.</li>
+<li><strong>f</strong> &#8211; (<code class="docutils literal"><span class="pre">callable</span></code>) Function to evaluate.</li>
+<li><strong>val</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) Return value when <code class="docutils literal"><span class="pre">x</span></code> is out of domain.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">float</span></code>) Function value or out of domain.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.woodbury_inverse">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">woodbury_inverse</code><span class="sig-paren">(</span><em>G</em>, <em>sigma2</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.woodbury_inverse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix inversion using the Woodbury-Sherman-Morrison lemma.</p>
+<div class="math">
+\[(\mathbf{GG}^T + \dfrac{1}{\sigma^2}  \mathbf{I})^{-1}\]</div>
+<p>Order of operations is important.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>G</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Low-rank matrix.</li>
+<li><strong>sigma2</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) Noise / nugget term / sigma squared.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) The solution to the above equation by inverting a shape <code class="docutils literal"><span class="pre">(k,</span> <span class="pre">k)</span></code> matrix.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="mklaren.util.la.woodbury_inverse_full">
+<code class="descclassname">mklaren.util.la.</code><code class="descname">woodbury_inverse_full</code><span class="sig-paren">(</span><em>Ai</em>, <em>U</em>, <em>Ci</em>, <em>V</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.util.la.woodbury_inverse_full" title="Permalink to this definition">¶</a></dt>
+<dd><p>Matrix inversion lemma Woodbury-Sherman-Morrison in its general form.</p>
+<div class="math">
+\[(\mathbf{A} + \mathbf{UCV})^{-1}\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Ai</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Inverse of a square matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</li>
+<li><strong>U</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">k)</span></code>.</li>
+<li><strong>Ci</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Inverse of square matrix of shape <code class="docutils literal"><span class="pre">(k,</span> <span class="pre">k)</span></code>.</li>
+<li><strong>V</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Matrix of shape <code class="docutils literal"><span class="pre">(k,</span> <span class="pre">n)</span></code>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  The solution to the above equation by inverting A and C. The solution is of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="regression.html" title="previous chapter">Multiple kernel regression</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/la.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Martin Stražar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+      |
+      <a href="_sources/la.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
