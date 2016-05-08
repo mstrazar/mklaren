@@ -19,4 +19,4 @@ A Multiple kernel learning Python library.
 
 * Mklaren method article [[arXiv]](http://arxiv.org/abs/1601.04366) [[.py scripts]](https://github.com/mstrazar/mklaren/wiki/Experiments-in-the-Mklaren-article)
 
-* Full documentation [[zip]](https://github.com/mstrazar/mklaren/raw/master/docs/documentation.zip)
+* Full documentation [[html]](https://cdn.rawgit.com/mstrazar/mklaren/master/docs/build/html/index.html)
