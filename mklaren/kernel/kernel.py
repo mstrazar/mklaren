@@ -85,12 +85,12 @@ def exponential_kernel(x, y, sigma=2.0, gamma=None):
     The exponential quadratic / radial basis kernel (RBF) kernel.
 
         .. math::
-            k(\mathbf{x}, \mathbf{y}) = exp\{\dfrac{\|\mathbf{x} - \mathbf{y}\|}{\sigma^2} \}
+            k(\mathbf{x}, \mathbf{y}) = exp\{\dfrac{\|\mathbf{x} - \mathbf{y}\|^2}{\sigma^2} \}
 
         or
 
         .. math::
-            k(\mathbf{x}, \mathbf{y}) = exp\{\gamma \|\mathbf{x} - \mathbf{y}\| \}
+            k(\mathbf{x}, \mathbf{y}) = exp\{\gamma \|\mathbf{x} - \mathbf{y}\|^2 \}
 
         :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
 
@@ -115,9 +115,9 @@ def exponential_kernel(x, y, sigma=2.0, gamma=None):
         return np.exp(-gamma  * (x - y)**2)
     if len(x.shape) >= 2 or len(y.shape) >= 2:
         K = np.zeros((x.shape[0], y.shape[0]))
-        for i, x in enumerate(x):
-            for j, y in enumerate(y):
-                K[i, j] = np.exp(-gamma * np.linalg.norm(x - y, ord=2)**2)
+        for i, xi in enumerate(x):
+            for j, yj in enumerate(y):
+                K[i, j] = np.exp(-gamma * np.linalg.norm(xi - yj, ord=2)**2)
         return K
     return np.exp(-gamma  * np.linalg.norm(x - y, ord=2)**2)
 
