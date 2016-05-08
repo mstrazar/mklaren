@@ -69,7 +69,9 @@ def cosine_similarity_low_rank(a, b):
     Cosine similarity between matrices from outer products of vectors :math:`\mathbf{a}` and :math:`\mathbf{b}`:
 
     .. math::
-        \mathbf{A} = \mathbf{aa}^T\
+        \mathbf{A} = \mathbf{aa}^T
+
+    .. math::
         \mathbf{B} = \mathbf{bb}^T
 
     .. math::
