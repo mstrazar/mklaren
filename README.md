@@ -15,9 +15,8 @@ A Multiple kernel learning Python library.
 
 * Quick Start Guide [[jupyter notebook]](https://cdn.rawgit.com/mstrazar/mklaren/master/docs/quick_start.ipynb) [[html]](https://cdn.rawgit.com/mstrazar/mklaren/master/docs/quick_start.html)
 
-* Poster presentation [[png]](./docs/poster.png)[[eps]](./docs/poster.eps)
+* Poster presentation [[png]](https://cdn.rawgit.com/mstrazar/mklaren/master/docs/poster.png)[[eps]](https://cdn.rawgit.com/mstrazar/mklaren/master/docs/poster.eps)
 
-* Mklaren method article [[arXiv]](http://arxiv.org/abs/1601.04366)
-    * Experiments [[.py scripts]](https://github.com/mstrazar/mklaren/wiki/Experiments-in-the-Mklaren-article)
+* Mklaren method article [[arXiv]](http://arxiv.org/abs/1601.04366) [[.py scripts]](https://github.com/mstrazar/mklaren/wiki/Experiments-in-the-Mklaren-article)
 
 * Full documentation [[zip]](https://github.com/mstrazar/mklaren/raw/master/docs/documentation.zip)
