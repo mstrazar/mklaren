@@ -13,7 +13,7 @@ A Multiple kernel learning Python library.
 
 #### Resources
 
-    Quick Start Guide [[jupyter notebook]](./docs/quick_start.ipynb)[[html]](./docs/quick_start.html)
+    Quick Start Guide [jupyter notebook](./docs/quick_start.ipynb)[html](./docs/quick_start.html)
 
     Poster presentation [png][eps]
 
