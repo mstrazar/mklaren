@@ -45,7 +45,7 @@ def load_keys(dataset="books"):
 
 
     for split in ["train", "test"]:
-        fp        = gzopen(join(BLITZER_PATH, dataset, split))
+        fp        = gzopen(join(BLITZER_PATH, dataset, split + ".gz"))
         linecount = 0
         line      = fp.readline()
         while line:
@@ -101,7 +101,7 @@ def load_blitzer(dataset="books", n=None, max_features=None, tol=1e-5):
         y_test = zeros((n, ), dtype=int)
 
     for split, X, y in zip(["train", "test"], [X_train, X_test], [y_train, y_test]):
-        fp        = gzopen(join(BLITZER_PATH, dataset, split))
+        fp        = gzopen(join(BLITZER_PATH, dataset, split + ".gz"))
         linecount = 0
         line      = fp.readline()
         while line:
