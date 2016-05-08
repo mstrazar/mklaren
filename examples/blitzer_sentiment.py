@@ -18,7 +18,7 @@ from numpy import logspace, array, vstack, log10, argsort, var
 from random import shuffle, seed
 
 # Dataset and number of samples
-dset    = "books"
+dset    = "books" if len(argv) == 1 else argv[1]
 n       = None
 max_features = 500
 delta   = 1     # Number of look-ahead columns

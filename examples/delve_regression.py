@@ -26,21 +26,22 @@ from numpy import var, mean, logspace, where, log10
 from numpy.linalg import norm
 from random import shuffle, seed
 from os.path import join
+from sys import argv
 
 
 # Datasets and options
 # Load max. 1000 examples
 n    = 1000
-dset = "boston"
+dset = "boston" if len(argv) == 1 else argv[1]
 
 # Load datasets with at most n examples
 datasets = {
     "boston":        (load_boston,     {"n": n,}),
     "abalone":       (load_abalone,    {"n": n,}),
-    "comp-active":   (load_comp_activ, {"n": n,}),
-    "bank-8fm":      (load_bank, {"typ": "8fm", "n": n,}),
-    "pumadyn-8fm":   (load_pumadyn, {"typ": "8fm", "n": n,}),
-    "kin-8fm":       (load_kin, {"typ": "8fm", "n": n,}),
+    "comp":   (load_comp_activ, {"n": n,}),
+    "bank":      (load_bank, {"typ": "8fm", "n": n,}),
+    "pumadyn":   (load_pumadyn, {"typ": "8fm", "n": n,}),
+    "kin":       (load_kin, {"typ": "8fm", "n": n,}),
 }
 
 
@@ -70,7 +71,6 @@ validation_size = 0.2   # Validation set (for fitting hyperparameters)
 test_size       = 0.2   # Test set (for reporting scores)
 
 
-print("Loading data...")
 load, load_args = datasets[dset]
 data = load(**load_args)
 
