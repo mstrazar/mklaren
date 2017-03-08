@@ -124,6 +124,47 @@ def exponential_kernel(x, y, sigma=2.0, gamma=None):
 rbf_kernel = exponential_kernel
 
 
+def periodic_kernel(x, y, sigma=1, p=1, l=1):
+    """
+    The periodic kernel.
+    Defined as in http://www.cs.toronto.edu/~duvenaud/cookbook/index.html.
+
+        .. math::
+            k(\mathbf{x}, \mathbf{y}) = exp\{\dfrac{\|\mathbf{x} - \mathbf{y}\|^2}{\sigma^2} \}
+
+        or
+
+        .. math::
+            k(\mathbf{x}, \mathbf{y}) = exp\{\gamma \|\mathbf{x} - \mathbf{y}\|^2 \}
+
+        :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+        :param y: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+        :param p: (``float``) Period.
+
+        :param l: (``float``) Length scale.
+
+        :param sigma: (``float``) Variance.
+
+        :return: (``numpy.ndarray``) Kernel value/matrix between data points.
+    """
+    if sp.isspmatrix(x) and sp.isspmatrix(y):
+        x = np.array(x.todense())
+        y = np.array(y.todense())
+    if not hasattr(x, "shape"):
+        return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / p)**2  / l ** 2)
+
+    if np.asarray(x).ndim == 0:
+        return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / p)**2  / l ** 2)
+    if len(x.shape) >= 2 or len(y.shape) >= 2:
+        K = np.zeros((x.shape[0], y.shape[0]))
+        for i, xi in enumerate(x):
+            for j, yj in enumerate(y):
+                K[i, j] = sigma**2 * np.exp(- 2 * np.sin(np.pi * np.linalg.norm(xi - yj, ord=2) / p)**2  / l ** 2)
+        return K
+    return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / p)**2  / l ** 2)
+
 
 def random_kernel(n):
     """
@@ -169,3 +210,6 @@ def center_kernel_low_rank(G):
     :return: (``numpy.ndarray``) Centered low-rank approximation of the feature space.
     """
     return G - G.mean(axis=0)
+
+
+
