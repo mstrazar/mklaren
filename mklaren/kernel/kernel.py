@@ -6,6 +6,7 @@ import numpy as np
 import numpy.ma as ma
 from itertools import product
 import scipy.sparse as sp
+from sklearn.gaussian_process.kernels import Matern
 
 def linear_kernel(x, y):
         """
@@ -164,6 +165,43 @@ def periodic_kernel(x, y, sigma=1, p=1, l=1):
                 K[i, j] = sigma**2 * np.exp(- 2 * np.sin(np.pi * np.linalg.norm(xi - yj, ord=2) / p)**2  / l ** 2)
         return K
     return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / p)**2  / l ** 2)
+
+
+def matern_kernel(x, y, l=1.0, nu=1.5):
+    """
+    The Matern kernel wrapped from Scikit learn.
+
+        .. math::
+            k(\mathbf{x}, \mathbf{y}) = exp\{\dfrac{\|\mathbf{x} - \mathbf{y}\|^2}{\sigma^2} \}
+        or
+
+        .. math::
+            k(\mathbf{x}, \mathbf{y}) = exp\{\gamma \|\mathbf{x} - \mathbf{y}\|^2 \}
+
+        :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+        :param y: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+        :param l: (``float``) Length scale.
+
+        :param nu: (``float``) Differentiability of the kernel.
+
+        :return: (``numpy.ndarray``) Kernel value/matrix between data points.
+    """
+
+    mk = Matern(length_scale=l, nu=nu)
+    if sp.isspmatrix(x) and sp.isspmatrix(y):
+        x = np.array(x.todense())
+        y = np.array(y.todense())
+    if not hasattr(x, "shape") or np.asarray(x).ndim == 0:
+        x = np.reshape(np.array([x]), (1, 1))
+    if not hasattr(y, "shape") or np.asarray(y).ndim == 0:
+        y = np.reshape(np.array([y]), (1, 1))
+
+    if np.asarray(x).ndim == 1: x = np.reshape(np.array([x]), (len(x), 1))
+    if np.asarray(y).ndim == 1: y = np.reshape(np.array([y]), (len(y), 1))
+
+    return mk(x, y)
 
 
 def random_kernel(n):
