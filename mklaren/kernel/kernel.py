@@ -131,12 +131,8 @@ def periodic_kernel(x, y, sigma=1, p=1, l=1):
     Defined as in http://www.cs.toronto.edu/~duvenaud/cookbook/index.html.
 
         .. math::
-            k(\mathbf{x}, \mathbf{y}) = exp\{\dfrac{\|\mathbf{x} - \mathbf{y}\|^2}{\sigma^2} \}
+            k(\mathbf{x}, \mathbf{y}) = \sigma^2 exp\{-2 \pi \dfrac{np.sin(\|\mathbf{x} - \mathbf{y}\|)}{p}/l \}
 
-        or
-
-        .. math::
-            k(\mathbf{x}, \mathbf{y}) = exp\{\gamma \|\mathbf{x} - \mathbf{y}\|^2 \}
 
         :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
 
@@ -172,11 +168,10 @@ def matern_kernel(x, y, l=1.0, nu=1.5):
     The Matern kernel wrapped from Scikit learn.
 
         .. math::
-            k(\mathbf{x}, \mathbf{y}) = exp\{\dfrac{\|\mathbf{x} - \mathbf{y}\|^2}{\sigma^2} \}
-        or
+            k(\mathbf{x}, \mathbf{y}) = \sigma^2 \dfrac{2^{1-\nu}}{\Gamma{\nu}} (\sqrt{2\nu} \dfrac{d}{l})^{\nu} K_{\nu} (\sqrt{2\nu} \dfrac{d}{l})
 
-        .. math::
-            k(\mathbf{x}, \mathbf{y}) = exp\{\gamma \|\mathbf{x} - \mathbf{y}\|^2 \}
+        where {\Gamma } \Gamma is the gamma function, {K_{\nu }} K_{\nu }
+        is the modified Bessel function of the second kind, and l and \nu are non-negative parameters of the covariance.
 
         :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
 
