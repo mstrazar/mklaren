@@ -1,5 +1,6 @@
 from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, center_kernel
 from scipy.stats import chi2, spearmanr
+from sklearn.metrics import precision_score, recall_score
 from random import choice
 import numpy as np
 import mklaren as mkl
@@ -187,6 +188,18 @@ def weight_correlation(d1, d2):
         arr2[i] += d2.get(n, 0)
     return spearmanr(arr1, arr2)
 
+def weight_AUC(d_true, d_pred):
+    """Measure agreement between two sets of weights in terms of Spearman rho."""
+    names = sorted(set(d_true.keys()) | set(d_pred.keys()))
+    arr1 = np.zeros((len(names),))
+    arr2 = np.zeros((len(names),))
+    for i, n in enumerate(names):
+        arr1[i] += int(d_true.get(n, 0) > 0)
+        arr2[i] += int(d_pred.get(n, 0) > 0)
+    p = precision_score(arr1, arr2)
+    r = recall_score(arr1, arr2)
+    return p, r
+
 
 def process(N=1, P=4, rank=4):
     """
@@ -207,7 +220,7 @@ def process(N=1, P=4, rank=4):
 
     results = []
     for n in range(N):
-        data = generate_data(P=P)
+        data = generate_data(P=P, n=300)
         Ks, names = generate_kernels(data["X"])
         mf = data["mf"]
         true_w = mf.to_dict()
@@ -223,12 +236,15 @@ def process(N=1, P=4, rank=4):
         mklaren.fit(Ks, data["y"])
         mklaren_w = weight_result(names, mklaren.mu)
         mklaren_rho = weight_correlation(mklaren_w, true_w)
+        mklaren_pr = weight_AUC(true_w, mklaren_w)
         print(mklaren_w)
         print(mklaren_rho)
+        print(mklaren_pr)
         print
 
         results.append({"N": n, "method": "Mklaren",
-            "true": str(mf).replace("\n", ""), "rho": mklaren_rho[0], "pvalue": mklaren_rho[1], })
+            "true": str(mf).replace("\n", ""), "rho": mklaren_rho[0], "pvalue": mklaren_rho[1],
+                        "prec": mklaren_pr[0], "recall": mklaren_pr[1]})
 
         print("Fitting ICD ... (%d)" % n)
         effective_rank = rank
@@ -237,12 +253,15 @@ def process(N=1, P=4, rank=4):
         csi.fit(Ks, data["y"])
         csi_w = weight_result(names, csi.mu)
         csi_rho =weight_correlation(csi_w, true_w)
+        csi_pr = weight_AUC(true_w, csi_w)
         print(csi_w)
         print(csi_rho)
+        print(csi_pr)
         print
 
         results.append({ "N": n, "method": "ICD",
-            "true": str(mf).replace("\n", ""), "rho": csi_rho[0], "pvalue": csi_rho[1],})
+            "true": str(mf).replace("\n", ""), "rho": csi_rho[0], "pvalue": csi_rho[1],
+                         "prec": csi_pr[0], "recall": csi_pr[1]})
 
 
     # Write results in a data file
