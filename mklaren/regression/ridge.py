@@ -18,8 +18,8 @@ from ..projection.nystrom import NystromScikit, Nystrom
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.linear_model import Ridge
 
-from numpy import array, hstack, sqrt, where, isnan
-from numpy import hstack, array
+from numpy import array, hstack, sqrt, where, isnan, zeros
+from numpy import hstack, array, absolute
 from numpy.linalg import inv, norm
 
 
@@ -197,8 +197,10 @@ class RidgeLowRank:
 
         # Initialize low-rank and regression model
         self.rank       = rank
+        self.mu         = None
         self.lr_models  = dict()
         self.reg_model  = Ridge(alpha=lbd, normalize=normalize)
+
 
 
     def fit(self, Ks, y, *method_args):
@@ -251,6 +253,14 @@ class RidgeLowRank:
         # Fit regression model
         X = hstack(self.Gs)
         self.reg_model.fit(X, y)
+
+        # Set kernel weights (absolute values)
+        beta = self.reg_model.coef_.ravel()
+        self.mu = zeros((len(Ks)),)
+
+        for ki in range(len(self.mu)):
+            self.mu[ki] = absolute(beta[(ki * self.rank): ((ki+1) * self.rank)]).sum()
+
         self.trained = True
 
 
