@@ -14,7 +14,7 @@ The implementation is based on the MATLAB/octave code provided by authors. It as
 """
 
 
-# from oct2py import octave
+from oct2py import octave
 from os.path import join, dirname, realpath
 import numpy as np
 
@@ -47,7 +47,7 @@ class CSI:
         self.I         = list()
         self.active_set_ = list()
         self.trained   = False
-        # octave.addpath(join(dirname(realpath(__file__)), 'csi'))
+        octave.addpath(join(dirname(realpath(__file__)), 'csi'))
 
 
     def fit(self, K, y):
@@ -63,9 +63,8 @@ class CSI:
         y = y.reshape((len(y), 1))
 
         # Call original implementation
-        G, P, Q, R, error1, error2, error, predicted_gain, true_gain \
-            = octave.csi(K, y, self.rank, self.centering, self.kappa,
-                         self.delta, self.tol)
+        G, P, Q, R, error1, error2, error, predicted_gain, true_gain = \
+            octave.csi(K, y, self.rank, self.centering, self.kappa, self.delta, self.tol)
 
         # Octave indexes from 1
         P = P.ravel().astype(int) - 1
