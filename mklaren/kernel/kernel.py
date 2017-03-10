@@ -8,7 +8,7 @@ from itertools import product
 import scipy.sparse as sp
 from sklearn.gaussian_process.kernels import Matern
 
-def linear_kernel(x, y):
+def linear_kernel(x, y, b=0):
         """
         The linear kernel (the usual dot product in n-dimensional space).
 
@@ -19,18 +19,19 @@ def linear_kernel(x, y):
 
         :param y: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
 
-        :return: (``numpy.ndarray``) Kernel value/matrix between data points.
+        :param b: (``float``) Bias term.
 
+        :return: (``numpy.ndarray``) Kernel value/matrix between data points.
         """
         if isinstance(x, int):
             return x * y
         if sp.isspmatrix(x):
-            return np.array(x.dot(y.T).todense())
+            return b + np.array(x.dot(y.T).todense())
         else:
-            return x.dot(y.T)
+            return b + x.dot(y.T)
 
 
-def poly_kernel(x, y, p=2, b=0):
+def poly_kernel(x, y, degree=2, b=0):
         """
         The polynomial kernel.
 
@@ -41,18 +42,18 @@ def poly_kernel(x, y, p=2, b=0):
 
         :param y: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
 
-        :param p: (``float``) Polynomial degree.
+        :param degree: (``float``) Polynomial degree.
 
         :param b: (``float``) Bias term.
 
         :return: (``numpy.ndarray``) Kernel value/matrix between data points.
         """
         if sp.isspmatrix(x):
-            return np.array(x.dot(y.T).todense())**p
+            return np.array(x.dot(y.T).todense()) ** degree
         if not hasattr(x, "shape"):
-            return (x * y)**p
+            return (b + x * y) ** degree
         else:
-            return x.dot(y.T)**p
+            return (b + x.dot(y.T)) ** degree
 
 
 def sigmoid_kernel(x, y, b=1, c=0):
@@ -125,7 +126,7 @@ def exponential_kernel(x, y, sigma=2.0, gamma=None):
 rbf_kernel = exponential_kernel
 
 
-def periodic_kernel(x, y, sigma=1, p=1, l=1):
+def periodic_kernel(x, y, sigma=1, per=1, l=1):
     """
     The periodic kernel.
     Defined as in http://www.cs.toronto.edu/~duvenaud/cookbook/index.html.
@@ -138,7 +139,7 @@ def periodic_kernel(x, y, sigma=1, p=1, l=1):
 
         :param y: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
 
-        :param p: (``float``) Period.
+        :param per: (``float``) Period.
 
         :param l: (``float``) Length scale.
 
@@ -150,17 +151,17 @@ def periodic_kernel(x, y, sigma=1, p=1, l=1):
         x = np.array(x.todense())
         y = np.array(y.todense())
     if not hasattr(x, "shape"):
-        return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / p)**2  / l ** 2)
+        return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / per) ** 2 / l ** 2)
 
     if np.asarray(x).ndim == 0:
-        return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / p)**2  / l ** 2)
+        return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / per) ** 2 / l ** 2)
     if len(x.shape) >= 2 or len(y.shape) >= 2:
         K = np.zeros((x.shape[0], y.shape[0]))
         for i, xi in enumerate(x):
             for j, yj in enumerate(y):
-                K[i, j] = sigma**2 * np.exp(- 2 * np.sin(np.pi * np.linalg.norm(xi - yj, ord=2) / p)**2  / l ** 2)
+                K[i, j] = sigma**2 * np.exp(- 2 * np.sin(np.pi * np.linalg.norm(xi - yj, ord=2) / per) ** 2 / l ** 2)
         return K
-    return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / p)**2  / l ** 2)
+    return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / per) ** 2 / l ** 2)
 
 
 def matern_kernel(x, y, l=1.0, nu=1.5):
