@@ -243,9 +243,9 @@ def process(N=1, P=4, rank=4):
         effective_rank = P * rank
         try:
             mklaren = mkl.mkl.mklaren.Mklaren(delta=10, rank=effective_rank, lbd=0)
+            mklaren.fit(Ks, data["y"])
         except:
             continue
-        mklaren.fit(Ks, data["y"])
         mklaren_w = weight_result(names, mklaren.mu)
         mklaren_rho = weight_correlation(mklaren_w, true_w)
         mklaren_pr = weight_PR(true_w, mklaren_w)
@@ -253,16 +253,18 @@ def process(N=1, P=4, rank=4):
         print(mklaren_rho)
         print(mklaren_pr)
         print
-
-        results.append({"N": n, "method": "Mklaren",
+        mklaren_result = {"N": n, "method": "Mklaren",
             "true": str(mf).replace("\n", ""), "rho": mklaren_rho[0], "pvalue": mklaren_rho[1],
-                        "prec": mklaren_pr[0], "recall": mklaren_pr[1]})
+                        "prec": mklaren_pr[0], "recall": mklaren_pr[1]}
 
         print("Fitting ICD ... (%d)" % n)
         effective_rank = rank
-        csi = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0,
-                                                method="icd")
-        csi.fit(Ks, data["y"])
+        try:
+            csi = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0,
+                                                method="csi", method_init_args={"delta": 10})
+            csi.fit(Ks, data["y"])
+        except:
+            continue
         csi_w = weight_result(names, csi.mu)
         csi_rho =weight_correlation(csi_w, true_w)
         csi_pr = weight_PR(true_w, csi_w)
@@ -270,14 +272,17 @@ def process(N=1, P=4, rank=4):
         print(csi_rho)
         print(csi_pr)
         print
-
-        results.append({ "N": n, "method": "ICD",
+        csi_result = { "N": n, "method": "CSI",
             "true": str(mf).replace("\n", ""), "rho": csi_rho[0], "pvalue": csi_rho[1],
-                         "prec": csi_pr[0], "recall": csi_pr[1]})
+                         "prec": csi_pr[0], "recall": csi_pr[1]}
+
+        # Append if both methods go trough
+        results.append(mklaren_result)
+        results.append(csi_result)
 
 
     # Write results in a data file
-    writer = csv.DictWriter(open("output/functions_center_1000.csv", "w"),
+    writer = csv.DictWriter(open("output/functions_center_csi_1000.csv", "w"),
                             fieldnames=results[0].keys(),
                             quoting=csv.QUOTE_ALL)
     writer.writeheader()
