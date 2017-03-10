@@ -1,4 +1,5 @@
-from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, center_kernel
+from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, center_kernel, \
+    matern_kernel, periodic_kernel, kernel_row_normalize
 from scipy.stats import chi2, spearmanr
 from sklearn.metrics import precision_score, recall_score
 from random import choice
@@ -14,14 +15,17 @@ class MultiKernelFunction:
     library = {
         "exp": (exponential_kernel, ("gamma", )),
         "lin": (linear_kernel, ()),
-        "poly": (poly_kernel, ("p",))
+        "poly": (poly_kernel, ("p",)),
+        # "matern": (matern_kernel, ("nu",)),
+        # "periodic": (periodic_kernel, ("p",))
     }
 
     # Hyper parameter ranges
     values = {
         "gamma": np.logspace(-2, 2, 5),
         "p": [2, 3, 4],
-        "b": np.linspace(-3, 3, 5)
+        "b": np.linspace(-3, 3, 5),
+        "nu": [2, 3, 4],
     }
 
     @staticmethod
@@ -35,17 +39,20 @@ class MultiKernelFunction:
         a = ", ".join("%s=%.2f" % (k, v) for k, v in args.items())
         return "%s (x, x, %s)" % (f, a)
 
-    def __init__(self, p, center=True):
+    def __init__(self, p, center=False, row_normalize=False):
         """
         Initialize a random combination of kernels.
         :param p: Number of kernels.
         """
+        assert not (center and row_normalize)
         self.p = p
         self.signs = []
         self.funcs = []
         self.args = []
         self.weights = []
         self.center = center
+        self.row_normalize = row_normalize
+
         for pi in range(p):
             key = choice(self.library.keys())
             self.signs.append(key)
@@ -72,6 +79,8 @@ class MultiKernelFunction:
         for pi in range(self.p):
             if self.center:
                 K = K + self.weights[pi] * center_kernel(self.funcs[pi](X, X, **self.args[pi]))
+            elif self.row_normalize:
+                K = K + self.weights[pi] * kernel_row_normalize(self.funcs[pi](X, X, **self.args[pi]))
             else:
                 K = K + self.weights[pi] * self.funcs[pi](X, X, **self.args[pi])
         return K
@@ -135,18 +144,18 @@ def generate_kernels(X):
         if len(pars):
             for p in pars:
                 for v in vals[p]:
-                    k = mkl.kernel.kinterface.Kinterface(data=X, kernel=f, kernel_args={p: v})
+                    k = kernel_row_normalize(mkl.kernel.kinterface.Kinterface(data=X, kernel=f, kernel_args={p: v})[:, :])
                     Ks.append(k)
                     names.append(MultiKernelFunction.name(name, {p: v}))
         else:
-            k = mkl.kernel.kinterface.Kinterface(data=X, kernel=f)
+            k = kernel_row_normalize(mkl.kernel.kinterface.Kinterface(data=X, kernel=f)[:, :])
             Ks.append(k)
             names.append(MultiKernelFunction.name(name, {}))
     return Ks, names
 
 
 
-def generate_data(P=3, p=10, n=300):
+def generate_data(P=3, p=10, n=300, row_normalize=False):
     """
     Generate a random dataset.
     :param P:
@@ -163,7 +172,7 @@ def generate_data(P=3, p=10, n=300):
     # Dual coefficients are non-negative
     alpha = np.array([np.random.randn() for i in range(n)])
 
-    mf = MultiKernelFunction(P)
+    mf = MultiKernelFunction(P, row_normalize=row_normalize)
     y = mf(X, alpha)
     y = y - y.mean()
 
@@ -188,7 +197,7 @@ def weight_correlation(d1, d2):
         arr2[i] += d2.get(n, 0)
     return spearmanr(arr1, arr2)
 
-def weight_AUC(d_true, d_pred):
+def weight_PR(d_true, d_pred):
     """Measure agreement between two sets of weights in terms of Spearman rho."""
     names = sorted(set(d_true.keys()) | set(d_pred.keys()))
     arr1 = np.zeros((len(names),))
@@ -220,7 +229,7 @@ def process(N=1, P=4, rank=4):
 
     results = []
     for n in range(N):
-        data = generate_data(P=P, n=300)
+        data = generate_data(P=P, n=1000, row_normalize=True)
         Ks, names = generate_kernels(data["X"])
         mf = data["mf"]
         true_w = mf.to_dict()
@@ -232,11 +241,14 @@ def process(N=1, P=4, rank=4):
 
         print("Fitting Mklaren ... (%d)" % n)
         effective_rank = P * rank
-        mklaren = mkl.mkl.mklaren.Mklaren(delta=10, rank=effective_rank, lbd=10)
+        try:
+            mklaren = mkl.mkl.mklaren.Mklaren(delta=10, rank=effective_rank, lbd=0)
+        except:
+            continue
         mklaren.fit(Ks, data["y"])
         mklaren_w = weight_result(names, mklaren.mu)
         mklaren_rho = weight_correlation(mklaren_w, true_w)
-        mklaren_pr = weight_AUC(true_w, mklaren_w)
+        mklaren_pr = weight_PR(true_w, mklaren_w)
         print(mklaren_w)
         print(mklaren_rho)
         print(mklaren_pr)
@@ -248,12 +260,12 @@ def process(N=1, P=4, rank=4):
 
         print("Fitting ICD ... (%d)" % n)
         effective_rank = rank
-        csi = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=1,
+        csi = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0,
                                                 method="icd")
         csi.fit(Ks, data["y"])
         csi_w = weight_result(names, csi.mu)
         csi_rho =weight_correlation(csi_w, true_w)
-        csi_pr = weight_AUC(true_w, csi_w)
+        csi_pr = weight_PR(true_w, csi_w)
         print(csi_w)
         print(csi_rho)
         print(csi_pr)
@@ -265,7 +277,7 @@ def process(N=1, P=4, rank=4):
 
 
     # Write results in a data file
-    writer = csv.DictWriter(open("output/functions_center.csv", "w"),
+    writer = csv.DictWriter(open("output/functions_center_1000.csv", "w"),
                             fieldnames=results[0].keys(),
                             quoting=csv.QUOTE_ALL)
     writer.writeheader()
