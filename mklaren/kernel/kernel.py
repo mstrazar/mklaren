@@ -245,4 +245,16 @@ def center_kernel_low_rank(G):
     return G - G.mean(axis=0)
 
 
+def kernel_row_normalize(K):
+    """
+    Divide inner products of examples by their norm in the feature space,
+    effectively computing angles.
+
+    :param K: (``numpy.ndarray``) Kernel matrix of shape ``(n, n)``.
+
+    :return: (``numpy.ndarray``) Row-normalized kernel for a sample of points.
+    """
+    d = np.diag(K).reshape((K.shape[0], 1))
+    Kn = np.sqrt(d.dot(d.T))
+    return K / Kn
 
