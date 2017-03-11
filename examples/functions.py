@@ -12,21 +12,9 @@ from random import sample
 import numpy as np
 import mklaren as mkl
 import itertools as it
-import matplotlib.pyplot as plt
 import csv
+import datetime
 
-
-
-def powerset(iterable):
-    """
-    Power set excluding the empty set.
-    :param iterable:
-        Any iterable.
-    :return:
-        All subsets except the empty set.
-    """
-    s = list(iterable)
-    return it.chain.from_iterable(it.combinations(s, r) for r in range(1, len(s) + 1))
 
 class MultiKernelFunction:
 
@@ -34,19 +22,19 @@ class MultiKernelFunction:
     library = {
         "exp": (exponential_kernel, ("gamma", )),
         "lin": (linear_kernel, ("b",)),
-        # "pol": (poly_kernel, ("degree", "b")),
-        # "mat": (matern_kernel, ("nu", "l")),
+        "pol": (poly_kernel, ("degree", )),
+        "mat": (matern_kernel, ("nu", "l")),
         # "per": (periodic_kernel, ("per", "l"))
     }
 
     # Hyper parameter ranges
     values = {
-        "gamma": np.logspace(-2, 2, 5),
-        "degree": [2, 3, 4],
+        "gamma": np.logspace(-1, 1, 5),
+        "degree": [2, 3, 4, 5, 6],
         "per": [1, 10, 30],
-        "l": np.logspace(-1, 1, 3),
+        "l": np.logspace(0, 2, 3),
         "b": [0, ],
-        "nu": [5, 10, ],
+        "nu": [1.5, 2.5],
     }
 
     @staticmethod
@@ -69,11 +57,9 @@ class MultiKernelFunction:
         """
         listing = list()
         for name, (f, pars) in sorted(self.library.items()):
-            instances = list()
-            for pset in powerset(pars):
-                par_value_lists = [list(it.product((p,), self.values[p])) for p in pset]
-                ps = it.product(*par_value_lists)
-                instances.extend(ps)
+            par_value_lists = [list(it.product((p,), self.values[p])) for p in pars]
+            instances = it.product(*par_value_lists)
+
             if interface:
                 lst = [("k.%s.%d" % (name, i), f, dict(kw)) for i, kw in enumerate(instances)]
             else:
@@ -190,7 +176,7 @@ def generate_data(P=3, p=10, n=300, row_normalize=False):
             "mf": mf}
 
 
-def data_kernels(X, mf, center=False, row_normalize=False):
+def data_kernels(X, mf, center=False, row_normalize=False, noise=0):
     """
     Map data to all possible kernels given by MultiKernelFunction object.
     :param X:
@@ -201,6 +187,8 @@ def data_kernels(X, mf, center=False, row_normalize=False):
         Center the kernel matrix.
     :param row_normalize
         Apply feature space vector normalization.
+    :param noise
+        Add noise to ensure full rank kernels.
     :return:
         List of kernel matrices.
     """
@@ -208,7 +196,7 @@ def data_kernels(X, mf, center=False, row_normalize=False):
     Ks = list()
     names = list()
     for name, f, args in mf.kernel_generator():
-        L = f(X, X, **args)
+        L = f(X, X, **args) + noise * np.eye(X.shape[0])
         if center:
             L = center_kernel(L)
         elif row_normalize:
@@ -247,7 +235,7 @@ def weight_PR(d_true, d_pred):
     return p, r
 
 
-def process(repeats=1):
+def process(repeats, fname):
     """
     :param repeats:
         Number of repetitions.
@@ -267,14 +255,14 @@ def process(repeats=1):
     header = ["exp.id", "repl", "P", "n", "rank", "method", "rho", "pvalue", "prec", "recall"]
     names = [nm for nm, _, _ in MultiKernelFunction(1).kernel_generator()]
     header.extend(names)
-    writer = csv.DictWriter(open("output/functions_systematic_ICD_CSI_MKL.csv", "w", buffering=0),
+    writer = csv.DictWriter(open(fname, "w", buffering=0),
                             fieldnames=header, quoting=csv.QUOTE_ALL)
     writer.writeheader()
 
     # Varying parameters
     range_P = [5, 10, 20]
-    range_rank = [5, 10, 20]
-    range_n = [100, 300, 1000]
+    range_rank = [3, 5, 10]
+    range_n = [100, 300]
 
     results = []
     count = 0
@@ -286,7 +274,7 @@ def process(repeats=1):
             # Generate test data
             data = generate_data(P=P, n=n, row_normalize=True)
             mf = data["mf"]
-            Ks, names = data_kernels(data["X"], mf, row_normalize=True)
+            Ks, names = data_kernels(data["X"], mf, row_normalize=True, noise=0.01)
             true_w = mf.to_dict()
             true_result = true_w.copy()
             true_result.update(row)
@@ -358,5 +346,10 @@ def process(repeats=1):
             # results.extend([true_result, mklaren_result, csi_result])
 
 if __name__  == "__main__":
-     process(100)
+    d = datetime.datetime.now()
+    dname = os.path.join("output", "functions", "%d-%d-%d" % (d.year, d.month, d.day))
+    if not os.path.exists(dname):
+        os.makedirs(dname)
+    fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
+    process(100, fname)
 
