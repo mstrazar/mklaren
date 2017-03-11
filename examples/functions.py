@@ -262,7 +262,7 @@ def process(repeats, fname):
     # Varying parameters
     range_P = [5, 10, 20]
     range_rank = [3, 5, 10]
-    range_n = [100, 300]
+    range_n = [100, 300, 1000]
 
     results = []
     count = 0
