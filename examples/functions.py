@@ -6,7 +6,7 @@ if os.path.exists(octv):
 
 from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, center_kernel, \
     matern_kernel, periodic_kernel, kernel_row_normalize
-from scipy.stats import chi2, spearmanr
+from scipy.stats import chi2, spearmanr, kendalltau, pearsonr
 from sklearn.metrics import precision_score, recall_score
 from random import sample
 import numpy as np
@@ -29,12 +29,12 @@ class MultiKernelFunction:
 
     # Hyper parameter ranges
     values = {
-        "gamma": np.logspace(-1, 1, 5),
+        "gamma": np.logspace(-3, 1, 5),
         "degree": [2, 3, 4, 5, 6],
-        "per": [1, 10, 30],
+        # "per": [1, 10, 30],
         "l": np.logspace(0, 2, 3),
-        "b": [0, ],
-        "nu": [1.5, 2.5],
+        "b": [0, 1],
+        "nu": [1.5, 2.0, 2.5],
     }
 
     @staticmethod
@@ -211,7 +211,7 @@ def weight_result(names, weights):
     return dict([(n, w) for n, w in zip(names, weights) if w != 0])
 
 
-def weight_correlation(d1, d2):
+def weight_correlation(d1, d2, typ="spearman"):
     """Measure agreement between two sets of weights in terms of Spearman rho."""
     names = sorted(set(d1.keys()) | set(d2.keys()))
     arr1 = np.zeros((len(names),))
@@ -219,7 +219,15 @@ def weight_correlation(d1, d2):
     for i, n in enumerate(names):
         arr1[i] += d1.get(n, 0)
         arr2[i] += d2.get(n, 0)
-    return spearmanr(arr1, arr2)
+    if typ == "spearman":
+        return spearmanr(arr1, arr2)
+    elif typ == "kendall":
+        return kendalltau(arr1, arr2)
+    elif typ == "pearson":
+        return pearsonr(arr1, arr2)
+    else:
+        raise ValueError(typ)
+
 
 
 def weight_PR(d_true, d_pred):
@@ -252,7 +260,10 @@ def process(repeats, fname):
 
     """
     # Open an output file
-    header = ["exp.id", "repl", "P", "n", "rank", "method", "rho", "pvalue", "prec", "recall"]
+    header = ["exp.id", "repl", "P", "n", "rank", "method", "prec", "recall",
+              "spearman_rho", "spearman_pvalue",
+              "pearson_rho", "pearson_pvalue",
+              "kendall_rho", "kendall_pvalue",]
     names = [nm for nm, _, _ in MultiKernelFunction(1).kernel_generator()]
     header.extend(names)
     writer = csv.DictWriter(open(fname, "w", buffering=0),
@@ -260,7 +271,7 @@ def process(repeats, fname):
     writer.writeheader()
 
     # Varying parameters
-    range_P = [5, 10, 20]
+    range_P = [3, 5]
     range_rank = [3, 5, 10]
     range_n = [100, 300, 1000]
 
@@ -282,68 +293,48 @@ def process(repeats, fname):
             print("Original kernel")
             print(mf)
 
-            # Fit mklaren
-            print("Fitting Mklaren ... (%s)" % row)
-            try:
-                effective_rank = P * rank
-                mklaren = mkl.mkl.mklaren.Mklaren(delta=10, rank=effective_rank, lbd=0)
-                mklaren.fit(Ks, data["y"])
-                mklaren_w = weight_result(names, mklaren.mu)
-                mklaren_rho = weight_correlation(mklaren_w, true_w)
-                mklaren_pr = weight_PR(true_w, mklaren_w)
-            except Exception as e:
-                print "Mklaren error", e
-                continue
-            mklaren_result = {"method": "Mklaren",
-                              "rho": mklaren_rho[0], "pvalue": mklaren_rho[1],
-                              "prec": mklaren_pr[0], "recall": mklaren_pr[1]}
-            mklaren_result.update(row)
-            mklaren_result.update(mklaren_w)
+            rows = []
+            for method in ["Mklaren", "ICD", "CSI"]:
+                if rows is None: break
+                print("Fitting %s ... (%s)" % (method, row))
 
+                try:
+                    if method == "Mklaren":
+                        effective_rank = P * rank
+                        mklaren = mkl.mkl.mklaren.Mklaren(delta=10, rank=effective_rank, lbd=0)
+                        mklaren.fit(Ks, data["y"])
+                        results_w = weight_result(names, mklaren.mu)
+                    elif method == "ICD":
+                        icd = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0, method="icd")
+                        icd.fit(Ks, data["y"])
+                        results_w = weight_result(names, icd.mu)
+                    elif method == "CSI":
+                        csi = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0,
+                                                                method="csi",
+                                                                method_init_args={"delta": 10})
+                        csi.fit(Ks, data["y"])
+                        results_w = weight_result(names, csi.mu)
 
-            print("Fitting ICD ... (%s)" % row)
-            effective_rank = rank
-            try:
-                icd = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0, method="icd")
-                icd.fit(Ks, data["y"])
-                icd_w = weight_result(names, icd.mu)
-                icd_rho = weight_correlation(icd_w, true_w)
-                icd_pr = weight_PR(true_w, icd_w)
-            except Exception as e:
-                print "ICD error", e
-                continue
-            icd_result = { "method": "ICD",
-                            "rho": icd_rho[0], "pvalue": icd_rho[1],
-                            "prec": icd_pr[0], "recall": icd_pr[1]}
-            icd_result.update(row)
-            icd_result.update(icd_w)
+                except Exception as e:
+                    print "%s error: %s" % (method, e)
+                    rows = None
+                    continue
 
-            
-            print("Fitting CSI ... (%s)" % row)
-            effective_rank = rank
-            try:
-                csi = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0,
-                                                        method="csi",
-                                                        method_init_args={"delta": 10})
-                csi.fit(Ks, data["y"])
-                csi_w = weight_result(names, csi.mu)
-                csi_rho = weight_correlation(csi_w, true_w)
-                csi_pr = weight_PR(true_w, csi_w)
-            except Exception as e:
-                print "CSI error", e
-                continue
-            csi_result = {"method": "CSI",
-                          "rho": csi_rho[0], "pvalue": csi_rho[1],
-                          "prec": csi_pr[0], "recall": csi_pr[1]}
-            csi_result.update(row)
-            csi_result.update(csi_w)
+                pr = weight_PR(true_w, results_w)
+                results_row = {"method": method,
+                                  "prec": pr[0], "recall": pr[1]}
+                for t in ["spearman", "kendall", "pearson"]:
+                    wc = weight_correlation(results_w, true_w, typ=t)
+                    results_row["%s_rho" % t] = wc[0]
+                    results_row["%s_pvalue" % t] = wc[1]
+                results_row.update(row)
+                results_row.update(results_w)
+                if rows is not None: rows.append(results_row)
 
             # Append if all methods go trough
-            writer.writerow(true_result)
-            writer.writerow(mklaren_result)
-            writer.writerow(csi_result)
-            writer.writerow(icd_result)
-            # results.extend([true_result, mklaren_result, csi_result])
+            if rows is not None:
+                writer.writerow(true_result)
+                writer.writerows(rows)
 
 if __name__  == "__main__":
     d = datetime.datetime.now()
