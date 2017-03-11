@@ -274,6 +274,7 @@ class Mklaren:
         self.trained    = True
         self.regr       = regr[:n]
         self.bias       = bias
+        self.y_pred     = bias + self.regr
         for pi in xrange(no_kernels):
             data[pi]["G"] = data[pi]["G"][:, :data[pi]["k"]]
             assert data[pi]["k"] == len(data[pi]["act"])

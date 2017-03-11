@@ -7,7 +7,7 @@ if os.path.exists(octv):
 from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, center_kernel, \
     matern_kernel, periodic_kernel, kernel_row_normalize
 from scipy.stats import chi2, spearmanr, kendalltau, pearsonr
-from sklearn.metrics import precision_score, recall_score
+from sklearn.metrics import precision_score, recall_score, mean_squared_error
 from random import sample
 import numpy as np
 import mklaren as mkl
@@ -260,7 +260,7 @@ def process(repeats, fname):
 
     """
     # Open an output file
-    header = ["exp.id", "repl", "P", "n", "rank", "method", "prec", "recall",
+    header = ["exp.id", "repl", "P", "n", "rank", "method", "prec", "recall", "MSE",
               "spearman_rho", "spearman_pvalue",
               "pearson_rho", "pearson_pvalue",
               "kendall_rho", "kendall_pvalue",]
@@ -304,16 +304,19 @@ def process(repeats, fname):
                         mklaren = mkl.mkl.mklaren.Mklaren(delta=10, rank=effective_rank, lbd=0)
                         mklaren.fit(Ks, data["y"])
                         results_w = weight_result(names, mklaren.mu)
+                        y_pred = mklaren.y_pred
                     elif method == "ICD":
                         icd = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0, method="icd")
                         icd.fit(Ks, data["y"])
                         results_w = weight_result(names, icd.mu)
+                        y_pred = icd.y_pred
                     elif method == "CSI":
                         csi = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0,
                                                                 method="csi",
                                                                 method_init_args={"delta": 10})
                         csi.fit(Ks, data["y"])
                         results_w = weight_result(names, csi.mu)
+                        y_pred = csi.y_pred
 
                 except Exception as e:
                     print "%s error: %s" % (method, e)
@@ -321,7 +324,8 @@ def process(repeats, fname):
                     continue
 
                 pr = weight_PR(true_w, results_w)
-                results_row = {"method": method,
+                mse = mean_squared_error(y_true=data["y"], y_pred=y_pred)
+                results_row = {"method": method, "MSE": mse,
                                   "prec": pr[0], "recall": pr[1]}
                 for t in ["spearman", "kendall", "pearson"]:
                     wc = weight_correlation(results_w, true_w, typ=t)

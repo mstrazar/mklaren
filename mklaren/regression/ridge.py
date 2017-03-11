@@ -253,6 +253,7 @@ class RidgeLowRank:
         # Fit regression model
         X = hstack(self.Gs)
         self.reg_model.fit(X, y)
+        self.y_pred = self.reg_model.predict(X)
 
         # Set kernel weights (absolute values)
         beta = self.reg_model.coef_.ravel()
