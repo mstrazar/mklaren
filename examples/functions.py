@@ -129,10 +129,8 @@ class MultiKernelFunction:
         :return:
             A text representation of a random kernel function.
         """
-        mp = map(lambda pi: "%0.2e %s"
-                            % (self.weights[pi],
-                               self.name(self.signs[pi], self.args[pi])),
-                 range(self.p))
+        tups = sorted(zip(self.weights, self.signs, self.args), reverse=True)
+        mp = map(lambda t: "%0.2e %s(x, x, %s)" % t, tups)
         txt = " + \n\t ".join(mp)
         return "y = \n\t %s" % txt
 
