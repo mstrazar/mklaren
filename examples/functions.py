@@ -260,7 +260,7 @@ def process(repeats, fname):
 
     """
     # Open an output file
-    header = ["exp.id", "repl", "P", "n", "rank", "method", "prec", "recall", "MSE",
+    header = ["exp.id", "repl", "P", "n", "rank", "lbd", "method", "prec", "recall", "MSE",
               "spearman_rho", "spearman_pvalue",
               "pearson_rho", "pearson_pvalue",
               "kendall_rho", "kendall_pvalue",]
@@ -274,11 +274,11 @@ def process(repeats, fname):
     range_P = [3, 5]
     range_rank = [3, 5, 10]
     range_n = [100, 300, 1000]
+    range_lbd = [0] + np.logspace(-1, 1, 3)
 
-    results = []
     count = 0
     for repl in range(repeats):
-        for P, n, rank in it.product(range_P, range_n, range_rank):
+        for P, n, rank, lbd in it.product(range_P, range_n, range_rank, range_lbd):
             row = {"exp.id": count, "repl": repl, "P": P, "n": n, "rank": rank}
             count += 1
 
@@ -294,24 +294,27 @@ def process(repeats, fname):
             print(mf)
 
             rows = []
-            for method in ["Mklaren", "ICD", "CSI"]:
+            # for method in ["Mklaren", "ICD", "CSI"]:
+            for method in ["Mklaren", "ICD",]:
                 if rows is None: break
                 print("Fitting %s ... (%s)" % (method, row))
 
                 try:
                     if method == "Mklaren":
                         effective_rank = P * rank
-                        mklaren = mkl.mkl.mklaren.Mklaren(delta=10, rank=effective_rank, lbd=0)
+                        mklaren = mkl.mkl.mklaren.Mklaren(delta=10, rank=effective_rank, lbd=lbd)
                         mklaren.fit(Ks, data["y"])
                         results_w = weight_result(names, mklaren.mu)
                         y_pred = mklaren.y_pred
                     elif method == "ICD":
-                        icd = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0, method="icd")
+                        effective_rank = rank
+                        icd = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=lbd, method="icd")
                         icd.fit(Ks, data["y"])
                         results_w = weight_result(names, icd.mu)
                         y_pred = icd.y_pred
                     elif method == "CSI":
-                        csi = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=0,
+                        effective_rank = rank
+                        csi = mkl.regression.ridge.RidgeLowRank(rank=effective_rank, lbd=lbd,
                                                                 method="csi",
                                                                 method_init_args={"delta": 10})
                         csi.fit(Ks, data["y"])
@@ -325,7 +328,7 @@ def process(repeats, fname):
 
                 pr = weight_PR(true_w, results_w)
                 mse = mean_squared_error(y_true=data["y"], y_pred=y_pred)
-                results_row = {"method": method, "MSE": mse,
+                results_row = {"method": method, "MSE": mse, "lbd": lbd,
                                   "prec": pr[0], "recall": pr[1]}
                 for t in ["spearman", "kendall", "pearson"]:
                     wc = weight_correlation(results_w, true_w, typ=t)
