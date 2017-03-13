@@ -293,9 +293,11 @@ class Mklaren:
                     assert norm(data[pi]["G"][:, :k] - self.G[:, cols]) < 1e-5
 
         # Approximate kernel weights as the sum of coefficient absolute values
-        self.mu = zeros((len(Ks)))
+        self.mu = zeros((len(Ks),))
         for ki, K in enumerate(Ks):
-            self.mu[ki] = npsum(absolute(self.beta[where(Xa_mask == ki)[0]]))
+            inxs = where(Xa_mask == ki)[0]
+            if len(inxs):
+                self.mu[ki] = norm(self.G[:,inxs].dot(self.beta[inxs]))
 
         # Fit Nystrom method to selected pivots to obtain kxk operators
         #   to Cholesky factor spaces
