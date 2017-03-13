@@ -260,7 +260,7 @@ class RidgeLowRank:
         self.mu = zeros((len(Ks)),)
 
         for ki in range(len(self.mu)):
-            self.mu[ki] = absolute(beta[(ki * self.rank): ((ki+1) * self.rank)]).sum()
+            self.mu[ki] = norm(self.Gs[ki].dot(beta[(ki * self.rank): ((ki + 1) * self.rank)]))
 
         self.trained = True
 
