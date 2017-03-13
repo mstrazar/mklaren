@@ -2,9 +2,9 @@ from examples.functions import *
 import matplotlib.pyplot as plt
 
 repeats = 5
-ns = [100, 300, 1000]
+ns = [1200]
 P = 5
-ranks = [5, 10, 20, 50, 80, 90]
+ranks = [10, 100, 300]
 lbds = [0, 1, 10, 100]
 
 for repl, n in it.product(range(repeats), ns):
