@@ -22,29 +22,30 @@ for p in range(P * 5):
     X = np.random.rand(n, rank)
     if p < P:
         # Features are very small
-        X = X / 10000
+        # X = X / 1000
+        X = np.power(X, 4)
     K = X.dot(X.T)
     Ks.append(K)
 
 K_true = sum(Ks[:P])
 K_all = sum(Ks)
 y = K_true.dot(alpha)
+y = y - y.mean()
 mu_true = np.zeros((len(Ks), ))
 mu_true[:P] = 1
-
 
 # Mklaren
 model = Mklaren(rank=P * rank)
 model.fit(Ks, y)
-y_pred = model.y_pred
+y_pred = model.regr
 
 rho, pv = spearmanr(mu_true, model.mu)
 rho_fit, pv_fit = spearmanr(y_pred, y)
-# p_rho_fit, p_pv_fit = pearsonr(y_pred, y)
+p_rho_fit, p_pv_fit = pearsonr(y_pred.ravel(), y.ravel())
 mse = np.linalg.norm(y_pred - y)
 print("Mklaren weights: %f, %f" % (rho, pv))
 print("Mklaren fit (s): %f, %f" % (rho_fit, pv_fit))
-# print("Mklaren fit (p): %f, %f" % (p_rho_fit, p_pv_fit))
+print("Mklaren fit (p): %f, %f" % (p_rho_fit, p_pv_fit))
 print("Mklaren mse: %f" % mse)
 
 
@@ -55,8 +56,8 @@ lin_model = LinearRegression()
 lin_model.fit(csi.G, y)
 y_pred = lin_model.predict(csi.G)
 rho_fit, pv_fit = spearmanr(y_pred, y)
-# p_rho_fit, p_pv_fit = pearsonr(y_pred, y)
+p_rho_fit, p_pv_fit = pearsonr(y_pred.ravel(), y.ravel())
 mse = np.linalg.norm(y_pred - y)
 print("CSI fit (s): %f, %f" % (rho_fit, pv_fit))
-# print("CSI fit (p): %f, %f" % (p_rho_fit, p_pv_fit))
+print("CSI fit (p): %f, %f" % (p_rho_fit, p_pv_fit))
 print("CSI mse: %f" % mse)
