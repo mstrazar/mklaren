@@ -37,10 +37,10 @@ mu_true[:P] = 1
 # Mklaren
 model = Mklaren(rank=P * rank)
 model.fit(Ks, y)
-y_pred = model.regr
+y_pred = model.regr.ravel()
 
 rho, pv = spearmanr(mu_true, model.mu)
-rho_fit, pv_fit = spearmanr(y_pred, y)
+rho_fit, pv_fit = spearmanr(y_pred.ravel(), y.ravel())
 p_rho_fit, p_pv_fit = pearsonr(y_pred.ravel(), y.ravel())
 mse = np.linalg.norm(y_pred - y)
 print("Mklaren weights: %f, %f" % (rho, pv))
@@ -54,7 +54,7 @@ csi = CSI(rank=P * rank)
 csi.fit(K_all, y)
 lin_model = LinearRegression()
 lin_model.fit(csi.G, y)
-y_pred = lin_model.predict(csi.G)
+y_pred = lin_model.predict(csi.G).ravel()
 rho_fit, pv_fit = spearmanr(y_pred, y)
 p_rho_fit, p_pv_fit = pearsonr(y_pred.ravel(), y.ravel())
 mse = np.linalg.norm(y_pred - y)
