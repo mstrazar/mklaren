@@ -30,14 +30,13 @@ for p in range(P * 5):
 K_true = sum(Ks[:P])
 K_all = sum(Ks)
 y = K_true.dot(alpha)
-y = y - y.mean()
 mu_true = np.zeros((len(Ks), ))
 mu_true[:P] = 1
 
 # Mklaren
 model = Mklaren(rank=P * rank)
 model.fit(Ks, y)
-y_pred = model.regr.ravel()
+y_pred = model.y_pred.ravel()
 
 rho, pv = spearmanr(mu_true, model.mu)
 rho_fit, pv_fit = spearmanr(y_pred.ravel(), y.ravel())
