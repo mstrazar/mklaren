@@ -1,17 +1,13 @@
+# Do pivots tend to represent some portions of space better than others, or is the
+# relation purely random? Does this transfer to the PSD cone of kernels?
+
 from mklaren.projection.icd import ICD
-from mklaren.util.la import fro_prod
-from mklaren.kernel.kernel import center_kernel
-from scipy.stats import pearsonr, spearmanr
+from scipy.stats import pearsonr
 import scipy.cluster.hierarchy as sch
 import numpy as np
 import matplotlib.pyplot as plt
 import itertools as it
 
-
-# Do pivots tend to represent some portions of space better than others, or is the
-# relation purely random?
-
-# Does this transfer to the PSD cone of kernels?
 
 n = 1000
 rank = 100
