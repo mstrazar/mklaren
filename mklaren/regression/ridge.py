@@ -164,7 +164,8 @@ class RidgeLowRank:
 
 
     def __init__(self, method_init_args=None,
-                 method="icd", lbd=0, rank=10, normalize=False):
+                 method="icd", lbd=0, rank=10, normalize=False,
+                 sum_kernels=False):
         """
         Initialize object.
 
@@ -173,6 +174,8 @@ class RidgeLowRank:
         :param rank: (``int``) Maximal decomposition rank.
 
         :param normalize: (``bool``) Normalize data in Ridge model.
+
+        :param sum_kernels: (``bool``) Sum kernels prior to fitting. This will invoke computation of full kernel matrix.
 
         :param method_init_args: (``dict``) Initialization arguments for the low-rank approximation models.
 
@@ -200,7 +203,8 @@ class RidgeLowRank:
         self.mu         = None
         self.lr_models  = dict()
         self.reg_model  = Ridge(alpha=lbd, normalize=normalize)
-
+        self.sum_kernels   = sum_kernels
+        self.Kinterfaces = None
 
 
     def fit(self, Ks, y, *method_args):
@@ -214,8 +218,11 @@ class RidgeLowRank:
         :param method_args: (``dict``) Arguments to the fit method of the kernel approximation method.
         """
 
-        # Store kernels
+        # Store kernels / sum if specified
         self.Ks = Ks
+        self.Kinterfaces = Ks
+        if self.sum_kernels:
+            self.Ks = [sum([K[:, :] for K in Ks])]
 
         # Set y as another argument
         if self.method in self.supervised:
@@ -225,7 +232,7 @@ class RidgeLowRank:
         Gs = []
         Ts = []
         As = []
-        for K in Ks:
+        for K in self.Ks:
             lr_model = self.method_class(rank=self.rank, **self.method_init_args)
             lr_model.fit(K, *method_args)
 
@@ -257,7 +264,7 @@ class RidgeLowRank:
 
         # Set kernel weights (absolute values)
         beta = self.reg_model.coef_.ravel()
-        self.mu = zeros((len(Ks)),)
+        self.mu = zeros((len(self.Ks)),)
 
         for ki in range(len(self.mu)):
             self.mu[ki] = norm(self.Gs[ki].dot(beta[(ki * self.rank): ((ki + 1) * self.rank)]))
@@ -274,10 +281,18 @@ class RidgeLowRank:
         """
         assert self.trained
         Gs = []
-        for K, X, Trn, active in zip(self.Ks, Xs, self.Ts, self.As,):
-            K_ST = K(K.data[active], X)
-            G    = Trn.dot(K_ST).T
-            Gs.append(G)
+        XT = None
 
-        XT = hstack(Gs)
+        if self.sum_kernels:
+            K_ST = 0
+            for K, X, active in zip(self.Kinterfaces, Xs, self.As, ):
+                K_ST += K(K.data[active], X)
+            Trn = self.Ts[0]
+            XT = Trn.dot(K_ST).T
+        else:
+            for K, X, Trn, active in zip(self.Ks, Xs, self.Ts, self.As,):
+                K_ST = K(K.data[active], X)
+                G    = Trn.dot(K_ST).T
+                Gs.append(G)
+                XT = hstack(Gs)
         return self.reg_model.predict(X=XT).ravel()
