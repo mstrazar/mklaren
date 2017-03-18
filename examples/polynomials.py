@@ -1,8 +1,13 @@
+# Assessment of the quality of the fit (MSE) as the degree
+# of polynomial kernel changes. The causal kernels are always
+# the top two of highest degree and it gets harder to detect
+# correct kernels and fit the data.
+
+
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.projection.csi import CSI
-from mklaren.projection.icd import ICD
 from itertools import product
-from mklaren.kernel.kernel import kernel_row_normalize, poly_kernel
+from mklaren.kernel.kernel import kernel_row_normalize
 from scipy.stats import pearsonr, spearmanr
 from sklearn.linear_model import LinearRegression
 import numpy as np
