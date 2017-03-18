@@ -52,7 +52,9 @@ for ni, n in enumerate(n_range):
 plt.legend()
 plt.xlabel("Polynomial degree")
 plt.ylabel("Average column norm")
-plt.savefig("examples/output/norms/comparison_norms.pdf", bbox_inches="tight")
+plt.xlim(0, degree_range[-1]+0.5)
+plt.savefig("examples/output/norms/comparison_norms.pdf",
+            bbox_inches="tight")
 
 # Means
 plt.figure()
@@ -62,5 +64,6 @@ for ni, n in enumerate(n_range):
 plt.legend()
 plt.xlabel("Polynomial degree")
 plt.ylabel("Average cell value")
-plt.savefig("examples/output/norms/comparison_means.pdf", bbox_inches="tight")
-plt.show()
+plt.xlim(0, degree_range[-1]+0.5)
+plt.savefig("examples/output/norms/comparison_means.pdf",
+            bbox_inches="tight")
