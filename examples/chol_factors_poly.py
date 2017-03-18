@@ -10,15 +10,15 @@ import numpy as np
 # relation purely random?
 
 # Does this transfer to the PSD cone of kernels?
-n = 1000
-rank = 2
+n = 100
+rank = 30
 P = 2
 
 alpha = np.random.rand(n, 1).ravel()
 
 # Basically sum of rank one kernels, tu can be arbitrarily big.
 Ks = []
-for p in range(P * 5):
+for p in range(n):
     X = np.random.rand(n, rank)
     if p < P:
         # Features are very small
@@ -34,7 +34,7 @@ mu_true = np.zeros((len(Ks), ))
 mu_true[:P] = 1
 
 # Mklaren
-model = Mklaren(rank=P * rank)
+model = Mklaren(rank=P * rank, delta=1)
 model.fit(Ks, y)
 y_pred = model.y_pred.ravel()
 
@@ -49,7 +49,7 @@ print("Mklaren mse: %f" % mse)
 
 
 # CSI
-csi = CSI(rank=P * rank)
+csi = CSI(rank=P * rank, delta=P, kappa=1)
 csi.fit(K_all, y)
 lin_model = LinearRegression()
 lin_model.fit(csi.G, y)
