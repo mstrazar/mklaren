@@ -1,7 +1,6 @@
 require(ggplot2)
 data = read.csv("output/polynomials/2017-3-17/results_12.csv", header=TRUE)
 
-
 # Graphical plots
 qplot(data=data, x=as.factor(D), y=mse, fill=method, geom="boxplot")
 ggsave("output/polynomials/mse_degree.pdf")
@@ -39,3 +38,5 @@ for (r in c(unique(data$rank), "all")){
 # Filter and store results
 results.bydegree = subset(rank.results, rank=="all")
 results.byrank = subset(rank.results, degree=="all")
+write.table(results.bydegree, "output/polynomials/wilcox.degree.tab", row.names=FALSE)
+write.table(results.byrank, "output/polynomials/wilcox.rank.tab", row.names=FALSE)
