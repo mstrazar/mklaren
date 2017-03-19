@@ -11,13 +11,14 @@ import os
 
 # Fixed hyper parameters
 repeats = 10
-range_n = [30, 100, 300]
+range_n = [30, 100, 300, 1000]
 range_degree = range(2, 7)
 range_repeat = range(repeats)
 range_lbd = [0, 1, 10]
+range_rank = [3, 5, 10]
+
 methods = ["Mklaren", "CSI", "ICD"]
 delta = 10  # Delta to max rank
-rank = 10   # Rank is known because the data is simulated
 p_tr = 0.75
 p_te = 1.0 - p_tr
 P = 1   # Number of true kernels to be taken in the sum
@@ -31,19 +32,20 @@ if not os.path.exists(dname):
 fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
 print("Writing to %s ..." % fname)
 
-header = ["repl", "method", "mse_fit", "mse_pred", "lbd", "n", "D"]
+header = ["repl", "method", "mse_fit", "mse_pred", "lbd", "n", "D", "norm", "rank"]
 writer = csv.DictWriter(open(fname, "w", buffering=0),
                         fieldnames=header, quoting=csv.QUOTE_ALL)
 writer.writeheader()
 
 count = 0
-for repl, n, lbd, maxd in product(range_repeat, range_n, range_lbd, range_degree):
+for repl, n, lbd, maxd, rank in product(range_repeat, range_n, range_lbd, range_degree, range_rank):
 
     # Training / test split
     tr = range(int(n * p_tr))
     te = range(tr[-1]+1, n)
 
-    X = np.random.rand(n, rank)
+    # Rank is known because the data is simulated
+    X = np.random.rand(n, range_rank[-1])
     X = (X - X.mean(axis=0)) / np.std(X, axis=0)
 
     X_tr = X[tr]
@@ -68,6 +70,7 @@ for repl, n, lbd, maxd in product(range_repeat, range_n, range_lbd, range_degree
     alpha[te] = 0
     K_true = sum([mu_true[i] * Ks_all[i][:, :] for i in range(len(Ks_all))])
     y_true = K_true.dot(alpha)
+    norm = np.linalg.norm(K_true)
 
     rows = []
     for method in methods:
@@ -100,7 +103,7 @@ for repl, n, lbd, maxd in product(range_repeat, range_n, range_lbd, range_degree
         mse_pred = mean_squared_error(y_true[te], y_pred)
         mse_fit = mean_squared_error(y_true[tr], y_fit)
         row = {"repl": repl, "method": method, "mse_fit": mse_fit, "mse_pred": mse_pred,
-               "lbd": lbd, "n": n, "D": maxd}
+               "lbd": lbd, "n": n, "D": maxd, "norm": norm, "rank": rank}
         rows.append(row)
 
     if len(rows) == len(methods):
