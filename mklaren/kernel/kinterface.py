@@ -1,5 +1,5 @@
-from numpy import array, atleast_2d, ndarray
-from scipy.sparse import isspmatrix, csr_matrix
+from numpy import array, atleast_2d, ndarray, diag, sqrt, outer
+from scipy.sparse import isspmatrix
 
 class Kinterface:
         """
@@ -10,7 +10,7 @@ class Kinterface:
         of the kernel matrix.
         """
 
-        def __init__(self, data, kernel, kernel_args={}, data_labels=None):
+        def __init__(self, data, kernel, kernel_args={}, data_labels=None, row_normalize=False):
             """
             :param data: (``numpy.ndarray```) Data in the original input space.
 
@@ -28,7 +28,7 @@ class Kinterface:
             except TypeError:
                 self.shape  = (data.shape[0], data.shape[0])
             self.data_labels = data_labels
-
+            self.row_normalize = row_normalize
 
 
         def __getitem__(self, item):
@@ -71,7 +71,8 @@ class Kinterface:
                     raise NotImplementedError("Unknown addressing type.")
 
             # Ravel if vector
-            r = self.kernel(args[0], args[1], **self.kernel_args)
+            # r = self.kernel(args[0], args[1], **self.kernel_args)
+            r = self.__call__(args[0], args[1])
             if hasattr(r, "shape") and 1 in r.shape:
                 r = r.ravel()
             return r
@@ -87,7 +88,12 @@ class Kinterface:
 
             :return:  (``float``) Value of the kernel for x, y.
             """
-            return self.kernel(x, y, **self.kernel_args)
+            K = self.kernel(x, y, **self.kernel_args)
+            if self.row_normalize:
+                x_norm = diag(self.kernel(x, x, **self.kernel_args))
+                y_norm = diag(self.kernel(y, y, **self.kernel_args))
+                K = K / sqrt(outer(x_norm, y_norm))
+            return K
 
 
         def diag(self):
