@@ -1,21 +1,33 @@
 require(ggplot2)
-data = read.csv("output/polynomial_prediction/2017-3-19/results_4.csv", header=TRUE)
+data = read.csv("output/polynomial_prediction/2017-3-19/results_5.csv", header=TRUE)
 
 # Graphical plots
+qplot(data=data, x=as.factor(D), y=norm, geom="boxplot")
+ggsave("output/polynomial_prediction/kernel_norm.pdf")
+
+# MSE / degree
 qplot(data=data, x=as.factor(D), y=mse_pred, fill=method, geom="boxplot")
 ggsave("output/polynomial_prediction/mse_pred_degree.pdf")
 qplot(data=data, x=as.factor(D), y=mse_fit, fill=method, geom="boxplot")
 ggsave("output/polynomial_prediction/mse_fit_degree.pdf")
 
+# MSE / lambda
 qplot(data=data, x=as.factor(lbd), y=mse_fit, fill=method, geom="boxplot")
 ggsave("output/polynomial_prediction/mse_fit_lbd.pdf")
 qplot(data=data, x=as.factor(lbd), y=mse_pred, fill=method, geom="boxplot")
 ggsave("output/polynomial_prediction/mse_pred_lbd.pdf")
 
+# MSE / n
 qplot(data=data, x=as.factor(n), y=mse_fit, fill=method, geom="boxplot")
 ggsave("output/polynomial_prediction/mse_fit_n.pdf")
 qplot(data=data, x=as.factor(n), y=mse_pred, fill=method, geom="boxplot")
 ggsave("output/polynomial_prediction/mse_pred_n.pdf")
+
+# MSE / rank
+qplot(data=data, x=as.factor(rank), y=mse_fit, fill=method, geom="boxplot")
+ggsave("output/polynomial_prediction/mse_fit_rank.pdf")
+qplot(data=data, x=as.factor(rank), y=mse_pred, fill=method, geom="boxplot")
+ggsave("output/polynomial_prediction/mse_pred_rank.pdf")
 
 # Wilcoxon rank.test (depending on rank)
 for (target in c("mse_fit", "mse_pred")){
