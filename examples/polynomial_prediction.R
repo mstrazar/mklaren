@@ -1,5 +1,6 @@
 require(ggplot2)
-data = read.csv("output/polynomial_prediction/2017-3-19/results_5.csv", header=TRUE)
+# data = read.csv("output/polynomial_prediction/2017-3-19/results_5.csv", header=TRUE)
+data = read.csv("output/polynomial_prediction/2017-3-21/results_6.csv", header=TRUE)
 
 # Graphical plots
 qplot(data=data, x=as.factor(D), y=norm, geom="boxplot")
@@ -8,6 +9,8 @@ ggsave("output/polynomial_prediction/kernel_norm.pdf")
 # MSE / degree
 qplot(data=data, x=as.factor(D), y=mse_pred, fill=method, geom="boxplot")
 ggsave("output/polynomial_prediction/mse_pred_degree.pdf")
+qplot(data=data, x=as.factor(D), y=expl_var, fill=method, geom="boxplot")
+ggsave("output/polynomial_prediction/explvar_pred_degree.pdf")
 qplot(data=data, x=as.factor(D), y=mse_fit, fill=method, geom="boxplot")
 ggsave("output/polynomial_prediction/mse_fit_degree.pdf")
 
