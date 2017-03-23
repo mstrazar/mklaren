@@ -24,8 +24,6 @@ p_tr = 0.6
 p_va = 0.2
 p_te = 0.2
 
-
-
 # Create output directory
 d = datetime.datetime.now()
 dname = os.path.join("output", "polynomial_prediction", "%d-%d-%d" % (d.year, d.month, d.day))
@@ -34,7 +32,8 @@ if not os.path.exists(dname):
 fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
 print("Writing to %s ..." % fname)
 
-header = ["repl", "method", "mse_fit", "mse_pred", "expl_var", "lbd", "n", "D", "norm", "rank"]
+header = ["repl", "method", "mse_fit", "mse_pred", "expl_var_fit",
+          "expl_var_pred", "lbd", "n", "D", "norm", "rank"]
 writer = csv.DictWriter(open(fname, "w", buffering=0),
                         fieldnames=header, quoting=csv.QUOTE_ALL)
 writer.writeheader()
@@ -57,7 +56,7 @@ for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_ra
 
     Ks_tr = []
     Ks_all = []
-    for d in range(1, maxd + 1):
+    for d in range(0, maxd + 1):
         K_tr = Kinterface(kernel=poly_kernel, kernel_args={"degree": d},
                           data=X_tr, row_normalize=True)
         K_a = Kinterface(kernel=poly_kernel, kernel_args={"degree": d},
@@ -106,9 +105,13 @@ for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_ra
                 if mse_val < mse_best:
                     mse_best, lbd_best = mse_val, lbd
 
+                    # Fit MSE
                     y_fit = model.predict([X_tr] * len(Ks_tr))
                     mse_fit = mean_squared_error(y_true[tr], y_fit)
+                    total_mse_fit = mean_squared_error(y_true[tr], np.zeros((len(tr),)))
+                    expl_var_fit = (total_mse_fit - mse_fit) / total_mse_fit
 
+                    # Predict MSE
                     y_pred = model.predict([X_te] * len(Ks_tr))
                     mse_pred = mean_squared_error(y_true[te], y_pred)
                     total_mse_pred = mean_squared_error(y_true[te], np.zeros((len(te),)))
@@ -120,7 +123,8 @@ for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_ra
         # Score the predictions
         if y_pred is not None:
             row = {"repl": repl, "method": method, "mse_fit": mse_fit, "mse_pred": mse_pred,
-                   "expl_var": expl_var_pred, "lbd": lbd_best, "n": n, "D": maxd, "norm": norm,
+                   "expl_var_fit": expl_var_fit, "expl_var_pred": expl_var_pred,
+                   "lbd": lbd_best, "n": n, "D": maxd, "norm": norm,
                    "rank": rank}
             rows.append(row)
 
