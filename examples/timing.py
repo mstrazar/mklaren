@@ -11,7 +11,7 @@ import os
 
 # Fixed hyper parameters
 repeats = 10
-range_n = [1e2, 1e3, 1e4, 1e5, 1e6]
+range_n = np.linspace(1e3, 1e6, 4)
 range_degree = [6]
 range_repeat = range(repeats)
 range_lbd = [0.01, 0.1, 1, 10]
@@ -19,7 +19,7 @@ range_rank = [30]
 sigma2 = 0.1    # noise variance
 lbd = 0.1
 
-methods = ["Mklaren", "ICD"]
+methods = ["Mklaren"]
 delta = 10  # Delta to max rank
 P = 1   # Number of true kernels to be taken in the sum
 p_tr = 0.6
@@ -73,7 +73,7 @@ for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_ra
     Ks_all = []
     for d in range(0, maxd + 1):
         K_a = Kinterface(kernel=poly_kernel, kernel_args={"degree": d},
-                         data=X, row_normalize=True)
+                         data=X, row_normalize=False)
         Ks_all.append(K_a)
     rows = []
     for method in methods:
