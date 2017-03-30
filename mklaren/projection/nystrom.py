@@ -1,9 +1,10 @@
 """
 
-Th  e Nystrom method learns a low-rank approximation of the kernel by evaluating the kernel function at a subset of data points.
+The Nystrom method learns a low-rank approximation of the kernel by evaluating the kernel function at a subset of data points.
 
     C. Williams and M. Seeger, "Using the Nystrom method to speed up kernel machines," in Proceedings of the 14th Annual Conference on Neural Information Processing Systems, 2001, no. EPFL-CONF.161322, pp. 682-688.
 
+    A. Alaoui and M. Mahoney, "Fast Randomized Kernel Methods With Statistical Guarantees", arXiv, 2001.
 
 Given a kernel matrix :math:`\mathbf{K} \in \mathbb{R}^{n\ x\ n}` and an active set :math:`\mathcal{A}`, the kernel matrix is approximated as
 
@@ -19,9 +20,9 @@ or in terms of :math:`\mathbf{G}`:
 
 from ..kernel.kinterface import Kinterface
 from sklearn.kernel_approximation import Nystroem
-from numpy import array
-from numpy.linalg import inv
-from numpy.random import choice
+from numpy import array, diag, eye, real
+from numpy.linalg import inv, cholesky
+from numpy.random import choice, seed
 from scipy.linalg import sqrtm
 
 class Nystrom:
@@ -39,12 +40,38 @@ class Nystrom:
     """
 
 
-    def __init__(self, rank=10):
+    def __init__(self, rank=10, random_state=None, lbd=0):
         """
         :param rank: (``int``) Maximal decomposition rank.
+
+        :param lbd: (``float``) regularization parameter (to be used in Kernel Ridge Regression).
         """
         self.trained = False
         self.rank = rank
+        self.lbd = lbd
+        if random_state is not None:
+            seed(random_state)
+
+
+    def leverage_scores(self, K):
+        """
+        Compute leverage scores for matrix K and regularization parameter lbd.
+
+        :param K: (``numpy.ndarray``) or of (``Kinterface``). The kernel to be approximated with G.
+
+        :return: (``numpy.ndarray``) a vector of leverage scores to determine a sampling distribution.
+        """
+        dg = K.diag() if isinstance(K, Kinterface) else diag(K)
+        pi = dg / dg.sum()
+        n = K.shape[0]
+        linxs = choice(xrange(n), size=self.rank, replace=True, p=pi)
+        C = K[:, linxs]
+        W = C[linxs, :]
+        B = C.dot(real(sqrtm(W)))
+        BTB = B.T.dot(B)
+        BTBi = inv(BTB + n * self.lbd * eye(self.rank, self.rank))
+        l = array([B[i, :].dot(BTBi).dot(B[i, :]) for i in xrange(n)])
+        return l / l.sum()
 
 
     def fit(self, K, inxs=None):
@@ -57,8 +84,16 @@ class Nystrom:
         """
         self.n       = K.shape[0]
         if inxs is None:
-            inxs = choice(xrange(self.n),
-                          size=self.rank, replace=False)
+            if self.lbd == 0:
+                print("Choosing the active points randomly")
+                inxs = choice(xrange(self.n),
+                              size=self.rank, replace=False)
+
+            else:
+                print("Choosing the active points via leverage scores")
+                leverage = self.leverage_scores(K)
+                inxs = choice(xrange(len(leverage)), size=self.rank, replace=False, p=leverage)
+
         self.rank    = len(inxs)
         self.K       = K
         self.active_set_  = inxs
