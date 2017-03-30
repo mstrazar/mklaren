@@ -27,23 +27,6 @@ p_va = 0.2
 p_te = 0.2
 
 
-def bias_variance(L, sig, s2, l):
-    """
-    Bias variance decomposition of the model error.
-    :param L
-        Reconstructed kernel matrix.
-    :param sig
-        True signal.
-    :param s2
-        Noise variance.
-    :param l
-        Lambda.
-    """
-    n = L.shape[0]
-    T = np.linalg.inv(L + n * l * np.eye(n))
-    b = np.sqrt(n * l**2 * np.linalg.norm(T.dot(sig), ord=2) ** 2)
-    v = s2 / n * np.sum(np.diag(L.dot(L).dot(T).dot(T)))
-    return b, v
 
 # Create output directory
 d = datetime.now()
