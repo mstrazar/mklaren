@@ -14,9 +14,9 @@ repeats = 10
 range_n = [30, 100, 300, 1000]
 range_degree = range(2, 7)
 range_repeat = range(repeats)
-range_lbd = [0, 1, 10]
+range_lbd = np.logspace(-2, 2, 10)
 range_rank = [3, 5, 10]
-sigma2 = 0.0    # noise variance
+sigma2 = 0.001    # noise variance
 
 methods = ["Mklaren", "CSI", "ICD", "Nystrom"]
 delta = 10  # Delta to max rank
