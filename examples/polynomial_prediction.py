@@ -53,7 +53,7 @@ fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
 print("Writing to %s ..." % fname)
 
 header = ["repl", "method", "mse_fit", "mse_pred", "expl_var_fit",
-          "expl_var_pred", "bias", "variance", "lbd", "n", "D", "norm", "rank"]
+          "expl_var_pred", "bias", "variance", "risk", "lbd", "n", "D", "norm", "rank"]
 writer = csv.DictWriter(open(fname, "w", buffering=0),
                         fieldnames=header, quoting=csv.QUOTE_ALL)
 writer.writeheader()
@@ -144,6 +144,7 @@ for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_ra
                     # Bias-variance
                     L = G.dot(G.T)
                     bi, var = bias_variance(L=L, s2=sigma2, l=lbd_best, sig=y_sig[tr])
+                    risk = mean_squared_error(y_sig[tr], y_fit)
 
             except:
                 print("%s error" % method)
@@ -154,7 +155,7 @@ for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_ra
             row = {"repl": repl, "method": method, "mse_fit": mse_fit, "mse_pred": mse_pred,
                    "expl_var_fit": expl_var_fit, "expl_var_pred": expl_var_pred,
                    "lbd": lbd_best, "n": n, "D": maxd, "norm": norm, "bias": bi, "variance": var,
-                   "rank": rank}
+                   "rank": rank, "risk": risk}
             rows.append(row)
 
     if len(rows) == len(methods):
