@@ -13,12 +13,12 @@ from ..kernel.kernel import center_kernel_low_rank
 from ..kernel.kinterface import Kinterface
 from ..projection.icd import ICD
 from ..projection.csi import CSI
-from ..projection.nystrom import NystromScikit, Nystrom
+from ..projection.nystrom import Nystrom
 
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.linear_model import Ridge
 
-from numpy import array, hstack, sqrt, where, isnan, zeros
+from numpy import array, hstack, sqrt, where, isnan, zeros, cumsum
 from numpy import hstack, array, absolute
 from numpy.linalg import inv, norm
 
@@ -157,10 +157,9 @@ class RidgeLowRank:
     methods  = {
         CHOLESKY: {"icd": ICD,
                    "csi": CSI,},
-        NYSTROM: {"nystrom": NystromScikit, }
+        NYSTROM: {"nystrom": Nystrom, }
     }
-
-    supervised = ["csi", "nystrom"]
+    supervised = ["csi"]
 
 
     def __init__(self, method_init_args=None,
@@ -266,8 +265,12 @@ class RidgeLowRank:
         beta = self.reg_model.coef_.ravel()
         self.mu = zeros((len(self.Ks)),)
 
+        # Kernel weight is the corresponding portion of the beta vector
+        subranks = [self.Gs[ki].shape[1] for ki in range(len(self.mu))]
+        subranks = [0] + list(cumsum(subranks))
+        se = zip(subranks[:-1], subranks[1:])
         for ki in range(len(self.mu)):
-            self.mu[ki] = norm(self.Gs[ki].dot(beta[(ki * self.rank): ((ki + 1) * self.rank)]))
+            self.mu[ki] = norm(self.Gs[ki].dot(beta[se[ki][0]:se[ki][1]]))
 
         self.trained = True
 
