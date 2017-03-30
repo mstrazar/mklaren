@@ -2,7 +2,6 @@ import numpy as np
 import unittest
 from mklaren.projection.nystrom import Nystrom
 from mklaren.kernel.kernel import poly_kernel
-from mklaren.kernel.kinterface import Kinterface
 
 class TestNystrom(unittest.TestCase):
 
