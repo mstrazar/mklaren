@@ -14,11 +14,11 @@ repeats = 10
 range_n = [30, 100, 300, 1000]
 range_degree = range(2, 7)
 range_repeat = range(repeats)
-range_lbd = [0.01, 0.1, 1, 10]
+range_lbd = [0, 1, 10]
 range_rank = [3, 5, 10]
-sigma2 = 0.1    # noise variance
+sigma2 = 0.0    # noise variance
 
-methods = ["Mklaren", "CSI", "ICD"]
+methods = ["Mklaren", "CSI", "ICD", "Nystrom"]
 delta = 10  # Delta to max rank
 P = 1   # Number of true kernels to be taken in the sum
 p_tr = 0.6
@@ -121,6 +121,13 @@ for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_ra
                 elif method == "ICD":
                     model = RidgeLowRank(rank=rank, method="icd", lbd=lbd,
                                              sum_kernels=True)
+                    model.fit(Ks_tr, y_true[tr])
+                    G = sum(model.Gs)
+                elif method == "Nystrom":
+                    model = RidgeLowRank(rank=rank, method="nystrom",
+                                         method_init_args={"lbd": lbd},
+                                         lbd=lbd,
+                                         sum_kernels=True)
                     model.fit(Ks_tr, y_true[tr])
                     G = sum(model.Gs)
 
