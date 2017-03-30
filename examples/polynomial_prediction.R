@@ -3,11 +3,8 @@ require(scmamp)
 require(Rgraphviz)
 require(reshape2)
 
-# Add bias to multiple kernels
-# data = read.csv("output/polynomial_prediction/2017-3-23/results_3.csv", header=TRUE)
-
-# Add Nystrom method with leverage scores
-data = read.csv("output/polynomial_prediction/2017-3-30/results_11.csv", header=TRUE)
+# Increase lambda range and add noise variance
+data = read.csv("output/polynomial_prediction/2017-3-30/results_14.csv", header=TRUE)
 
 # Graphical plots
 qplot(data=data, x=as.factor(D), y=norm, geom="boxplot")
@@ -45,7 +42,7 @@ ggsave("output/polynomial_prediction/mse_pred_rank.pdf")
 
 # Wilcoxon rank.test (depending on rank)
 for (target in c("mse_fit", "mse_pred")){
-  for (meth in c("CSI", "Nystrom")){
+  for (meth in c("CSI", "Nystrom", "ICD")){
     rank.results = data.frame()
     for (d in c(unique(data$D), "all")){
       inxs.mkl = data$method=="Mklaren"
@@ -88,7 +85,8 @@ for (d in c("all", unique(data$D))){
     df = dd[(i*p):((i+1)*p - 1), ]
     D[i, df$method] = df$mse_pred
   }  
-  fname = sprintf("output/polynomial_prediction/cd.degree_%d.pdf", d)
+  fname = sprintf("output/polynomial_prediction/cd.degree_%s.pdf", d)
+  pdf(fname)
   plotCD(-D, alpha=0.05, cex=1.25)
   title(sprintf("Degree: %s", d))
   dev.off()
