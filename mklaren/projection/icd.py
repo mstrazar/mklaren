@@ -39,14 +39,14 @@ class ICD:
         :param K: (``numpy.ndarray``) or of (``Kinterface``). The kernel to be approximated with G.
         """
         n = K.shape[0]
-        G = np.zeros((n, n))
+        G = np.zeros((n, self.rank))
         if isinstance(K, Kinterface):
             D = K.diag().copy()
         else:
             D = np.diag(K).copy()
         J = set(range(n))
         I = list()
-        for k in range(n):
+        for k in range(self.rank):
             # select pivot d
             i = np.argmax(D)
             I.append(i)
