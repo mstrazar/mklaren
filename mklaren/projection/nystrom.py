@@ -97,8 +97,9 @@ class Nystrom:
         self.rank    = len(inxs)
         self.K       = K
         self.active_set_  = inxs
-        self.K_SS    = K[inxs, inxs]
-        self.K_XS    = K[:, inxs]
+        self.K_XS = K[:, inxs]
+        self.K_SS = K[inxs, inxs]
+
         if len(inxs) > 1:
             self.K_SS_i = inv(K[inxs, :][:, inxs])
             R = sqrtm(self.K_SS_i)
