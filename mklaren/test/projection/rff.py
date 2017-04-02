@@ -1,6 +1,5 @@
 import unittest
 import numpy as np
-from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel
 from mklaren.projection.rff import RFF
 
