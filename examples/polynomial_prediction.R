@@ -6,6 +6,9 @@ require(reshape2)
 # Increase lambda range and add noise variance
 data = read.csv("output/polynomial_prediction/2017-3-30/results_14.csv", header=TRUE)
 
+# Added RFF model
+data = read.csv("output/polynomial_prediction/2017-4-2/results_0.csv", header=TRUE)
+
 # Graphical plots
 qplot(data=data, x=as.factor(D), y=norm, geom="boxplot")
 ggsave("output/polynomial_prediction/kernel_norm.pdf")
@@ -41,8 +44,8 @@ qplot(data=data, x=as.factor(rank), y=mse_pred, fill=method, geom="boxplot")
 ggsave("output/polynomial_prediction/mse_pred_rank.pdf")
 
 # Wilcoxon rank.test (depending on rank)
-for (target in c("mse_fit", "mse_pred")){
-  for (meth in c("CSI", "Nystrom", "ICD")){
+for (target in c("mse_pred")){
+  for (meth in c("CSI", "Nystrom", "ICD", "RFF")){
     rank.results = data.frame()
     for (d in c(unique(data$D), "all")){
       inxs.mkl = data$method=="Mklaren"
@@ -86,10 +89,10 @@ for (d in c("all", unique(data$D))){
     D[i, df$method] = df$mse_pred
   }  
   fname = sprintf("output/polynomial_prediction/cd.degree_%s.pdf", d)
-  pdf(fname)
+  # pdf(fname)
   plotCD(-D, alpha=0.05, cex=1.25)
   title(sprintf("Degree: %s", d))
-  dev.off()
+  # dev.off()
   message(sprintf("Written %s", fname))
 }
 

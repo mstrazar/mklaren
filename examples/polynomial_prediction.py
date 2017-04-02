@@ -2,6 +2,7 @@ from mklaren.kernel.kernel import poly_kernel
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
+from mklaren.projection.rff import RFF
 from sklearn.metrics import mean_squared_error
 from itertools import product
 import numpy as np
@@ -16,9 +17,11 @@ range_degree = range(2, 7)
 range_repeat = range(repeats)
 range_lbd = np.logspace(-2, 2, 10)
 range_rank = [3, 5, 10]
+range_gamma = np.logspace(-2, 2, 5)
 sigma2 = 0.001    # noise variance
 
-methods = ["Mklaren", "CSI", "ICD", "Nystrom"]
+
+methods = ["Mklaren", "CSI", "ICD", "Nystrom", "RFF"]
 delta = 10  # Delta to max rank
 P = 1   # Number of true kernels to be taken in the sum
 p_tr = 0.6
@@ -106,23 +109,35 @@ for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_ra
 
         for lbd in range_lbd:
             try:
-                model = None
+                model = y_val = None
                 if method == "Mklaren":
                     model = Mklaren(rank=rank, delta=delta, lbd=lbd)
                     model.fit(Ks_tr, y_true[tr])
                     w_fit = model.mu / model.mu.sum()
                     G = model.G
+                    y_val = model.predict([X_va] * len(Ks_tr))
+                    y_fit = model.predict([X_tr] * len(Ks_tr))
+                    y_pred = model.predict([X_te] * len(Ks_tr))
+
                 elif method == "CSI":
                     model = RidgeLowRank(rank=rank, method="csi", lbd=lbd,
                                              method_init_args={"delta": delta},
                                              sum_kernels=True)
                     model.fit(Ks_tr, y_true[tr])
                     G = sum(model.Gs)
+                    y_val = model.predict([X_va] * len(Ks_tr))
+                    y_fit = model.predict([X_tr] * len(Ks_tr))
+                    y_pred = model.predict([X_te] * len(Ks_tr))
+
                 elif method == "ICD":
                     model = RidgeLowRank(rank=rank, method="icd", lbd=lbd,
                                              sum_kernels=True)
                     model.fit(Ks_tr, y_true[tr])
                     G = sum(model.Gs)
+                    y_val = model.predict([X_va] * len(Ks_tr))
+                    y_fit = model.predict([X_tr] * len(Ks_tr))
+                    y_pred = model.predict([X_te] * len(Ks_tr))
+
                 elif method == "Nystrom":
                     model = RidgeLowRank(rank=rank, method="nystrom",
                                          method_init_args={"lbd": lbd},
@@ -130,20 +145,28 @@ for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_ra
                                          sum_kernels=True)
                     model.fit(Ks_tr, y_true[tr])
                     G = sum(model.Gs)
+                    y_val = model.predict([X_va] * len(Ks_tr))
+                    y_fit = model.predict([X_tr] * len(Ks_tr))
+                    y_pred = model.predict([X_te] * len(Ks_tr))
 
-                y_val = model.predict([X_va] * len(Ks_tr))
+                elif method == "RFF":
+                    model = RFF(rank=rank, delta=delta, lbd=lbd, gamma_range=range_gamma)
+                    model.fit(X[tr], y_true[tr])
+                    G = model.G
+                    y_val = model.predict(X_va)
+                    y_fit = model.predict(X_tr)
+                    y_pred = model.predict(X_te)
+
                 mse_val = mean_squared_error(y_true[va], y_val)
                 if mse_val < mse_best:
                     mse_best, lbd_best = mse_val, lbd
 
                     # Fit MSE
-                    y_fit = model.predict([X_tr] * len(Ks_tr))
                     mse_fit = mean_squared_error(y_true[tr], y_fit)
                     total_mse_fit = mean_squared_error(y_true[tr], np.zeros((len(tr),)))
                     expl_var_fit = (total_mse_fit - mse_fit) / total_mse_fit
 
                     # Predict MSE
-                    y_pred = model.predict([X_te] * len(Ks_tr))
                     mse_pred = mean_squared_error(y_true[te], y_pred)
                     total_mse_pred = mean_squared_error(y_true[te], np.zeros((len(te),)))
                     expl_var_pred = (total_mse_pred - mse_pred) / total_mse_pred
