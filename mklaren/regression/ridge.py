@@ -204,6 +204,7 @@ class RidgeLowRank:
         self.reg_model  = Ridge(alpha=lbd, normalize=normalize)
         self.sum_kernels   = sum_kernels
         self.Kinterfaces = None
+        self.beta = None
 
 
     def fit(self, Ks, y, *method_args):
@@ -262,7 +263,7 @@ class RidgeLowRank:
         self.y_pred = self.reg_model.predict(X)
 
         # Set kernel weights (absolute values)
-        beta = self.reg_model.coef_.ravel()
+        self.beta = self.reg_model.coef_.ravel()
         self.mu = zeros((len(self.Ks)),)
 
         # Kernel weight is the corresponding portion of the beta vector
