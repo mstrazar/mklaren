@@ -271,7 +271,7 @@ class RidgeLowRank:
         subranks = [0] + list(cumsum(subranks))
         se = zip(subranks[:-1], subranks[1:])
         for ki in range(len(self.mu)):
-            self.mu[ki] = norm(self.Gs[ki].dot(beta[se[ki][0]:se[ki][1]]))
+            self.mu[ki] = norm(self.Gs[ki].dot(self.beta[se[ki][0]:se[ki][1]]))
 
         self.trained = True
 
