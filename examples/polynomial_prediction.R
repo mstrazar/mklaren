@@ -3,10 +3,10 @@ require(scmamp)
 require(Rgraphviz)
 require(reshape2)
 
-# Added RFF model
+# Added RFF model  multiple kernels are tested individually.
 data = read.csv("output/polynomial_prediction/2017-4-2/results_0.csv", header=TRUE)
 
-# Only single kernel
+# Only a single, isolated kernel per dimension.
 data = read.csv("output/polynomial_prediction/2017-4-5/results_9.csv", header=TRUE) # added correlation
 
 # Graphical plots
@@ -81,6 +81,7 @@ message(sprintf("Written %s", fname))
 # Warning: subsequent rows are assumed to belong to the same experiment
 lvls = levels(data$method)
 p = length(lvls)
+alpha = 0.01
 for (d in c("all", unique(data$D))){
   if(d == "all"){
     dd = data 
@@ -96,9 +97,9 @@ for (d in c("all", unique(data$D))){
   }  
   fname = sprintf("output/polynomial_prediction/cd.degree_%s.pdf", d)
   pdf(fname)
-  plotCD(-D, alpha=0.05, cex=1.25)
+  plotCD(-D, alpha=alpha, cex=1.25)
   # plotCD(D, alpha=0.05, cex=1.25)
-  title(sprintf("Degree: %s", d))
+  title(sprintf("Degree: %s, p-value: %f", d, alpha))
   dev.off()
   message(sprintf("Written %s", fname))
 }
