@@ -3,15 +3,20 @@ require(scmamp)
 require(Rgraphviz)
 require(reshape2)
 
-# Increase lambda range and add noise variance
-data = read.csv("output/polynomial_prediction/2017-3-30/results_14.csv", header=TRUE)
-
 # Added RFF model
 data = read.csv("output/polynomial_prediction/2017-4-2/results_0.csv", header=TRUE)
+
+# Only single kernel
+data = read.csv("output/polynomial_prediction/2017-4-5/results_9.csv", header=TRUE) # added correlation
 
 # Graphical plots
 qplot(data=data, x=as.factor(D), y=norm, geom="boxplot")
 ggsave("output/polynomial_prediction/kernel_norm.pdf")
+
+# Correlation / of weights
+qplot(data=data, x=as.factor(D), y=rho, fill=method, geom="boxplot")
+qplot(data=data, x=as.factor(rank), y=rho, fill=method, geom="boxplot")
+qplot(data=data, x=as.factor(n), y=rho, fill=method, geom="boxplot")
 
 # MSE / degree
 qplot(data=data, x=as.factor(D), y=mse_pred, fill=method, geom="boxplot")
@@ -71,30 +76,32 @@ write.table(rank.results, fname, row.names=FALSE)
 message(sprintf("Written %s", fname))
 }
   
-  
-  # Friedman rank test ; reshape the matrix into experiments/rows form
-  # Warning: subsequent rows are assumed to belong to the same experiment
-  lvls = levels(data$method)
-  p = length(lvls)
-  for (d in c("all", unique(data$D))){
-    if(d == "all"){
-      dd = data 
-    } else {
-      dd = data[data$D == d, ]
-    }
-    D = matrix(0, nrow=nrow(dd)/p, ncol=p)
-    colnames(D) = lvls
-    for (i in 0:nrow(D)-1){
-      df = dd[(i*p):((i+1)*p - 1), ]
-      D[i, df$method] = df$mse_pred
-    }  
-    fname = sprintf("output/polynomial_prediction/cd.degree_%s.pdf", d)
-    pdf(fname)
-    plotCD(-D, alpha=0.05, cex=1.25)
-    title(sprintf("Degree: %s", d))
-    dev.off()
-    message(sprintf("Written %s", fname))
+
+# Friedman rank test ; reshape the matrix into experiments/rows form
+# Warning: subsequent rows are assumed to belong to the same experiment
+lvls = levels(data$method)
+p = length(lvls)
+for (d in c("all", unique(data$D))){
+  if(d == "all"){
+    dd = data 
+  } else {
+    dd = data[data$D == d, ]
   }
+  D = matrix(0, nrow=nrow(dd)/p, ncol=p)
+  colnames(D) = lvls
+  for (i in 0:nrow(D)-1){
+    df = dd[(i*p):((i+1)*p - 1), ]
+    D[i, df$method] = df$mse_pred
+    # D[i, df$method] = df$rho
+  }  
+  fname = sprintf("output/polynomial_prediction/cd.degree_%s.pdf", d)
+  pdf(fname)
+  plotCD(-D, alpha=0.05, cex=1.25)
+  # plotCD(D, alpha=0.05, cex=1.25)
+  title(sprintf("Degree: %s", d))
+  dev.off()
+  message(sprintf("Written %s", fname))
+}
 
 
 
