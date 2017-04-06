@@ -18,7 +18,7 @@ qplot(data=data, x=as.factor(D), y=mse_pred, fill=method, geom="boxplot")
 ggsave("output/polynomial_overfit/mse_pred_degree.pdf")
 
 qplot(data=data, x=as.factor(D), y=mse_fit, fill=method, geom="boxplot")
-ggsave("output/polynomial_overfit/mse_pred_degree.pdf")
+ggsave("output/polynomial_overfit/mse_fit_degree.pdf")
 
 
 target = "mse_pred"
