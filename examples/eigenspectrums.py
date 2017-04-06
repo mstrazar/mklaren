@@ -1,56 +1,37 @@
 """
-Comparison of selction of pivots in one dimension for MKL & CSI (later SPGP).
+Comparison of kernel eigenspectrums in different situations.
+Investigate various situations that can give rise to overfitting.
 
 """
-# import matplotlib
-# matplotlib.use("Agg")
-
-import os
-import csv
-import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 
 from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel
 from mklaren.kernel.kinterface import Kinterface
-from scipy.stats import multivariate_normal as mvn
-
-from examples.features import Features
-from mklaren.mkl.mklaren import Mklaren
-from mklaren.regression.ridge import RidgeLowRank
-from sklearn.metrics import mean_squared_error as mse
 
 
 # Complete data range
 p = 10
 n = 5
-sigma2 = 1
 Xt = np.linspace(-2, 2, 2 * n).reshape((2 * n, 1))
 
-feats = Features(degree=6)
-Ft = feats.fit_transform(Xt)
 
-# True kernel and signal
-K = Kinterface(data=Ft, kernel=linear_kernel)
-f = mvn.rvs(mean=np.zeros((2 * n,)), cov=K[:, :] + sigma2 * np.eye(2*n, 2*n), size=1).ravel()
-
-# Plot function
-# plt.figure()
-# plt.plot(Xt.ravel(), f, ".")
-# plt.show()
-
-
-# Eigenvalue of the exponential kernel
+# Eigenvalue of the exponential kernels
+# Shorter length-scales (sigmas) converge to identity
 plt.figure()
 for gi, g in enumerate(np.logspace(-1, 3, 4)):
     K = Kinterface(data=Xt, kernel=exponential_kernel, kernel_args={"gamma": g})
     vals, vecs = np.linalg.eig(K[:, :])
     plt.plot(vals, label="$\gamma=%0.2f,\  \sigma^2=%0.4f$" % (g, 1.0/g), linewidth=2)
 plt.legend()
-plt.show()
+plt.xlabel("Eigenvalue index")
+plt.ylabel("Magnitutde")
+plt.title("Exponentiated quadratic")
+plt.savefig("examples/output/eigenspectrums/exponential.pdf")
+plt.close()
 
-
-# Random kernels converge to indentity (pure-noise) covariance
+# Random kernels converge to identity (pure-noise) covariance
+# Important: data must be sampled from normal rather than normal distribution
 n = 5
 plt.figure()
 for pi, p in enumerate(np.logspace(1, 6, 6)):
@@ -64,4 +45,8 @@ for pi, p in enumerate(np.logspace(1, 6, 6)):
     print(K[:, :])
     print()
 plt.legend()
+plt.xlabel("Eigenvalue index")
+plt.ylabel("Magnitutde")
+plt.title("Linear kernel (p: dimensionality of space)")
+plt.savefig("examples/output/eigenspectrums/linear.pdf")
 plt.show()
