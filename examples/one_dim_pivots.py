@@ -42,10 +42,10 @@ n = 300
 s = 5           # Signal range
 nsig = 10
 noise = 0.01
-rank = 5
-delta = 5
+rank = 10
+delta = 10
 repeats = 20
-lbd_range = [0] + list(np.logspace(-2, 2, 5))
+lbd_range = [0] # + list(np.logspace(-2, 2, 5))
 methods = ["Mklaren", "ICD", "Nystrom", "CSI"]
 
 
@@ -61,6 +61,7 @@ def plot_fit(fname, X, f, y, yp, tr, u, method):
     plt.plot(X, yp, "-", color="red",  linewidth=2,    label="Model")
     plt.plot(u, [-2]*len(u), "+", color="red",  markersize=10,  label="active set")
     plt.xlim(X[0], X[-1])
+    plt.ylim(-3, 3)
     plt.legend()
     plt.savefig(fname, bbox_inches="tight")
     plt.close()
@@ -77,7 +78,7 @@ K = Kinterface(data=Ft, kernel=linear_kernel)
 
 
 # Smartsplit of test set
-tr = range(n-n/4, n+n/4)
+tr = range(5, 2*n-5)
 va = range(n-n/2, n-n/4) + range(n+n/4, n + n/2)
 
 # tr = range(n-n/2, n+n/2, 2)                 # training set
@@ -91,10 +92,19 @@ K_tr = Kinterface(data=Ft[tr], kernel=linear_kernel)
 K_va = Kinterface(data=Ft[va], kernel=linear_kernel)
 
 
+
+K    = Kinterface(data=Xt, kernel=exponential_kernel, kernel_args={"gamma": 1.0})
+K_tr = Kinterface(data=Xt[tr], kernel=exponential_kernel, kernel_args={"gamma": 1.0})
+
 for repl in range(repeats):
 
     # Pure signal and range of data is around zero
-    f = mvn.rvs(mean=np.zeros((2 * n,)), cov=K[:, :], size=1).ravel()
+    # f = mvn.rvs(mean=np.zeros((2 * n,)), cov=K[:, :], size=1).ravel()
+
+    # Generate regions of non-uniform variance.
+    f = np.zeros((2 * n,))
+    f[1:20] = 2
+    f[100:120] = -2
     y = mvn.rvs(mean=f, cov=np.eye(2 * n, 2 * n) * noise, size=1).ravel()
 
     rows = list()
@@ -137,11 +147,11 @@ for repl in range(repeats):
                 u = Xt[tr][model.As[0], :].ravel()
 
             # Determine best scores and parameters
-            yp_va = model.predict([Ft[va]])
+            yp_va = model.predict([Xt[va]])
             mse_va = mse(yp_va, y[va])
             if mse_va < mse_best:
-                yp_all = model.predict([Ft])
-                yp_te = model.predict([Ft[te]])
+                yp_all = model.predict([Xt])
+                yp_te = model.predict([Xt[te]])
                 mse_final = mse(yp_te, y[te])
                 mse_best = mse_va
                 u_best = u
