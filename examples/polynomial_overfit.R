@@ -4,22 +4,31 @@ require(Rgraphviz)
 require(reshape2)
 
 # Added RFF model  multiple kernels are tested individually.
-data = read.csv("output/polynomial_overfit/2017-4-6/results_8.csv", header=TRUE)
+data = read.csv("output/polynomial_overfit/2017-4-6/results_31.csv", header=TRUE)
 
 # Situation at linear kernel
-
 d = 1
 qplot(data=data[data$D == d, ], x=log(mse_fit), y=log(mse_pred), 
       color=method, main=sprintf("Degree: %d", d))
 ggsave("output/polynomial_overfit/pred_fit_degree_1.pdf")
 
 # MSE / degree
-qplot(data=data, x=as.factor(D), y=mse_pred, fill=method, geom="boxplot")
+qplot(data=data, x=as.factor(D), y=log(mse_pred), fill=method, geom="boxplot")
 ggsave("output/polynomial_overfit/mse_pred_degree.pdf")
 
-qplot(data=data, x=as.factor(D), y=mse_fit, fill=method, geom="boxplot")
+qplot(data=data, x=as.factor(D), y=log(mse_fit), fill=method, geom="boxplot")
 ggsave("output/polynomial_overfit/mse_fit_degree.pdf")
 
+# Explained variance
+qplot(data=data, x=as.factor(D), y=expl_var_pred, fill=method, geom="boxplot")
+qplot(data=data, x=as.factor(rank), y=expl_var_pred, fill=method, geom="boxplot")
+
+# Break-down by rank and dimension
+qplot(data=data[data$D==1,], x=as.factor(rank), y=expl_var_pred, fill=method, geom="boxplot")
+qplot(data=data[data$D==2,], x=as.factor(rank), y=expl_var_pred, fill=method, geom="boxplot")
+qplot(data=data[data$D==3,], x=as.factor(rank), y=expl_var_pred, fill=method, geom="boxplot")
+qplot(data=data[data$D==4,], x=as.factor(rank), y=expl_var_pred, fill=method, geom="boxplot")
+qplot(data=data[data$D==5,], x=as.factor(rank), y=expl_var_pred, fill=method, geom="boxplot")
 
 target = "mse_pred"
 meth = "CSI"
