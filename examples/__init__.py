@@ -1,2 +1,2 @@
 __author__ = 'martin'
-import functions
+from examples.archive import functions
