@@ -10,8 +10,6 @@ import csv
 import os
 
 
-
-
 def generate_data(n, max_rank, p_tr):
     """
     Generate data with a given number of inducing points within the training set.
@@ -55,13 +53,13 @@ def generate_data(n, max_rank, p_tr):
 
 def process():
     # Fixed hyper parameters
-    repeats = 10
-    lbd = 0.1
-    range_n = [100, 300, ]
-    methods = ["Mklaren", "ICD", "Nystrom"]
-    delta = 10  # Delta to max rank
-    p_tr = 0.8
-    max_rank = 40
+    repeats = 10                                                # Number of replicas.
+    lbd = 0.1                                                   # Regularization parameter
+    p_tr = 0.8                                                  # Fraction of test set
+    range_n = map(int, 1.0/p_tr * np.array([1e5, 3e5, 1e6]))    # Number of samples in TRAINING set.
+    methods = ["Mklaren", "ICD", "Nystrom"]                     # Methods
+    delta = 10                                                  # Lookahead columns
+    max_rank = 50                                               # Max. rank and number of indicuing points.
 
     # Create output directory
     d = datetime.now()
@@ -72,13 +70,14 @@ def process():
     print("Writing to %s ..." % fname)
 
     # Output file
-    header = ["repl", "method",  "n", "max_rank", "rank", "time", "expl_var"]
+    header = ["repl", "method",  "n", "p_tr", "max_rank", "rank", "time", "expl_var"]
     writer = csv.DictWriter(open(fname, "w", buffering=0),
                             fieldnames=header, quoting=csv.QUOTE_ALL)
     writer.writeheader()
 
     count = 0
     for repl, n in product(range(repeats), range_n):
+        print("%s processing replicate %d for N=%d" % (str(datetime.now()), repl, n))
 
         # Generated data
         K_tr, X_tr, X_te, y_tr, y_te = generate_data(n, max_rank, p_tr)
@@ -114,10 +113,13 @@ def process():
                 yp = model.predict([X_te]).ravel()
                 evar = (np.var(y_te) - np.var(y_te - yp)) / np.var(y_te)
                 row = {"repl": repl, "method": method, "time": t,
-                        "n": n, "rank": rank, "expl_var": evar, "max_rank": max_rank}
+                        "n": n, "rank": rank, "expl_var": evar, "max_rank": max_rank, "p_tr": p_tr}
                 rows.append(row)
 
         # Write rows nevertheless
         count += len(rows)
         writer.writerows(rows)
         print("Written %d rows" % count)
+
+if __name__ == "__main__":
+    process()
