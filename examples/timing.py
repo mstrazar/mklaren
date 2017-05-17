@@ -1,4 +1,4 @@
-from mklaren.kernel.kernel import poly_kernel
+from mklaren.kernel.kernel import exponential_kernel
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
@@ -9,91 +9,115 @@ import numpy as np
 import csv
 import os
 
-# Fixed hyper parameters
-repeats = 10
-range_n = np.linspace(1e3, 1e6, 4)
-range_degree = [6]
-range_repeat = range(repeats)
-range_rank = [30]
-sigma2 = 0.1    # noise variance
-lbd = 0.1
-
-methods = ["Mklaren", "ICD", "Nystrom"]
-delta = 10  # Delta to max rank
-P = 1   # Number of true kernels to be taken in the sum
-p_tr = 0.6
-p_va = 0.2
-p_te = 0.2
 
 
-# TODO: to ensure a practical comparison, run the methods until some practical
-# criterion is achieved w.r.t. prediction performance
 
-
-# Create output directory
-d = datetime.now()
-dname = os.path.join("output", "timing", "%d-%d-%d" % (d.year, d.month, d.day))
-if not os.path.exists(dname):
-    os.makedirs(dname)
-fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
-print("Writing to %s ..." % fname)
-
-header = ["repl", "method",  "n", "D", "rank", "time"]
-
-
-writer = csv.DictWriter(open(fname, "w", buffering=0),
-                        fieldnames=header, quoting=csv.QUOTE_ALL)
-writer.writeheader()
-
-count = 0
-for repl, n, maxd, rank in product(range_repeat, range_n, range_degree, range_rank):
-    print("%s Fitting with parameters: %s" % (str(datetime.now()), str([repl, n, maxd, rank])))
-
+def generate_data(n, max_rank, p_tr):
+    """
+    Generate data with a given number of inducing points within the training set.
+    Compute signalusing the Nystrom approximation.
+    :param n:
+        Number of data points.
+    :param max_rank:
+        Number of inducing points.
+    :param p_tr:
+        Fraction of training.
+    :return:
+    """
     # Rank is known because the data is simulated
-    X = np.random.rand(n, range_rank[-1])
+    X = np.random.rand(n, max_rank)
     X = (X - X.mean(axis=0)) / np.std(X, axis=0)
-    y_true = np.random.rand(n, 1)
+
+    # Fit one kernel
+    tr_inxs = range(int(p_tr * n))
+    te_inxs = range(int(p_tr * n), n)
+    X_tr = X[tr_inxs, :]
+    X_te = X[te_inxs, :]
+    K = Kinterface(kernel=exponential_kernel, kernel_args={"gamma": 0.01}, data=X)
+    K_tr = Kinterface(kernel=exponential_kernel, kernel_args={"gamma": 0.01}, data=X_tr)
+
+    # Signal is defined using a random subset of the training set
+    siginxs = np.random.choice(tr_inxs, size=max_rank, replace=False)
+    alpha = np.zeros((n, 1))
+    alpha[siginxs] = np.random.rand(len(siginxs), 1)
+
+    # Signal is defined in the span of the training set
+    # Use Nystrom approximation to compute signal efficiently
+    Ka = K[siginxs, :].dot(alpha)
+    KiKa = np.linalg.inv(K[siginxs, siginxs]).dot(Ka)
+    y_true = K[:, siginxs].dot(KiKa)
     y_true = y_true - y_true.mean()
+    y_tr = y_true[tr_inxs]
+    y_te = y_true[te_inxs]
 
-    Ks_all = []
-    for d in range(maxd, maxd + 1):
-        K_a = Kinterface(kernel=poly_kernel, kernel_args={"degree": d},
-                         data=X, row_normalize=False)
-        Ks_all.append(K_a)
-    rows = []
-    for method in methods:
-        valid = True
-        if True: # try:
-            t1 = time()
-            if method == "Mklaren":
-                effective_rank = rank * len(Ks_all)
-                model = Mklaren(rank=effective_rank, delta=delta, lbd=lbd)
-                model.fit(Ks_all, y_true)
-            elif method == "CSI":
-                model = RidgeLowRank(rank=rank, method="csi", lbd=lbd,
-                                         method_init_args={"delta": delta},
-                                         sum_kernels=False)
-                model.fit(Ks_all, y_true)
-            elif method == "ICD":
-                model = RidgeLowRank(rank=rank, method="icd", lbd=lbd,
-                                         sum_kernels=False)
-                model.fit(Ks_all, y_true)
-            elif method == "Nystrom":
-                model = RidgeLowRank(rank=rank, method="nystrom", lbd=lbd,
-                                         sum_kernels=False)
-                model.fit(Ks_all, y_true)
-            t2 = time() - t1
-        # except:
-        #    print("%s error" % method)
-        #    continue
+    return K_tr, X_tr, X_te, y_tr, y_te
 
-        # Score the predictions
-        if valid:
-            row = {"repl": repl, "method": method, "time": t2,
-               "n": n, "D": maxd, "rank": rank}
-            rows.append(row)
 
-    if len(rows) == len(methods):
+def process():
+    # Fixed hyper parameters
+    repeats = 10
+    lbd = 0.1
+    range_n = [100, 300, ]
+    methods = ["Mklaren", "ICD", "Nystrom"]
+    delta = 10  # Delta to max rank
+    p_tr = 0.8
+    max_rank = 40
+
+    # Create output directory
+    d = datetime.now()
+    dname = os.path.join("output", "timing", "%d-%d-%d" % (d.year, d.month, d.day))
+    if not os.path.exists(dname):
+        os.makedirs(dname)
+    fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
+    print("Writing to %s ..." % fname)
+
+    # Output file
+    header = ["repl", "method",  "n", "max_rank", "rank", "time", "expl_var"]
+    writer = csv.DictWriter(open(fname, "w", buffering=0),
+                            fieldnames=header, quoting=csv.QUOTE_ALL)
+    writer.writeheader()
+
+    count = 0
+    for repl, n in product(range(repeats), range_n):
+
+        # Generated data
+        K_tr, X_tr, X_te, y_tr, y_te = generate_data(n, max_rank, p_tr)
+        y_te = y_te.ravel()
+
+        # Output
+        rows = []
+        for method in methods:
+            rank_range = range(10, max_rank, 10)
+            for ri, rank in enumerate(rank_range):
+                model = None
+                try:
+                    t1 = time()
+                    if method == "Mklaren":
+                        model = Mklaren(rank=rank, delta=delta, lbd=lbd)
+                        model.fit([K_tr], y_tr)
+                    elif method == "CSI":
+                        model = RidgeLowRank(rank=rank, method="csi", lbd=lbd,
+                                                 method_init_args={"delta": delta})
+                        model.fit([K_tr], y_tr)
+                    elif method == "ICD":
+                        model = RidgeLowRank(rank=rank, method="icd", lbd=lbd)
+                        model.fit([K_tr], y_tr)
+                    elif method == "Nystrom":
+                        model = RidgeLowRank(rank=rank, method="nystrom", lbd=lbd)
+                        model.fit([K_tr], y_tr)
+                    t = time() - t1
+                except Exception as e:
+                    print("%s error: %s" % (method, e.message))
+                    continue
+
+                # Evaluate result for a given rank
+                yp = model.predict([X_te]).ravel()
+                evar = (np.var(y_te) - np.var(y_te - yp)) / np.var(y_te)
+                row = {"repl": repl, "method": method, "time": t,
+                        "n": n, "rank": rank, "expl_var": evar, "max_rank": max_rank}
+                rows.append(row)
+
+        # Write rows nevertheless
         count += len(rows)
         writer.writerows(rows)
         print("Written %d rows" % count)
