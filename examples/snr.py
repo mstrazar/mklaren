@@ -51,10 +51,10 @@ gamma = 1                               # Arbitrary kernel hyperparameter
 delta = 10                              # Arbitrary look-ahead parameter
 
 # Objective experimentation;
-n_range = [30, 100, 300, 1000]          # Vaste enough range of dataset sizes (which are full-rank)
+n_range = [100, 300, 500]               # Vaste enough range of dataset sizes (which are full-rank)
 noise_range = np.logspace(-3, 3, 7)     # Range of noise levels
 repeats = range(10)                     # Number of repeats
-rank_percents = [0.05, 0.1, 0.3]        # Rank percentages given n
+rank_percents = [0.05, 0.1, 0.2]        # Rank percentages given n
 methods = ["Mklaren", "CSI", "ICD"]
 lbd_range = [0, 0.1, 0.3, 1, 3, 10]     # Vast enough range, such that methods should be able to capture optimum somewhere
 
