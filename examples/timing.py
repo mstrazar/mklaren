@@ -54,8 +54,8 @@ def generate_data(n, max_rank, p_tr):
 def process():
     # Fixed hyper parameters
     repeats = 10                                                # Number of replicas.
-    lbd = 0.1                                                   # Regularization parameter
-    p_tr = 0.8                                                  # Fraction of test set
+    lbd = 0.0                                                   # Regularization parameter
+    p_tr = 0.6                                                  # Fraction of test set
     range_n = map(int, 1.0/p_tr * np.array([1e5, 3e5, 1e6]))    # Number of samples in TRAINING set.
     methods = ["Mklaren", "ICD", "Nystrom"]                     # Methods
     delta = 10                                                  # Lookahead columns
