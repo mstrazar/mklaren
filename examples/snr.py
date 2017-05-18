@@ -41,7 +41,7 @@ if not os.path.exists(dname):
 fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
 print("Writing to %s ..." % fname)
 
-header = ["repl", "method", "n", "lbd", "snr", "rank", "noise", "mse_sig", "pr_rho", "pr_pval"]
+header = ["repl", "method", "n", "lbd", "snr", "rank", "noise", "mse_sig", "mse_rel", "pr_rho", "pr_pval"]
 writer = csv.DictWriter(open(fname, "w", buffering=0),
                         fieldnames=header, quoting=csv.QUOTE_ALL)
 writer.writeheader()
@@ -99,12 +99,13 @@ for repl, n, noise, lbd, rp in it.product(repeats, n_range, noise_range, lbd_ran
 
         # Metrics
         mse_sig = mse(yp, f)
+        mse_rel = mse(yp, f) / np.var(y)
         snr = np.var(f) / noise
         pr_rho, pr_pval = pearsonr(yp, f)
 
         row = {"repl": repl, "method": method, "n": n, "snr": snr, "lbd": lbd,
                "rank": rank, "noise": np.round(np.log10(noise), 2), "mse_sig": mse_sig,
-               "pr_rho": pr_rho, "pr_pval": pr_pval}
+               "mse_rel": mse_rel, "pr_rho": pr_rho, "pr_pval": pr_pval}
         rows.append(row)
 
     if len(rows) == len(methods):
