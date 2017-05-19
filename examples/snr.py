@@ -157,3 +157,6 @@ if False:
     print("MKL", pearsonr(yp, f))
     # print("CSI", pearsonr(yp_csi, f))
     print("ICD", pearsonr(yp_icd, f))
+
+    print("MKL", mse(yp, f))
+    print("ICD", mse(yp_icd, f))
