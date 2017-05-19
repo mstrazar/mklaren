@@ -36,5 +36,30 @@ for (n in unique(data$n)){
           main=sprintf("N=%d, rank=%d %%, no. repl=%d", n, rp, max(dff$repl)+1),
           xlab="Noise", ylab="Relative MSE (%)")
     ggsave(fname)
+    
+    fname = sprintf("output/snr/images/cv_rmse_lambda_n-%d_rank-%d.pdf", n, rank)
+    qplot(data=dff, x=as.factor(noise), y=sqrt(mse_sig), geom="boxplot", fill=method,
+          main=sprintf("N=%d, rank=%d %%, no. repl=%d", n, rp, max(dff$repl)+1),
+          xlab="Noise", ylab="Relative MSE (%)")
+    ggsave(fname)
+    
+    fname = sprintf("output/snr/images/cv_pr_lambda_n-%d_rank-%d.pdf", n, rank)
+    qplot(data=dff, x=as.factor(noise), y=pr_rho, geom="boxplot", fill=method,
+          main=sprintf("N=%d, rank=%d %%, no. repl=%d", n, rp, max(dff$repl)+1),
+          xlab="Noise", ylab="Relative MSE (%)")
+    ggsave(fname)
+  }
+}
+
+
+# effect independent of lambda
+for (n in unique(data$n)){
+  for (rank in unique(data[data$n == n, "rank"])){
+    df = data[data$lbd == 0 & data$n == n & data$rank == rank, ]  
+    fname = sprintf("output/snr/images/plain_rmse_n-%d_rank-%d.pdf", n, rank)
+    qplot(data=df, x=as.factor(noise), y=sqrt(mse_sig), geom="boxplot", fill=method,
+          main=sprintf("N=%d, rank=%d %%, no. repl=%d", n, rp, max(dff$repl)+1),
+          xlab="Noise", ylab="RMSE")
+    ggsave(fname)
   }
 }
