@@ -41,26 +41,26 @@ if not os.path.exists(dname):
 fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
 print("Writing to %s ..." % fname)
 
-header = ["repl", "method", "n", "lbd", "snr", "rank", "noise", "mse_sig", "mse_rel", "pr_rho", "pr_pval"]
+header = ["repl", "method", "n", "gamma", "lbd", "snr", "rank", "noise", "mse_sig", "mse_rel", "pr_rho", "pr_pval"]
 writer = csv.DictWriter(open(fname, "w", buffering=0),
                         fieldnames=header, quoting=csv.QUOTE_ALL)
 writer.writeheader()
 
 # Parameters
-gamma = 1                               # Arbitrary kernel hyperparameter
-delta = 10                              # Arbitrary look-ahead parameter
+gamma_range = 2**(np.linspace(-2, 2, 5))  # Arbitrary kernel hyperparameters
+delta = 10                                # Arbitrary look-ahead parameter
 
 # Objective experimentation;
-n_range = [100, 300, 500]               # Vaste enough range of dataset sizes (which are full-rank)
-noise_range = np.logspace(-3, 3, 7)     # Range of noise levels
-repeats = range(10)                     # Number of repeats
-rank_percents = [0.05, 0.1, 0.2]        # Rank percentages given n
+n_range = [100, 300, 500]                 # Vaste enough range of dataset sizes (which are full-rank)
+noise_range = np.logspace(-3, 3, 7)       # Range of noise levels
+repeats = range(10)                       # Number of repeats
+rank_percents = [0.05, 0.1, 0.15]         # Rank percentages given n
 methods = ["Mklaren", "CSI", "ICD"]
-lbd_range = [0, 0.1, 0.3, 1, 3, 10]     # Vast enough range, such that methods should be able to capture optimum somewhere
-
+lbd_range = [0, 0.1, 0.3, 1, 3, 10, 30, 100]  # Vast enough range, such that methods should be able to capture optimum somewhere
 
 count = 0
-for repl, n, noise, lbd, rp in it.product(repeats, n_range, noise_range, lbd_range, rank_percents):
+for repl, gamma, n, noise, lbd, rp in it.product(repeats, gamma_range, n_range,
+                                                 noise_range, lbd_range, rank_percents):
     rank = max(5, int(rp * n))
 
     # Generate data
@@ -105,7 +105,7 @@ for repl, n, noise, lbd, rp in it.product(repeats, n_range, noise_range, lbd_ran
 
         row = {"repl": repl, "method": method, "n": n, "snr": snr, "lbd": lbd,
                "rank": rank, "noise": np.round(np.log10(noise), 2), "mse_sig": mse_sig,
-               "mse_rel": mse_rel, "pr_rho": pr_rho, "pr_pval": pr_pval}
+               "mse_rel": mse_rel, "pr_rho": pr_rho, "pr_pval": pr_pval, "gamma": gamma}
         rows.append(row)
 
     if len(rows) == len(methods):
