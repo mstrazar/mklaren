@@ -103,13 +103,16 @@ def process():
                         model.fit(Ks_tr, y_tr)
                     elif method == "CSI":
                         model = RidgeLowRank(rank=rank, method="csi", lbd=lbd,
-                                                 method_init_args={"delta": delta})
+                                                 method_init_args={"delta": delta},
+                                             sum_kernels=True)
                         model.fit(Ks_tr, y_tr)
                     elif method == "ICD":
-                        model = RidgeLowRank(rank=rank, method="icd", lbd=lbd)
+                        model = RidgeLowRank(rank=rank, method="icd", lbd=lbd,
+                                             sum_kernels=True)
                         model.fit(Ks_tr, y_tr)
                     elif method == "Nystrom":
-                        model = RidgeLowRank(rank=rank, method="nystrom", lbd=lbd)
+                        model = RidgeLowRank(rank=rank, method="nystrom", lbd=lbd,
+                                             sum_kernels=True)
                         model.fit(Ks_tr, y_tr)
                     t = time() - t1
                 except Exception as e:
