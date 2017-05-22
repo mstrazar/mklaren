@@ -10,7 +10,7 @@ import csv
 import os
 
 
-def generate_data(n, max_rank, p_tr, gamma_range=[1], max_scales=1):
+def generate_data(n, max_rank, p_tr, gamma_range=(1,), max_scales=1):
     """
     Generate data with a given number of inducing points within the training set.
     Compute signalusing the Nystrom approximation.
@@ -72,15 +72,15 @@ def generate_data(n, max_rank, p_tr, gamma_range=[1], max_scales=1):
 def process():
     # Fixed hyper parameters
     repeats = 10                                                # Number of replicas.
-    lbd = 0.01                                                   # Regularization parameter
     p_tr = 0.6                                                  # Fraction of test set
-    # range_n = map(int, 1.0/p_tr * np.array([1e5, 3e5, 1e6]))    # Number of samples in TRAINING set.
+    # range_n = map(int, 1.0/p_tr * np.array([1e5, 3e5, 1e6]))  # Number of samples in TRAINING set.
     range_n = map(int, 1.0 / p_tr * np.array([1e2, 3e2, 1e3]))  # Number of samples in TRAINING set.
     methods = ["Mklaren", "ICD", "Nystrom"]                     # Methods
     delta = 10                                                  # Lookahead columns
     max_rank = 10                                               # Max. rank and number of indicuing points.
     max_scales = 2                                              # Two relevant lengthscales
     gamma_range = np.power(10, np.linspace(-3, -1, 5))          # Arbitrary kernel hyperparameters
+    lbd_range   = np.power(10, np.linspace(-2, 2, 5))           # Arbitrary lambda hyperparameters
 
     # Create output directory
     d = datetime.now()
@@ -91,7 +91,7 @@ def process():
     print("Writing to %s ..." % fname)
 
     # Output file
-    header = ["repl", "method",  "n", "p_tr", "max_rank", "rank", "time", "expl_var"]
+    header = ["repl", "method",  "n", "p_tr", "max_rank", "rank", "lbd", "time", "expl_var_val", "expl_var"]
     writer = csv.DictWriter(open(fname, "w", buffering=0),
                             fieldnames=header, quoting=csv.QUOTE_ALL)
     writer.writeheader()
@@ -105,11 +105,16 @@ def process():
                                                             gamma_range=gamma_range, max_scales=max_scales)
         y_te = y_te.ravel()
 
+        # Split test data in validation and holdout sets
+        nt = len(y_te)
+        X_val, y_val = X_te[:nt/2], y_te[:nt/2]
+        X_hol, y_hol = X_te[nt/2:], y_te[nt/2:]
+
         # Output
         rows = []
         for method in methods:
             rank_range = range(2, max_rank, 2)
-            for ri, rank in enumerate(rank_range):
+            for lbd, rank in product(lbd_range, rank_range):
                 model = None
                 try:
                     t1 = time()
@@ -133,13 +138,20 @@ def process():
 
                 # Evaluate result for a given rank
                 if method == "Mklaren":
-                    Xs_te = [X_te] * len(Ks_tr)
+                    Xs_val = [X_val] * len(Ks_tr)
+                    Xs_hol = [X_hol] * len(Ks_tr)
                 else:
-                    Xs_te = [X_te]
-                yp = model.predict(Xs_te).ravel()
-                evar = (np.var(y_te) - np.var(y_te - yp)) / np.var(y_te)
+                    Xs_val = [X_val]
+                    Xs_hol = [X_hol]
+                yp_val = model.predict(Xs_val).ravel()
+                yp_hol = model.predict(Xs_hol).ravel()
+
+                evar_val = (np.var(y_val) - np.var(y_val - yp_val)) / np.var(y_val)
+                evar_hol = (np.var(y_hol) - np.var(y_hol - yp_hol)) / np.var(y_hol)
+
                 row = {"repl": repl, "method": method, "time": t,
-                        "n": n, "rank": rank, "expl_var": evar, "max_rank": max_rank, "p_tr": p_tr}
+                        "n": n, "rank": rank, "expl_var_val": evar_val, "lbd": lbd,
+                       "expl_var": evar_hol, "max_rank": max_rank, "p_tr": p_tr}
                 rows.append(row)
 
         # Write rows nevertheless

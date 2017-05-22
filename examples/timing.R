@@ -1,11 +1,29 @@
 require(ggplot2)
 setwd("~/Dev/mklaren/examples")
 
-data = read.csv("output/timing/2017-5-18/results_1.csv", stringsAsFactors = FALSE,
+
+
+# Small ranks with small lambda show good results for mklaren.
+# Good results (no CV).
+data = read.csv("output/timing/2017-5-22/results_8.csv", stringsAsFactors = FALSE,
+                 header=TRUE)
+
+# Good results (with CV for lambda).
+data = read.csv("output/timing/2017-5-22/results_10.csv", stringsAsFactors = FALSE,
                 header=TRUE)
 
-vars = seq(0.5, 0.9, 0.1)
+# Select resuld based on cross-validation w.r.t. hyperparamters (lambda)
+if ("expl_var_val" %in% colnames(data)){
+  agg = aggregate(data$expl_var_val, by=list(rank=data$rank, n=data$n, repl=data$repl, method=data$method), FUN=max)
+  row.names(agg) = sprintf("%d.%d.%d.%s", agg$rank, agg$n, agg$repl, agg$method)
+  inxs = sprintf("%d.%d.%d.%s", data$rank, data$n, data$repl, data$method)
+  data$best = agg[inxs, "x"] == data$expl_var_val
+  data = data[data$best,]
+}
 
+
+
+# Plot distributions.
 for (n in unique(data$n)){
   df = data[data$n == n,]
   
@@ -19,7 +37,7 @@ for (n in unique(data$n)){
   # Round expl. var to nearest 10%
   dv = data[data$n == n,]
   dv$expl_var = floor(10 * dv$expl_var) / 10 
-  ag = aggregate(df$time, by=list(method=df$method, expl_var=dv$expl_var, repl=dv$repl), FUN=min)
+  ag = aggregate(dv$time, by=list(method=dv$method, expl_var=dv$expl_var, repl=dv$repl), FUN=min)
   qplot(data=ag, x=as.factor(expl_var), y=x, geom="boxplot", fill=method, 
         ylab="Time (s)", xlab="Explained variance threshold",
         main = sprintf("N=%s", n))
