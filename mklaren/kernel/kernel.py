@@ -272,6 +272,7 @@ def kernel_sum(x, y, kernels, kernels_args, kernels_weights=None):
     :param kernels_weights: (``Iterable``) Iterable with kernel weights, of the same length as `kernels`.
     :return:
     """
+    assert len(kernels) == len(kernels_args)
     if kernels_weights is not None:
         return sum(w * k(x, y, **kw) for k, kw, w in zip(kernels, kernels_args, kernels_weights))
     else:
