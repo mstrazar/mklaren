@@ -52,7 +52,7 @@ delta = 10                                # Arbitrary look-ahead parameter
 
 # Objective experimentation;
 n_range = [100, 300, 500]                 # Vaste enough range of dataset sizes (which are full-rank)
-noise_range = np.logspace(-3, 3, 7)       # Range of noise levels
+noise_range = np.logspace(-2, 2, 7)       # Range of noise levels
 repeats = range(10)                       # Number of repeats
 rank_percents = [0.05, 0.1, 0.15]         # Rank percentages given n
 methods = ["Mklaren", "CSI", "ICD"]
