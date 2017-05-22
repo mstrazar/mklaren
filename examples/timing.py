@@ -10,7 +10,7 @@ import csv
 import os
 
 
-def generate_data(n, max_rank, p_tr, gamma_range=[1]):
+def generate_data(n, max_rank, p_tr, gamma_range=[1], max_scales=1):
     """
     Generate data with a given number of inducing points within the training set.
     Compute signalusing the Nystrom approximation.
@@ -18,6 +18,10 @@ def generate_data(n, max_rank, p_tr, gamma_range=[1]):
         Number of data points.
     :param max_rank:
         Number of inducing points.
+    :param max_scales:
+        Number of inducing lengthscales.
+    :param gamma_range:
+        Range of lengthscales.
     :param p_tr:
         Fraction of training.
     :return:
@@ -32,12 +36,6 @@ def generate_data(n, max_rank, p_tr, gamma_range=[1]):
     X_tr = X[tr_inxs, :]
     X_te = X[te_inxs, :]
 
-    # Kernel on whole data
-    K = Kinterface(data=X,
-                    kernel=kernel_sum,
-                    kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
-                                 "kernels_args": [{"gamma": g} for g in gamma_range]})
-
     # One kernel where funciton is the sum
     K_tr = Kinterface(data=X_tr,
                     kernel=kernel_sum,
@@ -45,6 +43,7 @@ def generate_data(n, max_rank, p_tr, gamma_range=[1]):
                                  "kernels_args": [{"gamma": g} for g in gamma_range]})
 
     # Same thing, but using a list of kernels instead
+    Ks_all = [Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": g}) for g in gamma_range]
     Ks_tr = [Kinterface(data=X_tr, kernel=exponential_kernel, kernel_args={"gamma": g}) for g in gamma_range]
 
     # Signal is defined using a random subset of the training set
@@ -54,8 +53,11 @@ def generate_data(n, max_rank, p_tr, gamma_range=[1]):
 
     # Signal is defined in the span of the training set
     # Use Nystrom approximation to compute signal efficiently
-    K_s  = K[siginxs, :]
-    K_ss = K[siginxs, siginxs]
+
+    # Only a few lengthscales are relevant
+    sigscales = np.random.choice(range(len(gamma_range)), replace=False, size=max_scales)
+    K_s  = sum((Ks_all[i][siginxs, :] for i in sigscales))
+    K_ss = sum((Ks_all[i][siginxs, siginxs] for i in sigscales))
 
     Ka = K_s.dot(alpha)
     KiKa = np.linalg.inv(K_ss).dot(Ka)
@@ -70,13 +72,14 @@ def generate_data(n, max_rank, p_tr, gamma_range=[1]):
 def process():
     # Fixed hyper parameters
     repeats = 10                                                # Number of replicas.
-    lbd = 0.01                                                  # Regularization parameter
+    lbd = 0.01                                                   # Regularization parameter
     p_tr = 0.6                                                  # Fraction of test set
     # range_n = map(int, 1.0/p_tr * np.array([1e5, 3e5, 1e6]))    # Number of samples in TRAINING set.
     range_n = map(int, 1.0 / p_tr * np.array([1e2, 3e2, 1e3]))  # Number of samples in TRAINING set.
     methods = ["Mklaren", "ICD", "Nystrom"]                     # Methods
     delta = 10                                                  # Lookahead columns
-    max_rank = 50                                               # Max. rank and number of indicuing points.
+    max_rank = 10                                               # Max. rank and number of indicuing points.
+    max_scales = 2                                              # Two relevant lengthscales
     gamma_range = np.power(10, np.linspace(-3, -1, 5))          # Arbitrary kernel hyperparameters
 
     # Create output directory
@@ -98,13 +101,14 @@ def process():
         print("%s processing replicate %d for N=%d" % (str(datetime.now()), repl, n))
 
         # Generated data
-        Ks_tr, K_tr, X_tr, X_te, y_tr, y_te = generate_data(n, max_rank, p_tr, gamma_range=gamma_range)
+        Ks_tr, K_tr, X_tr, X_te, y_tr, y_te = generate_data(n, max_rank, p_tr,
+                                                            gamma_range=gamma_range, max_scales=max_scales)
         y_te = y_te.ravel()
 
         # Output
         rows = []
         for method in methods:
-            rank_range = range(10, max_rank, 10)
+            rank_range = range(2, max_rank, 2)
             for ri, rank in enumerate(rank_range):
                 model = None
                 try:
