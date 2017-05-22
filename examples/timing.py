@@ -1,4 +1,4 @@
-from mklaren.kernel.kernel import exponential_kernel
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
@@ -31,10 +31,21 @@ def generate_data(n, max_rank, p_tr, gamma_range=[1]):
     te_inxs = range(int(p_tr * n), n)
     X_tr = X[tr_inxs, :]
     X_te = X[te_inxs, :]
-    Ks = [Kinterface(kernel=exponential_kernel, kernel_args={"gamma": gamma}, data=X)
-          for gamma in gamma_range]
-    Ks_tr = [Kinterface(kernel=exponential_kernel, kernel_args={"gamma": gamma}, data=X_tr)
-          for gamma in gamma_range]
+
+    # Kernel on whole data
+    K = Kinterface(data=X,
+                    kernel=kernel_sum,
+                    kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
+                                 "kernels_args": [{"gamma": g} for g in gamma_range]})
+
+    # One kernel where funciton is the sum
+    K_tr = Kinterface(data=X_tr,
+                    kernel=kernel_sum,
+                    kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
+                                 "kernels_args": [{"gamma": g} for g in gamma_range]})
+
+    # Same thing, but using a list of kernels instead
+    Ks_tr = [Kinterface(data=X_tr, kernel=exponential_kernel, kernel_args={"gamma": g}) for g in gamma_range]
 
     # Signal is defined using a random subset of the training set
     siginxs = np.random.choice(tr_inxs, size=max_rank, replace=False)
@@ -43,8 +54,8 @@ def generate_data(n, max_rank, p_tr, gamma_range=[1]):
 
     # Signal is defined in the span of the training set
     # Use Nystrom approximation to compute signal efficiently
-    K_s  = sum((K[siginxs, :] for K in Ks))
-    K_ss = sum((K[siginxs, siginxs] for K in Ks))
+    K_s  = K[siginxs, :]
+    K_ss = K[siginxs, siginxs]
 
     Ka = K_s.dot(alpha)
     KiKa = np.linalg.inv(K_ss).dot(Ka)
@@ -53,7 +64,7 @@ def generate_data(n, max_rank, p_tr, gamma_range=[1]):
     y_tr = y_true[tr_inxs]
     y_te = y_true[te_inxs]
 
-    return Ks_tr, X_tr, X_te, y_tr, y_te
+    return Ks_tr, K_tr, X_tr, X_te, y_tr, y_te
 
 
 def process():
@@ -66,7 +77,7 @@ def process():
     methods = ["Mklaren", "ICD", "Nystrom"]                     # Methods
     delta = 10                                                  # Lookahead columns
     max_rank = 50                                               # Max. rank and number of indicuing points.
-    gamma_range = np.power(2, np.linspace(-2, 2, 5))            # Arbitrary kernel hyperparameters
+    gamma_range = np.power(10, np.linspace(-3, -1, 5))          # Arbitrary kernel hyperparameters
 
     # Create output directory
     d = datetime.now()
@@ -87,7 +98,7 @@ def process():
         print("%s processing replicate %d for N=%d" % (str(datetime.now()), repl, n))
 
         # Generated data
-        Ks_tr, X_tr, X_te, y_tr, y_te = generate_data(n, max_rank, p_tr, gamma_range=gamma_range)
+        Ks_tr, K_tr, X_tr, X_te, y_tr, y_te = generate_data(n, max_rank, p_tr, gamma_range=gamma_range)
         y_te = y_te.ravel()
 
         # Output
@@ -103,24 +114,24 @@ def process():
                         model.fit(Ks_tr, y_tr)
                     elif method == "CSI":
                         model = RidgeLowRank(rank=rank, method="csi", lbd=lbd,
-                                                 method_init_args={"delta": delta},
-                                             sum_kernels=True)
-                        model.fit(Ks_tr, y_tr)
+                                                 method_init_args={"delta": delta})
+                        model.fit([K_tr], y_tr)
                     elif method == "ICD":
-                        model = RidgeLowRank(rank=rank, method="icd", lbd=lbd,
-                                             sum_kernels=True)
-                        model.fit(Ks_tr, y_tr)
+                        model = RidgeLowRank(rank=rank, method="icd", lbd=lbd)
+                        model.fit([K_tr], y_tr)
                     elif method == "Nystrom":
-                        model = RidgeLowRank(rank=rank, method="nystrom", lbd=lbd,
-                                             sum_kernels=True)
-                        model.fit(Ks_tr, y_tr)
+                        model = RidgeLowRank(rank=rank, method="nystrom", lbd=lbd)
+                        model.fit([K_tr], y_tr)
                     t = time() - t1
                 except Exception as e:
                     print("%s error: %s" % (method, e.message))
                     continue
 
                 # Evaluate result for a given rank
-                Xs_te = [X_te] * len(Ks_tr)
+                if method == "Mklaren":
+                    Xs_te = [X_te] * len(Ks_tr)
+                else:
+                    Xs_te = [X_te]
                 yp = model.predict(Xs_te).ravel()
                 evar = (np.var(y_te) - np.var(y_te - yp)) / np.var(y_te)
                 row = {"repl": repl, "method": method, "time": t,
