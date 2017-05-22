@@ -77,3 +77,17 @@ class TestKinterface(unittest.TestCase):
              poly_kernel(self.X, self.X, degree=4)
         Kn = kernel_row_normalize(Kc)
         self.assertAlmostEqual(np.linalg.norm(Ki[:, :] - Kn), 0, places=3)
+
+
+    def testKernelSumWeights(self):
+        Ki = Kinterface(data=self.X,
+                        kernel=kernel_sum,
+                        kernel_args={"kernels": [poly_kernel, poly_kernel, poly_kernel],
+                                     "kernels_args": [{"degree": 2}, {"degree": 3}, {"degree": 4}],
+                                     "kernels_weights": [1, 2, 0.5]},
+                        row_normalize=False)
+
+        Kc = poly_kernel(self.X, self.X, degree=2) + \
+             2 * poly_kernel(self.X, self.X, degree=3) + \
+             0.5 * poly_kernel(self.X, self.X, degree=4)
+        self.assertAlmostEqual(np.linalg.norm(Ki[:, :] - Kc), 0, places=3)
