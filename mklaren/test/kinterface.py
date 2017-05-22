@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from mklaren.kernel.kinterface import Kinterface
-from mklaren.kernel.kernel import poly_kernel, kernel_row_normalize
+from mklaren.kernel.kernel import poly_kernel, kernel_row_normalize, kernel_sum
 
 
 class TestKinterface(unittest.TestCase):
@@ -51,3 +51,29 @@ class TestKinterface(unittest.TestCase):
                         row_normalize=True)
         Kr = Ki(self.X, self.Y)
         self.assertTrue(np.all(Kr < 1))
+
+    def testKernelSum(self):
+        Ki = Kinterface(data=self.X,
+                        kernel=kernel_sum,
+                        kernel_args={"kernels": [poly_kernel, poly_kernel, poly_kernel],
+                                     "kernels_args": [{"degree": 2}, {"degree": 3}, {"degree": 4}]},
+                        row_normalize=False)
+
+        Kc = poly_kernel(self.X, self.X, degree=2) + \
+             poly_kernel(self.X, self.X, degree=3) + \
+             poly_kernel(self.X, self.X, degree=4)
+        self.assertAlmostEqual(np.linalg.norm(Ki[:, :] - Kc), 0, places=3)
+
+
+    def testKernelSumNormalized(self):
+        Ki = Kinterface(data=self.X,
+                        kernel=kernel_sum,
+                        kernel_args={"kernels": [poly_kernel, poly_kernel, poly_kernel],
+                                     "kernels_args": [{"degree": 2}, {"degree": 3}, {"degree": 4}]},
+                        row_normalize=True)
+
+        Kc = poly_kernel(self.X, self.X, degree=2) + \
+             poly_kernel(self.X, self.X, degree=3) + \
+             poly_kernel(self.X, self.X, degree=4)
+        Kn = kernel_row_normalize(Kc)
+        self.assertAlmostEqual(np.linalg.norm(Ki[:, :] - Kn), 0, places=3)

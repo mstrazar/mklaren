@@ -260,3 +260,15 @@ def kernel_row_normalize(K):
     Kn = np.sqrt(d.dot(d.T))
     return K / Kn
 
+
+def kernel_sum(x, y, kernels, kernels_args):
+    """
+    Sum of arbitrary kernel functions.
+    :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+    :param y: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+    :param kernels: (``Iterable``) Iterable of pointers to kernels.
+    :param kernels_args: (``Iterable``) Iterable with dictionaries of the same length as `kernels`.
+        Arguments are passed to kernels as kwargs.
+    :return:
+    """
+    return sum(k(x, y, **kw) for k, kw in zip(kernels, kernels_args))
