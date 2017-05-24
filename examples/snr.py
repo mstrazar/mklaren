@@ -114,7 +114,7 @@ for repl, gamma, n, noise, lbd, rp in it.product(repeats, gamma_range, n_range,
         print("%s Written %d rows (n=%d)" % (str(datetime.datetime.now()), count, n))
 
 
-def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, delta=10):
+def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, delta=10, plot=True):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
     versus list of kernels.
@@ -146,7 +146,12 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, de
     Klist = [Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": g})
             for g in gamma_range]
 
-    f = mvn.rvs(mean=np.zeros((n,)), cov=Ksum[:, :])
+    a = np.arange(n, dtype=float)
+    inxs = np.random.choice(a, p = a / a.sum(), size=rank, replace=False)
+    Kny = Ksum[:, inxs].dot(np.linalg.inv(Ksum[inxs, inxs])).dot(Ksum[inxs, :])
+    f = mvn.rvs(mean=np.zeros((n,)), cov=Kny)
+
+    # f = mvn.rvs(mean=np.zeros((n,)), cov=Ksum[:, :])
     y = mvn.rvs(mean=f, cov=noise * np.eye(n, n))
 
     # Fit MKL for kernel sum and
@@ -178,24 +183,25 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, de
     rho_csi, _ = pearsonr(y_csi, f)
 
     # Plot a summary figure
-    plt.figure()
+    if plot:
+        plt.figure()
 
-    # Plot signal
-    x = X.ravel()
-    xp = Xp.ravel()
-    plt.plot(x, y, "k.")
-    plt.plot(x, f, "r--")
-    plt.plot(xp, yp_Klist, "g-", label="Klist ($\\rho$=%.2f)" % rho_Klist)
-    # plt.plot(xp, yp_Ksum, "b-", label="Ksum ($\\rho$=%.2f)" % rho_Ksum)
-    plt.plot(xp, yp_csi, "r-", label="CSI ($\\rho$=%.2f)" % rho_csi)
+        # Plot signal
+        x = X.ravel()
+        xp = Xp.ravel()
+        plt.plot(x, y, "k.")
+        plt.plot(x, f, "r--")
+        plt.plot(xp, yp_Klist, "g-", label="Klist ($\\rho$=%.2f)" % rho_Klist)
+        # plt.plot(xp, yp_Ksum, "b-", label="Ksum ($\\rho$=%.2f)" % rho_Ksum)
+        plt.plot(xp, yp_csi, "r-", label="CSI ($\\rho$=%.2f)" % rho_csi)
 
-    # Plot freqency scales
-    for gi, (gx, gy) in enumerate(zip(Gxs, Gys)):
-        plt.plot(gx, [gy] * len(gx), "|", color="gray")
-        if len(Axs[gi]):
-            print("Number of pivots at gamma  %d: %d" % (gi, len(Axs[gi])))
-            plt.plot(Axs[gi], [gy]*len(Axs[gi]), "x", color="green", markersize=10)
-    plt.title("n=%d, noise=%.3f, rank=%d, lambda=%0.3f" % (n, np.max(noise), rank, lbd))
-    plt.legend()
-    plt.xlim((-11, 11))
-    plt.show()
+        # Plot freqency scales
+        for gi, (gx, gy) in enumerate(zip(Gxs, Gys)):
+            plt.plot(gx, [gy] * len(gx), "|", color="gray")
+            if len(Axs[gi]):
+                print("Number of pivots at gamma  %d: %d" % (gi, len(Axs[gi])))
+                plt.plot(Axs[gi], [gy]*len(Axs[gi]), "x", color="green", markersize=10)
+        plt.title("n=%d, noise=%.3f, rank=%d, lambda=%0.3f" % (n, np.max(noise), rank, lbd))
+        plt.legend()
+        plt.xlim((-11, 11))
+        plt.show()
