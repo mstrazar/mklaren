@@ -114,7 +114,7 @@ for repl, gamma, n, noise, lbd, rp in it.product(repeats, gamma_range, n_range,
         print("%s Written %d rows (n=%d)" % (str(datetime.datetime.now()), count, n))
 
 
-def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None):
+def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
     versus list of kernels.
@@ -130,10 +130,11 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None):
         np.random.seed(seed)
 
     # small gamma, large lengthscale -> small gamma, small frequency
-    gamma_range = np.logspace(-1, 3, 5)
+    gamma_range = np.logspace(-1, 5, P)
 
     # Generate data
     X = np.linspace(-10, 10, n).reshape((n, 1))
+    Xp = np.linspace(-10, 10, 500).reshape((500, 1))
 
     # Kernel sum
     Ksum = Kinterface(data=X, kernel=kernel_sum,
@@ -152,11 +153,13 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None):
     mkl = Mklaren(rank=rank,
                   delta=10, lbd=lbd)
     mkl.fit(Klist, y)
-    yp_Klist = mkl.predict([X] * len(Klist))
+    y_Klist = mkl.predict([X] * len(Klist))
+    yp_Klist = mkl.predict([Xp] * len(Klist))
     Axs = [X[mkl.data.get(gi, {}).get("act", [])].ravel() for gi in range(len(gamma_range))]
 
     mkl.fit([Ksum], y)
-    yp_Ksum = mkl.predict([X])
+    y_Ksum = mkl.predict([X])
+    yp_Ksum = mkl.predict([Xp])
 
     # Frequency scales
     ymin = int(np.absolute(np.min(y)))
@@ -164,18 +167,19 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None):
     Gys = range(-ymin-len(Gxs), -ymin)
 
     # Correlation
-    rho_Klist, _ = pearsonr(yp_Klist, f)
-    rho_Ksum, _ = pearsonr(yp_Ksum, f)
+    rho_Klist, _ = pearsonr(y_Klist, f)
+    rho_Ksum, _ = pearsonr(y_Ksum, f)
 
     # Plot a summary figure
     plt.figure()
 
     # Plot signal
     x = X.ravel()
+    xp = Xp.ravel()
     plt.plot(x, y, "k.")
     plt.plot(x, f, "r--")
-    plt.plot(x, yp_Klist, "g-", label="Klist ($\\rho$=%.2f)" % rho_Klist)
-    plt.plot(x, yp_Ksum, "b-", label="Ksum ($\\rho$=%.2f)" % rho_Ksum)
+    plt.plot(xp, yp_Klist, "g-", label="Klist ($\\rho$=%.2f)" % rho_Klist)
+    plt.plot(xp, yp_Ksum, "b-", label="Ksum ($\\rho$=%.2f)" % rho_Ksum)
 
     # Plot freqency scales
     for gi, (gx, gy) in enumerate(zip(Gxs, Gys)):
