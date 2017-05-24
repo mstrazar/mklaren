@@ -114,7 +114,7 @@ for repl, gamma, n, noise, lbd, rp in it.product(repeats, gamma_range, n_range,
         print("%s Written %d rows (n=%d)" % (str(datetime.datetime.now()), count, n))
 
 
-def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5):
+def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
     versus list of kernels.
@@ -130,7 +130,7 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5):
         np.random.seed(seed)
 
     # small gamma, large lengthscale -> small gamma, small frequency
-    gamma_range = np.logspace(-1, 5, P)
+    gamma_range = np.logspace(gmin, gmax, P)
 
     # Generate data
     X = np.linspace(-10, 10, n).reshape((n, 1))
@@ -187,7 +187,7 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5):
         if len(Axs[gi]):
             print("Number of pivots at gamma  %d: %d" % (gi, len(Axs[gi])))
             plt.plot(Axs[gi], [gy]*len(Axs[gi]), "x", color="green", markersize=6)
-    plt.title("n=%d, noise=%.3f, rank=%d, lambda=%0.3f" % (n, noise, rank, lbd))
+    plt.title("n=%d, noise=%.3f, rank=%d, lambda=%0.3f" % (n, max(noise), rank, lbd))
     plt.legend()
     plt.xlim((-11, 11))
     plt.show()
