@@ -114,7 +114,7 @@ for repl, gamma, n, noise, lbd, rp in it.product(repeats, gamma_range, n_range,
         print("%s Written %d rows (n=%d)" % (str(datetime.datetime.now()), count, n))
 
 
-def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4):
+def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, delta=10):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
     versus list of kernels.
@@ -151,7 +151,7 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4):
 
     # Fit MKL for kernel sum and
     mkl = Mklaren(rank=rank,
-                  delta=10, lbd=lbd)
+                  delta=delta, lbd=lbd)
     mkl.fit(Klist, y)
     y_Klist = mkl.predict([X] * len(Klist))
     yp_Klist = mkl.predict([Xp] * len(Klist))
@@ -161,6 +161,12 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4):
     y_Ksum = mkl.predict([X])
     yp_Ksum = mkl.predict([Xp])
 
+    # Fit CSI
+    csi = RidgeLowRank(rank=rank, lbd=lbd, method="csi", method_init_args={"delta": delta})
+    csi.fit([Ksum], y)
+    y_csi = csi.predict([X])
+    yp_csi = csi.predict([Xp])
+
     # Frequency scales
     ymin = int(np.absolute(np.min(y)))
     Gxs = [np.linspace(-10, 10, 5 + 10 * g) for g in gamma_range]
@@ -169,6 +175,7 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4):
     # Correlation
     rho_Klist, _ = pearsonr(y_Klist, f)
     rho_Ksum, _ = pearsonr(y_Ksum, f)
+    rho_csi, _ = pearsonr(y_csi, f)
 
     # Plot a summary figure
     plt.figure()
@@ -179,15 +186,16 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4):
     plt.plot(x, y, "k.")
     plt.plot(x, f, "r--")
     plt.plot(xp, yp_Klist, "g-", label="Klist ($\\rho$=%.2f)" % rho_Klist)
-    plt.plot(xp, yp_Ksum, "b-", label="Ksum ($\\rho$=%.2f)" % rho_Ksum)
+    # plt.plot(xp, yp_Ksum, "b-", label="Ksum ($\\rho$=%.2f)" % rho_Ksum)
+    plt.plot(xp, yp_csi, "r-", label="CSI ($\\rho$=%.2f)" % rho_csi)
 
     # Plot freqency scales
     for gi, (gx, gy) in enumerate(zip(Gxs, Gys)):
         plt.plot(gx, [gy] * len(gx), "|", color="gray")
         if len(Axs[gi]):
             print("Number of pivots at gamma  %d: %d" % (gi, len(Axs[gi])))
-            plt.plot(Axs[gi], [gy]*len(Axs[gi]), "x", color="green", markersize=6)
-    plt.title("n=%d, noise=%.3f, rank=%d, lambda=%0.3f" % (n, max(noise), rank, lbd))
+            plt.plot(Axs[gi], [gy]*len(Axs[gi]), "x", color="green", markersize=10)
+    plt.title("n=%d, noise=%.3f, rank=%d, lambda=%0.3f" % (n, np.max(noise), rank, lbd))
     plt.legend()
     plt.xlim((-11, 11))
     plt.show()
