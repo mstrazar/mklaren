@@ -63,8 +63,12 @@ class CSI:
         y = y.reshape((len(y), 1))
 
         # Call original implementation
+        octave.push(["K", "y", "rank", "centering", "kappa", "delta", "tol"],
+            [K, y, self.rank, self.centering, self.kappa, self.delta, self.tol])
+        octave.eval("[G, P, Q, R, error1, error2, error, predicted_gain, true_gain] = csi(K, y, rank, centering, kappa, delta, tol)",
+                    verbose=False)
         G, P, Q, R, error1, error2, error, predicted_gain, true_gain = \
-            octave.csi(K, y, self.rank, self.centering, self.kappa, self.delta, self.tol)
+            octave.pull(["G", "P", "Q", "R", "error1", "error2", "error", "predicted_gain", "true_gain"])
 
         # Octave indexes from 1
         P = P.ravel().astype(int) - 1
