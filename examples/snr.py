@@ -147,7 +147,7 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, de
             for g in gamma_range]
 
     a = np.arange(n, dtype=float)
-    inxs = np.random.choice(a, p = a / a.sum(), size=rank, replace=False)
+    inxs = np.random.choice(a, p = (a**2 / (a**2).sum()), size=rank, replace=False)
     Kny = Ksum[:, inxs].dot(np.linalg.inv(Ksum[inxs, inxs])).dot(Ksum[inxs, :])
     f = mvn.rvs(mean=np.zeros((n,)), cov=Kny)
 
@@ -205,3 +205,17 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, de
         plt.legend()
         plt.xlim((-11, 11))
         plt.show()
+    else:
+        return rho_Klist, rho_csi
+
+
+if __name__ == "__main__":
+    N = 100
+    R = np.zeros((N, 2))
+    for seed in range(N):
+        rho_Klist, rho_csi = test(lbd=0.0, rank=5, n=20, plot=False,
+                                  P=1, gmin=0, seed=seed, noise=0)
+        R[seed, 0] = rho_Klist
+        R[seed, 1] = rho_csi
+    print(np.sum(R[:, 0] > R[:, 1]))
+    plt.plot(R[:, 0], R[:, 1], "k.")
