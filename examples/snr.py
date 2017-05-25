@@ -117,7 +117,8 @@ def process():
             print("%s Written %d rows (n=%d)" % (str(datetime.datetime.now()), count, n))
 
 
-def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, delta=10, plot=True):
+def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None,
+         P=5, gmin=-1, gmax=4, delta=10, plot=True, inducing_mode="uniform"):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
     versus list of kernels.
@@ -126,6 +127,7 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, de
     :param rank:  Approximation rank.
     :param lbd: Regularization parameter.
     :param seed: Random seed.
+    :param inducing_mode: How to choose inducing points.
     :return:
     """
 
@@ -150,7 +152,13 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, de
             for g in gamma_range]
 
     a = np.arange(n, dtype=float)
-    inxs = np.random.choice(a, p = (a**2 / (a**2).sum()), size=rank, replace=False)
+    if inducing_mode == "uniform":
+        p = None
+    elif inducing_mode == "biased":
+        p = (a ** 2 / (a ** 2).sum())
+    else:
+        raise ValueError(inducing_mode)
+    inxs = np.random.choice(a, p=p, size = rank, replace = False)
     Kny = Ksum[:, inxs].dot(np.linalg.inv(Ksum[inxs, inxs])).dot(Ksum[inxs, :])
     f = mvn.rvs(mean=np.zeros((n,)), cov=Kny)
 
@@ -163,17 +171,22 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, de
     mkl.fit(Klist, y)
     y_Klist = mkl.predict([X] * len(Klist))
     yp_Klist = mkl.predict([Xp] * len(Klist))
-    Axs = [X[mkl.data.get(gi, {}).get("act", [])].ravel() for gi in range(len(gamma_range))]
+    active_Klist = [mkl.data.get(gi, {}).get("act", [])for gi in range(P)]
+    anchors_Klist = [X[mkl.data.get(gi, {}).get("act", [])].ravel() for gi in range(P)]
+
 
     mkl.fit([Ksum], y)
     y_Ksum = mkl.predict([X])
     yp_Ksum = mkl.predict([Xp])
 
     # Fit CSI
-    csi = RidgeLowRank(rank=rank, lbd=lbd, method="csi", method_init_args={"delta": delta})
+    csi = RidgeLowRank(rank=rank, lbd=lbd,
+                       method="csi", method_init_args={"delta": delta},)
     csi.fit([Ksum], y)
     y_csi = csi.predict([X])
     yp_csi = csi.predict([Xp])
+    active_csi = [csi.active_set_[gi] for gi in range(P)]
+    anchors_csi = [X[csi.active_set_[gi]] for gi in range(P)]
 
     # Frequency scales
     ymin = int(np.absolute(np.min(y)))
@@ -201,16 +214,67 @@ def test(n=100, noise=0.1, rank=10, lbd=0.1, seed=None, P=5, gmin=-1, gmax=4, de
         # Plot freqency scales
         for gi, (gx, gy) in enumerate(zip(Gxs, Gys)):
             plt.plot(gx, [gy] * len(gx), "|", color="gray")
-            if len(Axs[gi]):
-                print("Number of pivots at gamma  %d: %d" % (gi, len(Axs[gi])))
-                plt.plot(Axs[gi], [gy]*len(Axs[gi]), "x", color="green", markersize=10)
+            if len(anchors_Klist[gi]):
+                print("Number of pivots at gamma  %d: %d" % (gi, len(anchors_Klist[gi])))
+                plt.plot(anchors_Klist[gi], [gy] * len(anchors_Klist[gi]), "^", color="green", markersize=8, alpha=0.6)
+            if len(anchors_csi[gi]):
+                plt.plot(anchors_csi[gi], [gy] * len(anchors_Klist[gi]), "^", color="red", markersize=8, alpha=0.6)
         plt.title("n=%d, noise=%.3f, rank=%d, lambda=%0.3f" % (n, np.max(noise), rank, lbd))
+        ylim = plt.gca().get_ylim()
         plt.legend()
         plt.xlim((-11, 11))
+        plt.ylim((ylim[0]-1, ylim[1]))
         plt.show()
     else:
-        return rho_Klist, rho_csi
+        return inxs, rho_Klist, rho_csi, active_Klist, active_csi
 
 
 if __name__ == "__main__":
-    process()
+    # process()
+    n = 100
+    noise = 1
+    rank = 3
+    lbd = 0
+    repeats = 500
+
+    out_dir = "examples/output/snr/images/"
+
+    noise_models = ("fixed", "increasing")
+    sampling_models = ("uniform", "biased")
+
+    for noise_model, inducing_mode in it.product(noise_models, sampling_models):
+        if noise_model == "fixed":
+            noise = 1
+        else:
+            noise = np.logspace(-2, 2, n)
+
+        avg_anchors = dict()
+
+        for seed in range(repeats):
+            r = test(n=n, P=1, noise=noise, gmin=0, gmax=1, rank=rank, seed=seed, lbd=lbd,
+                     plot=False, inducing_mode=inducing_mode)
+            inxs, rho_Klist, rho_csi, active_Klist, active_csi = r
+            avg_anchors["Mklaren"] = avg_anchors.get("Mklaren", []) + active_Klist[0]
+            avg_anchors["CSI"] = avg_anchors.get("CSI", []) + active_csi[0]
+            avg_anchors["True"] = avg_anchors.get("True", []) + list(inxs)
+
+        # Compare distributions
+        bins =  np.array([  4. ,  13.5,  23. ,  32.5,  42. ,  51.5,  61. ,  70.5,  80. , 89.5,  99. ])
+        avg_mkl, _ = np.histogram(avg_anchors["Mklaren"], normed=True, bins=bins)
+        avg_csi, _ = np.histogram(avg_anchors["CSI"], normed=True, bins=bins)
+        avg_tru, _ = np.histogram(avg_anchors["True"], normed=True, bins=bins)
+        mkl_tot_var = np.sum(np.absolute(avg_mkl - avg_tru))
+        csi_tot_var = np.sum(np.absolute(avg_csi - avg_tru))
+
+        # Plot histograms
+        fname = os.path.join(out_dir, "noisy_sampling_%s-%s.pdf" % (noise_model, inducing_mode))
+        fig, ax = plt.subplots(nrows=3, ncols=1)
+        ax[0].hist(avg_anchors["True"], color="gray", label="True")
+        ax[1].hist(avg_anchors["Mklaren"], color="green", label="Mklaren (%.3f)" % mkl_tot_var)
+        ax[2].hist(avg_anchors["CSI"], color="blue", label="CSI (%.3f)" % csi_tot_var)
+        for i in range(len(ax)):
+            ax[i].legend()
+            ax[i].set_xlim((0, n))
+        plt.savefig(fname)
+        plt.close()
+        print("Written %s" % fname)
