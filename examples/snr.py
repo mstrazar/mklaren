@@ -422,6 +422,7 @@ def main():
         for i in range(len(ax)):
             ax[i].legend()
             ax[i].set_xlim((0, n))
+        fig.tight_layout()
         plt.savefig(figname)
         plt.close()
         print("Written %s" % figname)
