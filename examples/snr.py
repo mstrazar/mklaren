@@ -242,7 +242,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
                   delta=delta, lbd=lbd)
     mkl.fit(Klist, y)
     y_Klist = mkl.predict([X] * len(Klist))
-    # yp_Klist = mkl.predict([Xp] * len(Klist))
+    yp_Klist = mkl.predict([Xp] * len(Klist))
     active_Klist = [mkl.data.get(gi, {}).get("act", []) for gi in range(P)]
     anchors_Klist = [X[ix] for ix in active_Klist]
 
@@ -255,7 +255,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
                        method="csi", method_init_args={"delta": delta},)
     csi.fit([Ksum], y)
     y_csi = csi.predict([X])
-    # yp_csi = csi.predict([Xp])
+    yp_csi = csi.predict([Xp])
     active_csi = [csi.active_set_[gi] for gi in range(P)]
     anchors_csi = [X[ix] for ix in active_csi]
 
@@ -264,7 +264,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
                        method="nystrom", method_init_args={"lbd": lbd, "verbose": False})
     nystrom.fit([Ksum], y)
     y_nystrom = nystrom.predict([X])
-    # yp_nystrom = nystrom.predict([Xp])
+    yp_nystrom = nystrom.predict([Xp])
     active_nystrom = [nystrom.active_set_[gi] for gi in range(P)]
     anchors_nystrom = [X[ix] for ix in active_nystrom]
 
@@ -285,17 +285,20 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
                  "rho": rho_Klist,
                  "active": active_Klist,
                  "anchors": anchors_Klist,
-                 "idp": idp_dist_Klist},
+                 "idp": idp_dist_Klist,
+                 "yp": yp_Klist,},
             "CSI": {
                 "rho": rho_csi,
                 "active": active_csi,
                 "anchors": anchors_csi,
-                "idp": idp_dist_CSI},
+                "idp": idp_dist_CSI,
+                "yp": yp_csi},
             "Nystrom": {
                 "rho": rho_nystrom,
                 "active": active_nystrom,
                 "anchors": anchors_nystrom,
-                "idp": idp_dist_Nystrom}
+                "idp": idp_dist_Nystrom,
+                "yp": yp_nystrom}
             }
 
 
