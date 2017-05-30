@@ -162,60 +162,61 @@ def generate_data(n, rank, inducing_mode="uniform", noise=1, gamma_range=(0.1,),
     return Ksum, Klist, inxs, X, Xp, y, f
 
 
-# def plot_signal(X, Xp, y, f, models=(), tit=""):
-#     """
-#     Plot fitted signal.
-#
-#     :param X: Sampling coordinates.
-#     :param Xp:  Plotting (whole signal) coordinates.
-#     :param y:   True observed values.
-#     :param f:   True signal.
-#     :param models: Onr dictionary per model;
-#         "yp"    Predicted signal at yp.
-#         "anchors" Anchor (inducing points coordinates), one set per lengthscale.
-#         "color": Color.
-#         "label": Name.
-#     :param tit:
-#     :return:
-#     """
-#
-#     # Plot signal
-#     plt.figure()
-#     x = X.ravel()
-#     xp = Xp.ravel()
-#     plt.plot(x, y, "k.")
-#     plt.plot(x, f, "r--")
-#
-#     # Compute anchor ticks
-#     P = max([1] + map(lambda m: len(m.get("anchors", [])), models))
-#     ymin = int(np.absolute(np.min(y)))
-#     Gxs = [np.linspace(-10, 10, 5 + 10 * g) for g in np.logspace(-1, 1, P)]
-#     Gys = range(-ymin - len(Gxs), -ymin)
-#
-#     # Plot freqency scales
-#     for gi, (gx, gy) in enumerate(zip(Gxs, Gys)):
-#         plt.plot(gx, [gy] * len(gx), "|", color="gray")
-#
-#     # Plot multiple signals and anchors
-#     for data in models:
-#         label = data.get("label", "model")
-#         yp = data.get("yp", np.zeros((len(X), )))
-#         color = data.get("color", "blue")
-#         anchors = data.get("anchors", [[]])
-#         rho, _ = pearsonr(yp, f)
-#         plt.plot(xp, yp, "-", color=color, label="%s ($\\rho$=%.2f)" % (label, rho))
-#
-#         for gi in range(P):
-#             if not len(anchors[gi]): continue
-#             print("Number of pivots at gamma  %d: %d" % (gi, len(anchors_Klist[gi])))
-#             plt.plot(anchors[gi], [Gys[gi]] * len(anchors[gi]), "^", color=color, markersize=8, alpha=0.6)
-#
-#     plt.title(tit)
-#     ylim = plt.gca().get_ylim()
-#     plt.legend()
-#     plt.xlim((-x.min()-1, x.max()+1))
-#     plt.ylim((ylim[0]-1, ylim[1]))
-#     plt.show()
+def plot_signal(X, Xp, y, f, models=None, tit=""):
+    """
+    Plot fitted signal.
+
+    :param X: Sampling coordinates.
+    :param Xp:  Plotting (whole signal) coordinates.
+    :param y:   True observed values.
+    :param f:   True signal.
+    :param models: Onr dictionary per model;
+        "yp"    Predicted signal at yp.
+        "anchors" Anchor (inducing points coordinates), one set per lengthscale.
+        "color": Color.
+        "label": Name.
+    :param tit:
+    :return:
+    """
+
+    # Plot signal
+    plt.figure()
+    x = X.ravel()
+    xp = Xp.ravel()
+    plt.plot(x, y, "k.")
+    plt.plot(x, f, "r--")
+
+    # Compute anchor ticks
+    P = max([1] + map(lambda m: len(m.get("anchors", [])), models.values()))
+    ymin = int(np.absolute(np.min(y)))
+    Gxs = [np.linspace(-10, 10, 5 + 10 * g) for g in np.logspace(-1, 1, P)]
+    Gys = range(-ymin - len(Gxs), -ymin)
+
+    # Plot freqency scales
+    for gi, (gx, gy) in enumerate(zip(Gxs, Gys)):
+        plt.plot(gx, [gy] * len(gx), "|", color="gray")
+
+    # Plot multiple signals and anchors
+    if models is not None:
+        for label, data in models.items():
+            if label == "True": continue
+            yp = data.get("yp", np.zeros((len(X), )))
+            color = data.get("color", "blue")
+            anchors = data.get("anchors", [[]])
+            # rho, _ = pearsonr(yp, f)
+            print(label, xp.shape, yp.shape)
+            plt.plot(xp, yp, "-", color=color, label="%s" % label)
+            for gi in range(P):
+                if len(anchors) <= gi or not len(anchors[gi]): continue
+                print("Number of pivots at gamma  %d: %d" % (gi, len(anchors[gi])))
+                plt.plot(anchors[gi], [Gys[gi]] * len(anchors[gi]), "^", color=color, markersize=8, alpha=0.6)
+
+    plt.title(tit)
+    ylim = plt.gca().get_ylim()
+    plt.legend()
+    # plt.xlim((-x.min()-1, x.max()+1))
+    plt.ylim((ylim[0]-1, ylim[1]))
+    plt.show()
 
 
 def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
@@ -280,25 +281,28 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     idp_dist_Nystrom = inducing_points_distance(anchors, anchors_nystrom)
 
     # Plot a summary figure
-    return {"anchors": anchors,
+    return {"True": {"anchors": anchors,},
             "Mklaren": {
                  "rho": rho_Klist,
                  "active": active_Klist,
                  "anchors": anchors_Klist,
                  "idp": idp_dist_Klist,
-                 "yp": yp_Klist,},
+                 "yp": yp_Klist,
+                 "color": "green"},
             "CSI": {
                 "rho": rho_csi,
                 "active": active_csi,
                 "anchors": anchors_csi,
                 "idp": idp_dist_CSI,
-                "yp": yp_csi},
+                "yp": yp_csi,
+                "color": "red"},
             "Nystrom": {
                 "rho": rho_nystrom,
                 "active": active_nystrom,
                 "anchors": anchors_nystrom,
                 "idp": idp_dist_Nystrom,
-                "yp": yp_nystrom}
+                "yp": yp_nystrom,
+                "color": "pink"}
             }
 
 
@@ -391,7 +395,7 @@ def main():
 
             # Fill in anchors and active points
             avg_actives["True"] = avg_actives.get("True", []) + list(inxs)
-            avg_anchors["True"] = avg_anchors.get("True", []) + list(r["anchors"])
+            avg_anchors["True"] = avg_anchors.get("True", []) + list(r["True"]["anchors"])
             for m in methods:
                 avg_actives[m] = avg_actives.get(m, []) + list(r[m]["active"][0])
                 avg_anchors[m] = avg_anchors.get(m, []) + list(r[m]["anchors"][0])
