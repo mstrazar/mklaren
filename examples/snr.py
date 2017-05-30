@@ -30,6 +30,7 @@ from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
 from sklearn.metrics import mean_squared_error as mse
 import matplotlib.pyplot as plt
+import pickle, gzip
 
 
 def process():
@@ -260,6 +261,15 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     active_csi = [csi.active_set_[gi] for gi in range(P)]
     anchors_csi = [X[ix] for ix in active_csi]
 
+    # Fit ICD
+    icd = RidgeLowRank(rank=rank, lbd=lbd,
+                       method="icd")
+    icd.fit([Ksum], y)
+    y_icd = icd.predict([X])
+    yp_icd = icd.predict([Xp])
+    active_icd = [icd.active_set_[gi] for gi in range(P)]
+    anchors_icd = [X[ix] for ix in active_icd]
+    
     # Fit Nystrom
     nystrom = RidgeLowRank(rank=rank, lbd=lbd,
                        method="nystrom", method_init_args={"lbd": lbd, "verbose": False})
@@ -273,15 +283,18 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     rho_Klist, _ = pearsonr(y_Klist, f)
     rho_Ksum, _ = pearsonr(y_Ksum, f)
     rho_csi, _ = pearsonr(y_csi, f)
+    rho_icd, _ = pearsonr(y_icd, f)
     rho_nystrom, _ = pearsonr(y_nystrom, f)
 
     # Distance between anchors
     idp_dist_Klist = inducing_points_distance(anchors, anchors_Klist)
     idp_dist_CSI = inducing_points_distance(anchors, anchors_csi)
+    idp_dist_icd = inducing_points_distance(anchors, anchors_icd)
     idp_dist_Nystrom = inducing_points_distance(anchors, anchors_nystrom)
 
     # Plot a summary figure
-    return {"True": {"anchors": anchors,},
+    return {"True": {"anchors": anchors,
+                     "color": "gray"},
             "Mklaren": {
                  "rho": rho_Klist,
                  "active": active_Klist,
@@ -296,6 +309,13 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
                 "idp": idp_dist_CSI,
                 "yp": yp_csi,
                 "color": "red"},
+            "ICD": {
+                "rho": rho_icd,
+                "active": active_icd,
+                "anchors": anchors_icd,
+                "idp": idp_dist_icd,
+                "yp": yp_icd,
+                "color": "cyan"},
             "Nystrom": {
                 "rho": rho_nystrom,
                 "active": active_nystrom,
@@ -304,8 +324,6 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
                 "yp": yp_nystrom,
                 "color": "pink"}
             }
-
-
 
 def hist_total_variation(h1, h2):
     """
@@ -330,7 +348,15 @@ def inducing_points_distance(A, B):
     inxs = range(len(B))
     return min((np.linalg.norm(A - B[list(ix)]) for ix in it.permutations(inxs)))
 
-
+def bin_centers(bins):
+    """
+    Centers of histogram bins to plothistograms as lines
+    :param bins:
+        Bins limits.
+    :return:
+        Centers of bins.
+    """
+    return bins[:-1] + (bins[1:] - bins[:-1])  / 2.0
 
 def main():
     # Experiment paramaters
@@ -342,7 +368,7 @@ def main():
     pc = 0.1 # pseudocount; prevents inf in KL-divergence.
     noise_models = ("fixed", "increasing")
     sampling_models = ("uniform", "biased")
-    methods = ("Mklaren", "CSI", "Nystrom")
+    methods = ("Mklaren", "CSI", "ICD", "Nystrom")
 
     # Create output directory
     d = datetime.datetime.now()
@@ -354,6 +380,7 @@ def main():
     if not os.path.exists(subdname):
         os.makedirs(subdname)
     fname = os.path.join(dname, "results_%d.csv" % rcnt)
+    fname_details = os.path.join(subdname, "results.pkl.gz")
     print("Writing to %s ..." % fname)
 
     # Output file
@@ -361,6 +388,7 @@ def main():
               "anchors.dist", "anchors.dist.sd", "total.variation", "kl.divergence"]
     writer = csv.DictWriter(open(fname, "w", buffering=0), fieldnames=header)
     writer.writeheader()
+    results = []
 
     count = 0
     for rank, lbd, gamma, n, noise_model, inducing_mode in it.product(rank_range,
@@ -378,6 +406,7 @@ def main():
         avg_anchors = dict()
         avg_dists = dict()
 
+        r = None
         for seed in range(repeats):
             # Generate data
             Ksum, Klist, inxs, X, Xp, y, f = generate_data(n=n,
@@ -417,25 +446,56 @@ def main():
                     "anchors.dist": idp_mean, "anchors.dist.sd": idp_std,
                     "total.variation": tv, "kl.divergence": kl}
             rows.append(row)
-        writer.writerows(rows)
 
+            # Extended row for details
+            row_extd = row.copy()
+            row_extd["avg.dists"] = avg_dists[m]
+            row_extd["avg.anchors"] = avg_anchors[m]
+            row_extd["avg.actives"] = avg_actives[m]
+            results.append(row_extd)
+
+        # True row
+        row_true = {"method": "True", "noise.model": noise_model, "n": n, "rank": rank,
+                    "sampling.model": inducing_mode, "gamma": gamma,
+                    "avg.anchors": avg_anchors["True"], "avg.actives": avg_actives["True"]}
+        results.append(row_true)
+
+        # Write results
+        writer.writerows(rows)
+        pickle.dump(results, gzip.open(fname_details, "w"), protocol=pickle.HIGHEST_PROTOCOL)
         count += len(rows)
         print("%s Written %d rows"% (str(datetime.datetime.now()), count))
 
-
         # Plot histograms
-        figname = os.path.join(subdname, "noisy_sampling_%s_%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.pdf"
+        figname = os.path.join(subdname, "hist_%s_%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.pdf"
                              % (noise_model, inducing_mode, n, rank, lbd, gamma))
-        fig, ax = plt.subplots(nrows=4, ncols=1)
+        fig, ax = plt.subplots(nrows=len(methods)+1, ncols=1)
         ax[0].hist(avg_actives["True"], color="gray", label="True", bins=bins)
-        ax[1].hist(avg_actives["Mklaren"], color="green", label="Mklaren", bins=bins)
-        ax[2].hist(avg_actives["CSI"], color="blue", label="CSI", bins=bins)
-        ax[3].hist(avg_actives["Nystrom"], color="red", label="Nystrom", bins=bins)
-        ax[3].set_xlabel("Inducing point index")
+        for mi, m in enumerate(methods):
+            ax[mi+1].hist(avg_actives[m], color=r[m]["color"], label=m, bins=bins)
+        ax[len(methods)].set_xlabel("Inducing point index")
         for i in range(len(ax)):
             ax[i].legend()
             ax[i].set_xlim((0, n))
         fig.tight_layout()
+        plt.savefig(figname)
+        plt.close()
+        print("Written %s" % figname)
+
+        # Plot lines
+        figname = os.path.join(subdname, "lines_%s_%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.pdf"
+                               % (noise_model, inducing_mode, n, rank, lbd, gamma))
+
+        centers = bin_centers(bins)
+        plt.figure()
+        for m in ["True"] + list(methods):
+            p, _= np.histogram(avg_actives[m], bins=bins)
+            q = (1.0 * p) / sum(p)
+            plt.plot(centers, q, ("." if m != "True" else "") + "-",
+                     color=r[m]["color"], label=m)
+        plt.legend(loc=2)
+        plt.xlabel("Incuding point index")
+        plt.ylabel("Probability")
         plt.savefig(figname)
         plt.close()
         print("Written %s" % figname)
