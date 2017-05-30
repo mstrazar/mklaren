@@ -149,7 +149,8 @@ def generate_data(n, rank, inducing_mode="uniform", noise=1, gamma_range=(0.1,),
     if inducing_mode == "uniform":
         p = None
     elif inducing_mode == "biased":
-        p = (a ** 2 / (a ** 2).sum())
+        af = a.astype(float)
+        p = (af ** 2 / (af ** 2).sum())
     else:
         raise ValueError(inducing_mode)
 
@@ -260,7 +261,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
 
     # Fit Nystrom
     nystrom = RidgeLowRank(rank=rank, lbd=lbd,
-                       method="nystrom")
+                       method="nystrom", method_init_args={"lbd": lbd, "verbose": False})
     nystrom.fit([Ksum], y)
     y_nystrom = nystrom.predict([X])
     # yp_nystrom = nystrom.predict([Xp])
@@ -326,11 +327,12 @@ def inducing_points_distance(A, B):
 
 def main():
     # Experiment paramaters
-    n_range = (100, 300 ,1000)
+    n_range = (100, )
     rank_range = (3, 5, 10)
-    lbd_range = (0, 0.1, 1)
+    lbd_range = (0, )
     gamma_range = np.logspace(-1, 1, 3)
     repeats = 500
+    pc = 0.1 # pseudocount; prevents inf in KL-divergence.
     noise_models = ("fixed", "increasing")
     sampling_models = ("uniform", "biased")
     methods = ("Mklaren", "CSI", "Nystrom")
@@ -340,10 +342,11 @@ def main():
     dname = os.path.join("output", "snr", "%d-%d-%d" % (d.year, d.month, d.day))
     if not os.path.exists(dname):
         os.makedirs(dname)
-    subdname = os.path.join(dname, "details_%d" % len(os.listdir(dname)))
+    rcnt = len(os.listdir(dname))
+    subdname = os.path.join(dname, "details_%d" % rcnt)
     if not os.path.exists(subdname):
         os.makedirs(subdname)
-    fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
+    fname = os.path.join(dname, "results_%d.csv" % rcnt)
     print("Writing to %s ..." % fname)
 
     # Output file
@@ -353,12 +356,12 @@ def main():
     writer.writeheader()
 
     count = 0
-    for noise_model, inducing_mode, rank, lbd, gamma, n in it.product(noise_models,
-                                                         sampling_models,
-                                                         rank_range,
-                                                         lbd_range,
-                                                         gamma_range,
-                                                         n_range):
+    for rank, lbd, gamma, n, noise_model, inducing_mode in it.product(rank_range,
+                                                                     lbd_range,
+                                                                     gamma_range,
+                                                                     n_range,
+                                                                     noise_models,
+                                                                     sampling_models,):
         if noise_model == "fixed":
             noise = 1
         else:
@@ -389,13 +392,15 @@ def main():
             for m in methods:
                 avg_actives[m] = avg_actives.get(m, []) + list(r[m]["active"][0])
                 avg_anchors[m] = avg_anchors.get(m, []) + list(r[m]["anchors"][0])
-                avg_dists[m] = avg_dists.get(m, []) + r[m]["idp"]
+                avg_dists[m] = avg_dists.get(m, []) + [r[m]["idp"]]
 
         # Compare distributions
         rows = []
-        probs, bins  = np.histogram(avg_actives["True"], normed=True)
+        probs, bins  = np.histogram(avg_actives["True"], normed=False)
+        probs = 1.0 * (probs + pc) / (probs + pc).sum()
         for m in methods:
-            query, _ = np.histogram(avg_actives[m], normed=True, bins=bins)
+            query, _ = np.histogram(avg_actives[m], normed=False, bins=bins)
+            query = 1.0 * (query + pc ) / (query + pc).sum()
             kl = entropy(probs, query)
             tv = hist_total_variation(probs, query)
             idp_mean = np.mean(avg_dists[m])
@@ -419,6 +424,7 @@ def main():
         ax[1].hist(avg_actives["Mklaren"], color="green", label="Mklaren", bins=bins)
         ax[2].hist(avg_actives["CSI"], color="blue", label="CSI", bins=bins)
         ax[3].hist(avg_actives["Nystrom"], color="red", label="Nystrom", bins=bins)
+        ax[3].set_xlabel("Inducing point index")
         for i in range(len(ax)):
             ax[i].legend()
             ax[i].set_xlim((0, n))
