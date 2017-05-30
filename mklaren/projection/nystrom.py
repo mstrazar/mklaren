@@ -40,15 +40,18 @@ class Nystrom:
     """
 
 
-    def __init__(self, rank=10, random_state=None, lbd=0):
+    def __init__(self, rank=10, random_state=None, lbd=0, verbose=False):
         """
         :param rank: (``int``) Maximal decomposition rank.
 
         :param lbd: (``float``) regularization parameter (to be used in Kernel Ridge Regression).
+
+        :param verbose (``bool``) Set verbosity.
         """
         self.trained = False
         self.rank = rank
         self.lbd = lbd
+        self.verbose = verbose
         if random_state is not None:
             seed(random_state)
 
@@ -85,12 +88,12 @@ class Nystrom:
         self.n       = K.shape[0]
         if inxs is None:
             if self.lbd == 0:
-                print("Choosing the active points randomly")
+                if self.verbose: print("Choosing the active points randomly")
                 inxs = choice(xrange(self.n),
                               size=self.rank, replace=False)
 
             else:
-                print("Choosing the active points via leverage scores")
+                if self.verbose: print("Choosing the active points via leverage scores")
                 leverage = self.leverage_scores(K)
                 inxs = choice(xrange(len(leverage)), size=self.rank, replace=False, p=leverage)
 
