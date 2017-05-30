@@ -294,7 +294,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
 
     # Plot a summary figure
     return {"True": {"anchors": anchors,
-                     "color": "gray"},
+                     "color": "black"},
             "Mklaren": {
                  "rho": rho_Klist,
                  "active": active_Klist,
@@ -308,7 +308,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
                 "anchors": anchors_csi,
                 "idp": idp_dist_CSI,
                 "yp": yp_csi,
-                "color": "red"},
+                "color": "blue"},
             "ICD": {
                 "rho": rho_icd,
                 "active": active_icd,
