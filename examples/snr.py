@@ -337,7 +337,7 @@ def main():
     n_range = (100, )
     rank_range = (3, 5, 10)
     lbd_range = (0, )
-    gamma_range = np.logspace(-1, 1, 3)
+    gamma_range = [0.1, 0.3, 1, 3]
     repeats = 500
     pc = 0.1 # pseudocount; prevents inf in KL-divergence.
     noise_models = ("fixed", "increasing")
