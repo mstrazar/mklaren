@@ -229,6 +229,34 @@ def plot_signal(X, Xp, y, f, models=None, tit=""):
     plt.show()
 
 
+def plot_signal_2d(X, Xp, y, f, models=None, tit=""):
+    # Plot signal
+    N = X.shape[0]
+    n = int(N ** 0.5)
+    Np = Xp.shape[0]
+    nn = int(Np ** 0.5)
+
+    F = f.reshape((n, n))
+    Y = y.reshape((n, n))
+
+    methods = set(models.keys()) - {"True"}
+    fig, ax = plt.subplots(nrows=2, ncols=len(methods))
+    ax[0][0].imshow(F)
+    ax[0][0].set_title("True signal")
+    ax[0][1].imshow(Y)
+    ax[0][1].set_title("Signal + noise")
+    for i in range(2, len(methods)):
+        ax[0][i].axis("off")
+
+
+    for mi, m in enumerate(methods):
+        yp = models[m]["yp"]
+        Yp = yp.reshape((nn, nn))
+        ax[1][mi].imshow(Yp)
+        ax[1][mi].set_title(m)
+
+    plt.show()
+
 def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
@@ -371,12 +399,37 @@ def bin_centers(bins):
     """
     return bins[:-1] + (bins[1:] - bins[:-1])  / 2.0
 
+
+def generate_noise(n, noise_model, input_dim):
+    """
+    Generate noise vector.
+    :param n: Number of data samples along a dimension.
+    :param noise_model: "fixed" or "increasing".
+    :param input_dim:  Input dimensionality.
+    :return:noise vector of size N = n ** input_dim.
+    """
+    N = n ** input_dim
+    if noise_model == "fixed":
+        if input_dim == 1:
+            noise = 1
+        elif input_dim == 2:
+            noise = 0.03
+    else:
+        if input_dim == 1:
+            noise = np.logspace(-2, 2, N)
+        elif input_dim == 2:
+            a = np.logspace(-1, 1, n).reshape((n, 1))
+            A = a.dot(a.T) * 0.01
+            noise = A.reshape((N, 1))
+    return noise
+
+
 def main():
     # Experiment paramaters
     n_range = (10, )
     input_dim = 2
 
-    rank_range = (3, 5, 10)
+    rank_range = (3, 5,)
     lbd_range = (0, )
     gamma_range = [0.1, 0.3, 1, 3]
     repeats = 500
@@ -412,11 +465,8 @@ def main():
                                                                      n_range,
                                                                      noise_models,
                                                                      sampling_models,):
-        N = n ** input_dim
-        if noise_model == "fixed":
-            noise = 1
-        else:
-            noise = np.logspace(-2, 2, N)
+
+        noise = generate_noise(n, noise_model, input_dim)
 
         avg_actives = dict()
         avg_anchors = dict()
@@ -435,6 +485,8 @@ def main():
             # Evaluate methods
             try:
                 r = test(Ksum, Klist, inxs, X, Xp, y, f)
+                # plot_signal(X, Xp, y, f, models=r, tit="")
+                # plot_signal_2d(X, Xp, y, f, models=r, tit="")
             except Exception as e:
                 print("Exception, continuing: %s" % str(e))
                 continue
