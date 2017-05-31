@@ -118,23 +118,32 @@ def process():
 
 
 
-def generate_data(n, rank, inducing_mode="uniform", noise=1, gamma_range=(0.1,), seed=None):
+def generate_data(n, rank,
+                  inducing_mode="uniform", noise=1, gamma_range=(0.1,), seed=None,
+                  input_dim=1):
     """
-
+    Generate an artificial dataset with imput dimension.
     :param n: Number od data points.
     :param rank: Number of inducing points.
     :param inducing_mode:   Biased or uniform distribution of data points.
     :param noise: Noise variance.
     :param gamma_range: Number of kernels and hyperparameters.
     :param seed: Random seed.
+    :param input_dim: Input space dimension.
     :return:
     """
     if seed is not None:
         np.random.seed(seed)
 
-    # Generate data
-    X = np.linspace(-10, 10, n).reshape((n, 1))
-    Xp = np.linspace(-10, 10, 500).reshape((500, 1))
+    # Generate data for arbitray input_dim
+    x = np.linspace(-10, 10, n).reshape((n, 1))
+    M = np.meshgrid(*(input_dim * [x]))
+    X = np.array(zip(*[m.ravel() for m in M]))
+    N = X.shape[0]
+
+    xp = np.linspace(-10, 10, 100).reshape((100, 1))
+    Mp = np.meshgrid(*(input_dim * [xp]))
+    Xp = np.array(zip(*[m.ravel() for m in Mp]))
 
     # Kernel sum
     Ksum = Kinterface(data=X, kernel=kernel_sum,
@@ -146,19 +155,19 @@ def generate_data(n, rank, inducing_mode="uniform", noise=1, gamma_range=(0.1,),
     Klist = [Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": g})
              for g in gamma_range]
 
-    a = np.arange(n, dtype=int)
+    a = np.arange(X.shape[0], dtype=int)
     if inducing_mode == "uniform":
         p = None
     elif inducing_mode == "biased":
-        af = a.astype(float)
+        af = np.sum(X + abs(X.min(axis=0)), axis=1)
         p = (af ** 2 / (af ** 2).sum())
     else:
         raise ValueError(inducing_mode)
 
     inxs = np.random.choice(a, p=p, size=rank, replace=False)
     Kny = Ksum[:, inxs].dot(np.linalg.inv(Ksum[inxs, inxs])).dot(Ksum[inxs, :])
-    f = mvn.rvs(mean=np.zeros((n,)), cov=Kny)
-    y = mvn.rvs(mean=f, cov=noise * np.eye(n, n))
+    f = mvn.rvs(mean=np.zeros((N,)), cov=Kny)
+    y = mvn.rvs(mean=f, cov=noise * np.eye(N, N))
 
     return Ksum, Klist, inxs, X, Xp, y, f
 
@@ -237,7 +246,8 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     """
     P = len(Klist)                  # Number of kernels
     rank = len(inxs)      # Total number of inducing points over all lengthscales
-    anchors = X[inxs,].ravel()
+    anchors = X[inxs,]
+    input_dim = X.shape[1]
 
     # Fit MKL for kernel sum and
     mkl = Mklaren(rank=rank,
@@ -287,10 +297,13 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     rho_nystrom, _ = pearsonr(y_nystrom, f)
 
     # Distance between anchors
-    idp_dist_Klist = inducing_points_distance(anchors, anchors_Klist)
-    idp_dist_CSI = inducing_points_distance(anchors, anchors_csi)
-    idp_dist_icd = inducing_points_distance(anchors, anchors_icd)
-    idp_dist_Nystrom = inducing_points_distance(anchors, anchors_nystrom)
+    if input_dim == 1:
+        idp_dist_Klist = inducing_points_distance(anchors, anchors_Klist)
+        idp_dist_CSI = inducing_points_distance(anchors, anchors_csi)
+        idp_dist_icd = inducing_points_distance(anchors, anchors_icd)
+        idp_dist_Nystrom = inducing_points_distance(anchors, anchors_nystrom)
+    else:
+        idp_dist_Klist = idp_dist_CSI = idp_dist_icd = idp_dist_Nystrom = -1
 
     # Plot a summary figure
     return {"True": {"anchors": anchors,
@@ -361,6 +374,8 @@ def bin_centers(bins):
 def main():
     # Experiment paramaters
     n_range = (100, )
+    input_dim = 1
+
     rank_range = (3, 5, 10)
     lbd_range = (0, )
     gamma_range = [0.1, 0.3, 1, 3]
@@ -397,10 +412,11 @@ def main():
                                                                      n_range,
                                                                      noise_models,
                                                                      sampling_models,):
+        N = n ** input_dim
         if noise_model == "fixed":
             noise = 1
         else:
-            noise = np.logspace(-2, 2, n)
+            noise = np.logspace(-2, 2, N)
 
         avg_actives = dict()
         avg_anchors = dict()
@@ -414,7 +430,8 @@ def main():
                                                            inducing_mode=inducing_mode,
                                                            noise=noise,
                                                            gamma_range=[gamma],
-                                                           seed=seed)
+                                                           seed=seed,
+                                                           input_dim=input_dim)
             # Evaluate methods
             try:
                 r = test(Ksum, Klist, inxs, X, Xp, y, f)
@@ -431,11 +448,25 @@ def main():
                 avg_dists[m] = avg_dists.get(m, []) + [r[m]["idp"]]
 
         # Compare distributions
+        bins = None
+        if input_dim == 1:
+            probs, bins = np.histogram(avg_anchors["True"], normed=False)
+            probs = 1.0 * (probs + pc) / (probs + pc).sum()
+        elif input_dim == 2:
+            A = np.array(avg_anchors["True"])
+            probs, b1, b2 = np.histogram2d(A[:, 0], A[:, 1], normed=False, bins=5)
+            probs = probs.ravel()
+            probs = 1.0 * (probs + pc) / (probs + pc).sum()
+            bins = (b1, b2)
+
         rows = []
-        probs, bins  = np.histogram(avg_actives["True"], normed=False)
-        probs = 1.0 * (probs + pc) / (probs + pc).sum()
         for m in methods:
-            query, _ = np.histogram(avg_actives[m], normed=False, bins=bins)
+            if input_dim == 1:
+                h = np.histogram(avg_anchors[m], normed=False, bins=bins)
+            elif input_dim == 2:
+                A = np.array(avg_anchors[m])
+                h = np.histogram2d(A[:, 0], A[:, 1], normed=False, bins=bins)
+            query = h[0].ravel()
             query = 1.0 * (query + pc ) / (query + pc).sum()
             kl = entropy(probs, query)
             tv = hist_total_variation(probs, query)
@@ -466,39 +497,40 @@ def main():
         count += len(rows)
         print("%s Written %d rows"% (str(datetime.datetime.now()), count))
 
-        # Plot histograms
-        figname = os.path.join(subdname, "hist_%s_%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.pdf"
-                             % (noise_model, inducing_mode, n, rank, lbd, gamma))
-        fig, ax = plt.subplots(nrows=len(methods)+1, ncols=1)
-        ax[0].hist(avg_actives["True"], color="gray", label="True", bins=bins)
-        for mi, m in enumerate(methods):
-            ax[mi+1].hist(avg_actives[m], color=r[m]["color"], label=m, bins=bins)
-        ax[len(methods)].set_xlabel("Inducing point index")
-        for i in range(len(ax)):
-            ax[i].legend()
-            ax[i].set_xlim((0, n))
-        fig.tight_layout()
-        plt.savefig(figname)
-        plt.close()
-        print("Written %s" % figname)
+        if input_dim == 1:
+            # Plot histograms
+            figname = os.path.join(subdname, "hist_%s_%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.pdf"
+                                 % (noise_model, inducing_mode, n, rank, lbd, gamma))
+            fig, ax = plt.subplots(nrows=len(methods)+1, ncols=1)
+            ax[0].hist(avg_actives["True"], color="gray", label="True", bins=bins)
+            for mi, m in enumerate(methods):
+                ax[mi+1].hist(avg_actives[m], color=r[m]["color"], label=m, bins=bins)
+            ax[len(methods)].set_xlabel("Inducing point index")
+            for i in range(len(ax)):
+                ax[i].legend()
+                ax[i].set_xlim((0, n))
+            fig.tight_layout()
+            plt.savefig(figname)
+            plt.close()
+            print("Written %s" % figname)
 
-        # Plot lines
-        figname = os.path.join(subdname, "lines_%s_%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.pdf"
-                               % (noise_model, inducing_mode, n, rank, lbd, gamma))
+            # Plot lines
+            figname = os.path.join(subdname, "lines_%s_%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.pdf"
+                                   % (noise_model, inducing_mode, n, rank, lbd, gamma))
 
-        centers = bin_centers(bins)
-        plt.figure()
-        for m in ["True"] + list(methods):
-            p, _= np.histogram(avg_actives[m], bins=bins)
-            q = (1.0 * p) / sum(p)
-            plt.plot(centers, q, ("." if m != "True" else "") + "-",
-                     color=r[m]["color"], label=m)
-        plt.legend(loc=2)
-        plt.xlabel("Incuding point index")
-        plt.ylabel("Probability")
-        plt.savefig(figname)
-        plt.close()
-        print("Written %s" % figname)
+            centers = bin_centers(bins)
+            plt.figure()
+            for m in ["True"] + list(methods):
+                p, _= np.histogram(avg_actives[m], bins=bins)
+                q = (1.0 * p) / sum(p)
+                plt.plot(centers, q, ("." if m != "True" else "") + "-",
+                         color=r[m]["color"], label=m)
+            plt.legend(loc=2)
+            plt.xlabel("Incuding point index")
+            plt.ylabel("Probability")
+            plt.savefig(figname)
+            plt.close()
+            print("Written %s" % figname)
 
 
 if __name__ == "__main__":
