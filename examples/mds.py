@@ -43,13 +43,17 @@ def estimate_rel_error(X, Z):
     n = X.shape[0]
     nc = n * (n - 1) / 2
     errors = np.zeros((nc, ))
+    x_dists = np.zeros((nc, ))
+    z_dists = np.zeros((nc,))
     c = 0
     for i, j in it.combinations(range(n), 2):
         a = np.linalg.norm(X[i, :] - X[j, :])
         b = np.linalg.norm(Z[i, :] - Z[j, :])
         errors[c] = abs(a - b) / a
+        x_dists[c] = a
+        z_dists[c] = b
         c += 1
-    return np.mean(errors)
+    return np.mean(errors), x_dists, z_dists
 
 
 for dset, (load, load_args) in datasets.iteritems():
@@ -68,7 +72,8 @@ for dset, (load, load_args) in datasets.iteritems():
     X = X[inxs, :]
     Z = Z[inxs, :]
     y = y[inxs, :]
-    re = estimate_rel_error(X, Z)
+    re, x_dists, z_dists = estimate_rel_error(X, Z)
+    rho, _ = st.pearsonr(x_dists, z_dists)
 
     # Optimize a GP with exponentiated quadratic kernel
     k = GPy.kern.ExpQuad(1, lengthscale=np.std(Z))
@@ -77,6 +82,7 @@ for dset, (load, load_args) in datasets.iteritems():
     _, var = m.predict(Z)
 
     # Draw figures
+    # Fitted data
     fname = os.path.join(outdir, "mds_%s.pdf" % dset)
     plt.figure(figsize=(6, 4))
     plt.title("{0} (rel. err. {1} %)".format(dset, "%.2f" % (100 * re)) )
@@ -85,15 +91,29 @@ for dset, (load, load_args) in datasets.iteritems():
     plt.ylabel("Target variable (y)")
     plt.legend()
     plt.savefig(fname)
+    plt.close()
     print("Written %s" % fname)
 
+    # Variance
     fname = os.path.join(outdir, "var_%s.pdf" % dset)
     plt.figure(figsize=(6, 2))
     plt.plot(Z.ravel(), var, "k-")
     plt.xlabel("MDS (1D) approx. to input space")
     plt.ylabel("Fitted noise variance")
     plt.savefig(fname)
+    plt.close()
     print("Written %s" % fname)
+
+    # Correlation between distances
+    fname = os.path.join(outdir, "cor_%s.pdf" % dset)
+    plt.figure(figsize=(4, 4))
+    plt.title("{0} ({1})".format(dset, "R=%.2f" % rho))
+    plt.plot(x_dists, z_dists, "k.", alpha=0.4)
+    plt.xlabel("Original distance (X)")
+    plt.ylabel("Fitted distance (Z)")
+    plt.savefig(fname)
+    print("Written %s" % fname)
+
 
     # Write to log
     writer.writerow({"dataset": dset, "error": re})
