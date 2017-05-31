@@ -72,8 +72,8 @@ for dset, (load, load_args) in datasets.iteritems():
 
     # Draw figures
     fname = os.path.join(outdir, "mds_%s.pdf" % dset)
-    plt.figure(figsize=(8, 6))
-    plt.title(dset)
+    plt.figure(figsize=(6, 4))
+    plt.title("{0} (rel. err. {1} %)".format(dset, "%.4f" % (100 * re)) )
     m.plot(ax=plt.gca())
     plt.xlabel("MDS (1D) approx. to input space")
     plt.ylabel("Target variable (y)")
@@ -82,7 +82,7 @@ for dset, (load, load_args) in datasets.iteritems():
     print("Written %s" % fname)
 
     fname = os.path.join(outdir, "var_%s.pdf" % dset)
-    plt.figure(figsize=(8, 3))
+    plt.figure(figsize=(6, 2))
     plt.plot(Z.ravel(), var, "k-")
     plt.xlabel("MDS (1D) approx. to input space")
     plt.ylabel("Fitted noise variance")
