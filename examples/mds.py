@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import GPy
 import numpy as np
 import itertools as it
+import scipy.stats as st
 from sklearn.manifold.mds import MDS
 from datasets.delve import *
 
@@ -18,7 +19,6 @@ outlog = "output/mds/results.csv"
 # Load datasets with at most n examples
 n = 1000
 datasets = {
-    "census":    (load_census_house,     {"n": n,}),
     "boston":    (load_boston,     {"n": n,}),
     "abalone":   (load_abalone,    {"n": n,}),
     "comp":      (load_comp_activ, {"n": n,}),
@@ -48,18 +48,24 @@ def estimate_rel_error(X, Z):
         a = np.linalg.norm(X[i, :] - X[j, :])
         b = np.linalg.norm(Z[i, :] - Z[j, :])
         errors[c] = abs(a - b) / a
+        c += 1
     return np.mean(errors)
 
 
 for dset, (load, load_args) in datasets.iteritems():
+    print(dset)
 
-    # Load data and approximate with MDS
+    # Load data and
     data = load(**load_args)
     X, y = data["data"], data["target"]
+    X = st.zscore(X, axis=0)
     y = y.reshape((len(y), 1)) - y.mean()
+
+    # Approximate with 1D MDS
     model = MDS(n_components=1)
     Z = model.fit_transform(X, y)
     inxs = np.argsort(Z.ravel())
+    X = X[inxs, :]
     Z = Z[inxs, :]
     y = y[inxs, :]
     re = estimate_rel_error(X, Z)
@@ -73,7 +79,7 @@ for dset, (load, load_args) in datasets.iteritems():
     # Draw figures
     fname = os.path.join(outdir, "mds_%s.pdf" % dset)
     plt.figure(figsize=(6, 4))
-    plt.title("{0} (rel. err. {1} %)".format(dset, "%.4f" % (100 * re)) )
+    plt.title("{0} (rel. err. {1} %)".format(dset, "%.2f" % (100 * re)) )
     m.plot(ax=plt.gca())
     plt.xlabel("MDS (1D) approx. to input space")
     plt.ylabel("Target variable (y)")
