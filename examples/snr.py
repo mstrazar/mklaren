@@ -279,7 +279,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     yp_icd = icd.predict([Xp])
     active_icd = [icd.active_set_[gi] for gi in range(P)]
     anchors_icd = [X[ix] for ix in active_icd]
-    
+
     # Fit Nystrom
     nystrom = RidgeLowRank(rank=rank, lbd=lbd,
                        method="nystrom", method_init_args={"lbd": lbd, "verbose": False})
@@ -373,8 +373,8 @@ def bin_centers(bins):
 
 def main():
     # Experiment paramaters
-    n_range = (100, )
-    input_dim = 1
+    n_range = (10, )
+    input_dim = 2
 
     rank_range = (3, 5, 10)
     lbd_range = (0, )
