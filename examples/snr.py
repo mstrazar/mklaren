@@ -424,9 +424,31 @@ def generate_noise(n, noise_model, input_dim):
     return noise
 
 
+def generate_GP_samples():
+    """
+    One-time function to demonstrate samples from degenerate GPs with a sampling mode.
+    :return:
+    """
+    noise = np.logspace(-2, 2, 100)
+    Ksum, Klist, inxs, X, Xp, y, f = generate_data(n=100,
+                                                   rank=3,
+                                                   inducing_mode="biased",
+                                                   noise=noise,
+                                                   gamma_range=[0.3],
+                                                   seed=None,
+                                                   input_dim=1)
+
+    plt.figure()
+    plt.plot(f, label="signal")
+    plt.plot(y, "k.", label="data")
+    plt.xlabel("Input space (1D)")
+    plt.ylabel("y")
+    plt.show()
+
+
 def main():
     # Experiment paramaters
-    n_range = (10, )
+    n_range = (20, )
     input_dim = 2
 
     rank_range = (3, 5,)
