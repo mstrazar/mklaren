@@ -59,14 +59,14 @@ for (gi in 1:nrow(grid)){
     best = row[,gr$metric] == min(df[df$setting == ri, gr$metric])
     
     # Add prefix
-    # pfx = ""
-    # if(gr$metric == "KS.stat" && row["KS.pvalue"] > 0.01) pfx = "*"
+    sfx = ""
+    # if(gr$metric == "KS.stat") sfx = sprintf("(%.1e)", row$KS.pvalue)
     
     # Bold best scores
     if(best){
-      M[ri, ci] = sprintf("\\textbf{%.3f%s}", score, pfx)  
+      M[ri, ci] = sprintf("\\textbf{%.3f %s}", score, sfx)  
     } else {
-      M[ri, ci] = sprintf("%.3f%s", score, pfx)
+      M[ri, ci] = sprintf("%.3f %s", score, sfx)
     }
   }
   fname = file.path(tabdir, sprintf("%s_gamma-%.3f_rank-%d_n-%d.tex", gr$metric, gr$gamma, gr$rank, n))
