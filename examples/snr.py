@@ -433,8 +433,9 @@ def split_results(in_file, out_dir):
     """
     data = pickle.load(gzip.open(in_file))
     for row in data:
-        fname = "actives_method-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.txt" % \
-                (row["method"], row["n"], row["rank"], row.get("lbd", 0), row["gamma"])
+        fname = "actives_method-%s_noise-%s_sampling-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.txt" % \
+                (row["method"], row["noise.model"], row["sampling.model"],
+                 row["n"], row["rank"], row.get("lbd", 0), row["gamma"])
         actives = np.array(row["avg.actives"], dtype=int)
         np.savetxt(os.path.join(out_dir, fname), actives, fmt="%d")
     print("Saved %d files" % len(data))
