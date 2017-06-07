@@ -33,6 +33,13 @@ import matplotlib.pyplot as plt
 import pickle, gzip
 
 
+# Color mappings
+meth2color = {"Mklaren": "green",
+              "CSI": "red",
+              "ICD": "blue",
+              "Nystrom": "pink",
+              "True": "black"}
+
 def process():
     # Parameters
     gamma_range = 2 ** (np.linspace(-2, 2, 5))  # Arbitrary kernel hyperparameters
@@ -440,6 +447,47 @@ def split_results(in_file, out_dir):
         np.savetxt(os.path.join(out_dir, fname), actives, fmt="%d")
     print("Saved %d files" % len(data))
     return
+
+
+def cumulative_histogram(in_file, out_dir):
+    """
+    :param in_file: Input pkl.gz file.
+    :param out_dir: Output directory.
+    :return:
+    """
+    data = pickle.load(gzip.open(in_file))
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    hists = dict()
+    for row in data:
+        ky = (row["noise.model"], row["sampling.model"],
+              row["n"], row["rank"], row.get("lbd", 0), row["gamma"])
+
+        actives = np.array(row["avg.actives"], dtype=int)
+        if ky not in hists: hists[ky] = dict()
+        hists[ky][row["method"]] = actives
+
+    for ky in hists.keys():
+        noise, sampling, n, rank, lbd, gamma = ky
+        plt.figure(figsize=(5, 4))
+        for meth, samp in hists[ky].iteritems():
+            counts, bins = np.histogram(samp, normed=False)
+            probs = 1.0 * counts / counts.sum()
+            centers = bin_centers(bins)
+            cums = np.cumsum(probs)
+            fmt = "--" if meth == "True" else ".-"
+            plt.plot(centers, cums, fmt, color=meth2color[meth], label=meth)
+        plt.legend(loc=2)
+        plt.ylabel("Cumulative probability")
+        plt.xlabel("Inducing point (pivot) location")
+        plt.title("Noise:%s sampling:%s K=%d, $\gamma=%.1f$" % (noise, sampling, rank, gamma))
+
+        fname = "cumhist_noise-%s_sampling-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.pdf" % \
+                (noise, sampling, n, rank, lbd, gamma)
+        plt.savefig(os.path.join(out_dir, fname), bbox_inches="tight")
+        plt.close()
+        print("Written %s" % fname)
 
 
 def generate_GP_samples():
