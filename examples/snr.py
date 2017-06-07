@@ -424,6 +424,23 @@ def generate_noise(n, noise_model, input_dim):
     return noise
 
 
+def split_results(in_file, out_dir):
+    """
+    One-time use function to split results.pkl into a file readable by R.
+    :param in_file: Input pkl.gz file.
+    :param out_dir: Output directory.
+    :return:
+    """
+    data = pickle.load(gzip.open(in_file))
+    for row in data:
+        fname = "actives_method-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.txt" % \
+                (row["method"], row["n"], row["rank"], row.get("lbd", 0), row["gamma"])
+        actives = np.array(row["avg.actives"], dtype=int)
+        np.savetxt(os.path.join(out_dir, fname), actives)
+    print("Saved %d files" % len(data))
+    return
+
+
 def generate_GP_samples():
     """
     One-time function to demonstrate samples from degenerate GPs with a sampling mode.
