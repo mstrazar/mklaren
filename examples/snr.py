@@ -436,7 +436,7 @@ def split_results(in_file, out_dir):
         fname = "actives_method-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.txt" % \
                 (row["method"], row["n"], row["rank"], row.get("lbd", 0), row["gamma"])
         actives = np.array(row["avg.actives"], dtype=int)
-        np.savetxt(os.path.join(out_dir, fname), actives)
+        np.savetxt(os.path.join(out_dir, fname), actives, fmt="%d")
     print("Saved %d files" % len(data))
     return
 
