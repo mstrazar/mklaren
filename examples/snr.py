@@ -179,7 +179,7 @@ def generate_data(n, rank,
     return Ksum, Klist, inxs, X, Xp, y, f
 
 
-def plot_signal(X, Xp, y, f, models=None, tit=""):
+def plot_signal(X, Xp, y, f, models=None, tit="", typ="plot_models", f_out = None):
     """
     Plot fitted signal.
 
@@ -193,6 +193,7 @@ def plot_signal(X, Xp, y, f, models=None, tit=""):
         "color": Color.
         "label": Name.
     :param tit:
+    :param typ: plot_models or plot_gammas
     :return:
     """
 
@@ -205,8 +206,14 @@ def plot_signal(X, Xp, y, f, models=None, tit=""):
 
     # Compute anchor ticks
     P = max([1] + map(lambda m: len(m.get("anchors", [])), models.values()))
-    ymin = int(np.absolute(np.min(y)))
-    Gxs = [np.linspace(-10, 10, 5 + 10 * g) for g in np.logspace(-1, 1, P)]
+    ymin = int(np.absolute(np.min(y))) + 1
+
+    if typ == "plot_gammas":
+        Gxs = [np.linspace(-10, 10, 5 + 10 * g) for g in np.logspace(-1, 1, P)]
+    elif typ == "plot_models":
+        Gxs = [np.linspace(-10, 10, 15) for g in np.logspace(-1, 1, P)]
+    else:
+        raise ValueError
     Gys = range(-ymin - len(Gxs), -ymin)
 
     # Plot freqency scales
@@ -215,25 +222,41 @@ def plot_signal(X, Xp, y, f, models=None, tit=""):
 
     # Plot multiple signals and anchors
     if models is not None:
-        for label, data in models.items():
+        for mi, (label, data) in enumerate(models.items()):
             if label == "True": continue
             yp = data.get("yp", np.zeros((len(X), )))
-            color = data.get("color", "blue")
-            anchors = data.get("anchors", [[]])
-            # rho, _ = pearsonr(yp, f)
-            print(label, xp.shape, yp.shape)
+            color = meth2color[label]
             plt.plot(xp, yp, "-", color=color, label="%s" % label)
-            for gi in range(P):
-                if len(anchors) <= gi or not len(anchors[gi]): continue
-                print("Number of pivots at gamma  %d: %d" % (gi, len(anchors[gi])))
-                plt.plot(anchors[gi], [Gys[gi]] * len(anchors[gi]), "^", color=color, markersize=8, alpha=0.6)
+
+    for mi, (label, data) in enumerate(sorted(models.items(), key=lambda lb: lb[0] == "True")):
+            anchors = data.get("anchors", [[]])
+            color = meth2color[label]
+            if typ == "plot_gammas":        # Draw for different gammas
+                for gi in range(P):
+                    if len(anchors) <= gi or not len(anchors[gi]): continue
+                    plt.plot(anchors[gi], [Gys[gi]] * len(anchors[gi]), "^", color=color, markersize=8, alpha=0.6)
+
+            elif typ == "plot_models":      # Draw for different methods
+                gi = mi
+                ancs = np.array(anchors).ravel()
+                plt.text(-11, Gys[gi], "[%s]" % label, horizontalalignment="right",
+                         verticalalignment="center", color=meth2color[label])
+                plt.plot(ancs, [Gys[gi]] * len(ancs), "^", color=color, markersize=8, alpha=0.6)
+
 
     plt.title(tit)
     ylim = plt.gca().get_ylim()
-    plt.legend()
-    # plt.xlim((-x.min()-1, x.max()+1))
     plt.ylim((ylim[0]-1, ylim[1]))
-    plt.show()
+    plt.yticks(np.linspace(-ylim[1], ylim[1], 2 * ylim[1] + 1).astype(int))
+    plt.xlabel("Input space (x)")
+    plt.ylabel("Output space (y)")
+    plt.gca().yaxis.set_label_coords(-0.05, 0.75)
+    if f_out is None:
+        plt.show()
+    else:
+        plt.savefig(f_out)
+        plt.close()
+        print("Written %s" % f_out)
 
 
 def plot_signal_2d(X, Xp, y, f, models=None, tit=""):
@@ -488,6 +511,32 @@ def cumulative_histogram(in_file, out_dir):
         plt.savefig(os.path.join(out_dir, fname), bbox_inches="tight")
         plt.close()
         print("Written %s" % fname)
+
+
+def example_models(out_dir):
+    """
+    Example model fit to generate a figure.
+    :return:
+    """
+    n = 100
+
+    for noise_model, inducing_model, seed in it.product(("fixed", "increasing"), ("uniform", "biased"), range(0, 3)):
+        fname = os.path.join(out_dir, "example_%s_%s_%d.pdf" % (noise_model, inducing_model, seed))
+        noise = generate_noise(n, noise_model, 1)
+
+        Ksum, Klist, inxs, X, Xp, y, f = generate_data(n=n,
+                                                       rank=5,
+                                                       inducing_mode=inducing_model,
+                                                       noise=noise,
+                                                       gamma_range=[1.0],
+                                                       seed=seed,
+                                                       input_dim=1)
+
+        # Evaluate methods
+        r = test(Ksum, Klist, inxs, X, Xp, y, f)
+        plot_signal(X, Xp, y, f, models=r, tit="", f_out=fname)
+
+    return
 
 
 def generate_GP_samples():
