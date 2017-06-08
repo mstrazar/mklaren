@@ -1,6 +1,9 @@
-import examples.functions as func
 import unittest
+
 import numpy as np
+
+import examples.archive.functions as func
+
 
 class TestFunctions(unittest.TestCase):
 

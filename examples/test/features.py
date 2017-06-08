@@ -1,6 +1,9 @@
-import examples.features as ft
 import unittest
+
 import numpy as np
+
+import examples.features as ft
+
 
 class TestFeatures(unittest.TestCase):
 
