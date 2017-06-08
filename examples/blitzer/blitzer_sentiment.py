@@ -1,4 +1,4 @@
-import __config__
+import examples.__config__
 
 # Methods
 from mklaren.mkl.mklaren import Mklaren

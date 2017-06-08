@@ -2,7 +2,7 @@
     Evaluation of low-rank kernel approximation methods
     with ridge regression on standard datasets.
 """
-import __config__
+import examples.__config__
 
 # Low-rank approximation methods
 from mklaren.regression.ridge import RidgeLowRank
