@@ -1,5 +1,6 @@
-from examples.functions import *
 import matplotlib.pyplot as plt
+
+from examples.archive.functions import *
 
 repeats = 5
 ns = [1200]
