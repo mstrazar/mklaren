@@ -201,20 +201,23 @@ def plot_signal(X, Xp, y, f, models=None, tit="", typ="plot_models", f_out = Non
     plt.figure()
     x = X.ravel()
     xp = Xp.ravel()
+    xmin, xmax = xp.min(), xp.max()
+    ymin, ymax = int(min(f.min(), y.min())) - 1, int(max(f.max(), y.max())) + 1
+
+    # Plot data
     plt.plot(x, y, "k.")
     plt.plot(x, f, "r--")
 
     # Compute anchor ticks
     P = max([1] + map(lambda m: len(m.get("anchors", [])), models.values()))
-    ymin = int(np.absolute(np.min(y))) + 1
 
     if typ == "plot_gammas":
-        Gxs = [np.linspace(-10, 10, 5 + 10 * g) for g in np.logspace(-1, 1, P)]
+        Gxs = [np.linspace(xmin, xmax, 5 + 10 * g) for g in np.logspace(-1, 1, P)]
     elif typ == "plot_models":
-        Gxs = [np.linspace(-10, 10, 15) for g in np.logspace(-1, 1, P)]
+        Gxs = [np.linspace(xmin, xmax, 15) for g in np.logspace(-1, 1, len(models))]
     else:
         raise ValueError
-    Gys = range(-ymin - len(Gxs), -ymin)
+    Gys = range(ymin - len(Gxs), ymin)
 
     # Plot freqency scales
     for gi, (gx, gy) in enumerate(zip(Gxs, Gys)):
@@ -234,23 +237,24 @@ def plot_signal(X, Xp, y, f, models=None, tit="", typ="plot_models", f_out = Non
             if typ == "plot_gammas":        # Draw for different gammas
                 for gi in range(P):
                     if len(anchors) <= gi or not len(anchors[gi]): continue
-                    plt.plot(anchors[gi], [Gys[gi]] * len(anchors[gi]), "^", color=color, markersize=8, alpha=0.6)
+                    plt.plot(anchors[gi], [Gys[gi]] * len(anchors[gi]), "^",
+                             color=color, markersize=8, alpha=0.6)
 
             elif typ == "plot_models":      # Draw for different methods
                 gi = mi
                 ancs = np.array(anchors).ravel()
-                plt.text(-11, Gys[gi], "[%s]" % label, horizontalalignment="right",
+                plt.text(xmin - 1, Gys[gi], "[%s]" % label, horizontalalignment="right",
                          verticalalignment="center", color=meth2color[label])
-                plt.plot(ancs, [Gys[gi]] * len(ancs), "^", color=color, markersize=8, alpha=0.6)
-
+                plt.plot(ancs, [Gys[gi]] * len(ancs), "^",
+                         color=color, markersize=8, alpha=0.6)
 
     plt.title(tit)
-    ylim = plt.gca().get_ylim()
-    plt.ylim((ylim[0]-1, ylim[1]))
-    plt.yticks(np.linspace(-ylim[1], ylim[1], 2 * ylim[1] + 1).astype(int))
+    plt.yticks(np.linspace(ymin, ymax, 2 * (ymax - ymin) + 1).astype(int))
+    plt.ylim((ymin - len(Gys) - 1, ymax))
     plt.xlabel("Input space (x)")
     plt.ylabel("Output space (y)")
     plt.gca().yaxis.set_label_coords(-0.05, 0.75)
+
     if f_out is None:
         plt.show()
     else:
@@ -287,6 +291,7 @@ def plot_signal_2d(X, Xp, y, f, models=None, tit=""):
 
     plt.show()
 
+
 def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
@@ -302,6 +307,9 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     :param lbd:
     :return:
     """
+    def flatten(l):
+        return [item for sublist in l for item in sublist]
+
     P = len(Klist)                  # Number of kernels
     rank = len(inxs)      # Total number of inducing points over all lengthscales
     anchors = X[inxs,]
@@ -313,7 +321,9 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     mkl.fit(Klist, y)
     y_Klist = mkl.predict([X] * len(Klist))
     yp_Klist = mkl.predict([Xp] * len(Klist))
-    active_Klist = [mkl.data.get(gi, {}).get("act", []) for gi in range(P)]
+    # active_Klist = [mkl.data.get(gi, {}).get("act", []) for gi in range(P)]
+    # active_Klist = [np.array(mkl.data.get(gi, {}).get("act", []), dtype=int).ravel() for gi in range(P)]
+    active_Klist = [flatten([mkl.data.get(gi, {}).get("act", []) for gi in range(P)])]
     anchors_Klist = [X[ix] for ix in active_Klist]
 
     mkl.fit([Ksum], y)
@@ -326,7 +336,8 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     csi.fit([Ksum], y)
     y_csi = csi.predict([X])
     yp_csi = csi.predict([Xp])
-    active_csi = [csi.active_set_[gi] for gi in range(P)]
+    # active_csi = [csi.active_set_[gi] for gi in range(P)]
+    active_csi = [csi.active_set_]
     anchors_csi = [X[ix] for ix in active_csi]
 
     # Fit ICD
@@ -335,7 +346,8 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     icd.fit([Ksum], y)
     y_icd = icd.predict([X])
     yp_icd = icd.predict([Xp])
-    active_icd = [icd.active_set_[gi] for gi in range(P)]
+    # active_icd = [icd.active_set_[gi] for gi in range(P)]
+    active_icd = [icd.active_set_]
     anchors_icd = [X[ix] for ix in active_icd]
 
     # Fit Nystrom
@@ -344,7 +356,8 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     nystrom.fit([Ksum], y)
     y_nystrom = nystrom.predict([X])
     yp_nystrom = nystrom.predict([Xp])
-    active_nystrom = [nystrom.active_set_[gi] for gi in range(P)]
+    # active_nystrom = [nystrom.active_set_[gi] for gi in range(P)]
+    active_nystrom = [nystrom.active_set_]
     anchors_nystrom = [X[ix] for ix in active_nystrom]
 
     # Correlation
@@ -355,7 +368,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     rho_nystrom, _ = pearsonr(y_nystrom, f)
 
     # Distance between anchors
-    if input_dim == 1:
+    if input_dim == 1 and P == 1:
         idp_dist_Klist = inducing_points_distance(anchors, anchors_Klist)
         idp_dist_CSI = inducing_points_distance(anchors, anchors_csi)
         idp_dist_icd = inducing_points_distance(anchors, anchors_icd)
