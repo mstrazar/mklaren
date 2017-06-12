@@ -12,6 +12,11 @@ data = read.csv("output/timing/2017-5-22/results_8.csv", stringsAsFactors = FALS
 data = read.csv("output/timing/2017-5-22/results_10.csv", stringsAsFactors = FALSE,
                 header=TRUE)
 
+# Good results (with CV for lambda, max. n=16666).
+data = read.csv("output/timing/2017-6-12/results_0.csv", stringsAsFactors = FALSE,
+                header=TRUE)
+
+
 # Select resuld based on cross-validation w.r.t. hyperparamters (lambda)
 if ("expl_var_val" %in% colnames(data)){
   agg = aggregate(data$expl_var_val, by=list(rank=data$rank, n=data$n, repl=data$repl, method=data$method), FUN=max)
