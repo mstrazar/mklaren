@@ -74,10 +74,10 @@ def process():
     repeats = 10                                                # Number of replicas.
     p_tr = 0.6                                                  # Fraction of test set
     # range_n = map(int, 1.0/p_tr * np.array([1e5, 3e5, 1e6]))  # Number of samples in TRAINING set.
-    range_n = map(int, 1.0 / p_tr * np.array([1e2, 3e2, 1e3]))  # Number of samples in TRAINING set.
+    range_n = map(int, 1.0 / p_tr * np.array([1e3, 3e3, 1e4]))  # Number of samples in TRAINING set.
     methods = ["Mklaren", "ICD", "Nystrom"]                     # Methods
     delta = 10                                                  # Lookahead columns
-    max_rank = 10                                               # Max. rank and number of indicuing points.
+    max_rank = 30                                               # Max. rank and number of indicuing points.
     max_scales = 2                                              # Two relevant lengthscales
     gamma_range = np.power(10, np.linspace(-3, -1, 5))          # Arbitrary kernel hyperparameters
     lbd_range   = np.power(10, np.linspace(-2, 2, 5))           # Arbitrary lambda hyperparameters
