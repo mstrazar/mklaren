@@ -14,8 +14,9 @@ How to select lambda?
 Add more kernels?
 
 """
-import matplotlib
-matplotlib.use("Agg")
+if __name__ == "__main__":
+    import matplotlib
+    matplotlib.use("Agg")
 
 import csv
 import datetime
