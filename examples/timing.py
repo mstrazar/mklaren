@@ -2,12 +2,18 @@ from mklaren.kernel.kernel import exponential_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
+
+from examples.snr.snr import generate_data as snr_data, test as snr_test, plot_signal
+
 from time import time
 from datetime import datetime
 from itertools import product
 import numpy as np
 import csv
 import os
+import itertools as it
+
+import matplotlib.pyplot as plt
 
 
 def generate_data(n, max_rank, p_tr, gamma_range=(1,), max_scales=1):
@@ -67,6 +73,56 @@ def generate_data(n, max_rank, p_tr, gamma_range=(1,), max_scales=1):
     y_te = y_true[te_inxs]
 
     return Ks_tr, K_tr, X_tr, X_te, y_tr, y_te
+
+
+
+
+def process2():
+    repeats = 10
+    n = 1000
+    inducing_mode = "biased"
+    noise = 0.1
+    gamma = 10
+    max_rank = 30
+    methods = ("Mklaren", "ICD", "Nystrom")
+    lbd_range   = np.power(10, np.linspace(-2, 2, 5))           # Arbitrary lambda hyperparameters
+    rank_range  = range(2, max_rank, int(0.1 * max_rank))
+
+    # Create output directory
+    d = datetime.now()
+    dname = os.path.join("output", "timing", "%d-%d-%d" % (d.year, d.month, d.day))
+    if not os.path.exists(dname):
+        os.makedirs(dname)
+    fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
+    print("Writing to %s ..." % fname)
+
+    # Output file
+    header = ["repl", "method", "n", "max_rank", "rank", "lbd", "time", "expl_var"]
+    writer = csv.DictWriter(open(fname, "w", buffering=0),
+                            fieldnames=header, quoting=csv.QUOTE_ALL)
+    writer.writeheader()
+
+
+    count = 0
+    for seed in range(repeats):
+
+        Ksum, Klist, inxs, X, Xp, y, f = snr_data(n=n, inducing_mode=inducing_mode, gamma_range=[gamma],
+                                                  rank=max_rank, seed=seed, noise=noise)
+
+        for rank, lbd in it.product(rank_range, lbd_range):
+            jx = inxs[:rank]
+            r = snr_test(Ksum, Klist, jx, X, Xp, y, f, methods=methods, lbd=lbd)
+
+            rows = list()
+            for method in methods:
+                row = {"n": n, "method": method, "rank": rank,
+                       "time": r[method]["time"], "expl_var": r[method]["evar"],
+                       "repl": seed, "lbd": lbd, "max_rank": max_rank}
+                rows.append(row)
+
+            count += len(rows)
+            writer.writerows(rows)
+            print("Written %d rows" % count)
 
 
 def process():
@@ -160,4 +216,4 @@ def process():
         print("Written %d rows" % count)
 
 if __name__ == "__main__":
-    process()
+    process2()
