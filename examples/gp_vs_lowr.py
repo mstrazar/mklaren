@@ -1,11 +1,12 @@
 # Low rank kernel function vs. sampling from a GP
-
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from mklaren.kernel.kernel import exponential_kernel
 from mklaren.kernel.kinterface import Kinterface
 from scipy.stats import multivariate_normal as mvn
 
+outdir = "/Users/martin/Dev/mklaren/examples/output/gp_vs_lowr/"
 n = 100
 N = 1000
 X = np.linspace(-10, 10, n).reshape((n, 1))
@@ -30,15 +31,20 @@ funcs = alphas.dot(K_app)
 
 
 # Compare equivalent ways to generate the sample functions
+fname = os.path.join(outdir, "samples_GP.pdf")
 plt.figure()
 plt.title("GP-samples from low-rank kernel matrix")
 plt.plot(samples.T)
 plt.xlabel("Input space")
 plt.ylabel("y")
+plt.savefig(fname)
+plt.close()
 
+fname = os.path.join(outdir, "samples_RKHS.pdf")
 plt.figure()
 plt.title("Random functions in approximated RKHS")
 plt.plot(funcs.T)
 plt.xlabel("Input space")
 plt.ylabel("y")
-plt.show()
+plt.savefig(fname)
+plt.close()
