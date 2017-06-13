@@ -111,7 +111,9 @@ def process2():
 
         for rank, lbd in it.product(rank_range, lbd_range):
             jx = inxs[:rank]
-            r = snr_test(Ksum, Klist, jx, X, Xp, y, f, methods=methods, lbd=lbd)
+            try:
+                r = snr_test(Ksum, Klist, jx, X, Xp, y, f, methods=methods, lbd=lbd)
+            except: continue
 
             rows = list()
             for method in methods:
