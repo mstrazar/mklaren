@@ -248,12 +248,14 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
         active_Klist = [flatten([mkl.data.get(gi, {}).get("act", []) for gi in range(P)])]
         anchors_Klist = [X[ix] for ix in active_Klist]
         rho_Klist, _ = pearsonr(y_Klist, f)
+        evar = (np.var(y) - np.var(y - y_Klist)) / np.var(y)
         results["Mklaren"] = {
                      "rho": rho_Klist,
                      "active": active_Klist,
                      "anchors": anchors_Klist,
                      "yp": yp_Klist,
                      "time": t2,
+                     "evar": evar,
                      "color": meth2color["Mklaren"]}
 
     # Fit CSI
@@ -268,12 +270,14 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
         active_csi = [csi.active_set_]
         anchors_csi = [X[ix] for ix in active_csi]
         rho_csi, _ = pearsonr(y_csi, f)
+        evar = (np.var(y) - np.var(y - y_csi)) / np.var(y)
         results["CSI"] = {
                 "rho": rho_csi,
                 "active": active_csi,
                 "anchors": anchors_csi,
                 "time": t2,
                 "yp": yp_csi,
+                "evar": evar,
                 "color": meth2color["CSI"]}
 
     # Fit ICD
@@ -288,11 +292,13 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
         active_icd = [icd.active_set_]
         anchors_icd = [X[ix] for ix in active_icd]
         rho_icd, _ = pearsonr(y_icd, f)
+        evar = (np.var(y) - np.var(y - y_icd)) / np.var(y)
         results["ICD"] = {"rho": rho_icd,
                 "active": active_icd,
                 "anchors": anchors_icd,
                 "yp": yp_icd,
                 "time": t2,
+                "evar": evar,
                 "color": meth2color["ICD"]}
 
     # Fit Nystrom
@@ -307,12 +313,14 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
         active_nystrom = [nystrom.active_set_]
         anchors_nystrom = [X[ix] for ix in active_nystrom]
         rho_nystrom, _ = pearsonr(y_nystrom, f)
+        evar = (np.var(y) - np.var(y - y_nystrom)) / np.var(y)
         results["Nystrom"] = {
                 "rho": rho_nystrom,
                 "active": active_nystrom,
                 "anchors": anchors_nystrom,
                 "yp": yp_nystrom,
                 "time": t2,
+                "evar": evar,
                 "color": meth2color["Nystrom"]}
 
     return results
