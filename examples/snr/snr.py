@@ -21,7 +21,7 @@ import csv
 import datetime
 import os
 import itertools as it
-
+import time
 import numpy as np
 from scipy.stats import multivariate_normal as mvn, pearsonr, entropy
 from mklaren.kernel.kernel import exponential_kernel, kernel_sum
@@ -39,90 +39,6 @@ meth2color = {"Mklaren": "green",
               "ICD": "blue",
               "Nystrom": "pink",
               "True": "black"}
-
-def process():
-    # Parameters
-    gamma_range = 2 ** (np.linspace(-2, 2, 5))  # Arbitrary kernel hyperparameters
-    delta = 10  # Arbitrary look-ahead parameter
-
-    # Objective experimentation;
-    n_range = [100, 300, 500]  # Vaste enough range of dataset sizes (which are full-rank)
-    noise_range = np.logspace(-2, 2, 7)  # Range of noise levels
-    repeats = range(10)  # Number of repeats
-    rank_percents = [0.05, 0.1, 0.15]  # Rank percentages given n
-    methods = ["Mklaren", "CSI", "ICD"]
-    lbd_range = [0, 0.1, 0.3, 1, 3, 10, 30,
-                 100]  # Vast enough range, such that methods should be able to capture optimum somewhere
-
-    # Create output directory
-    d = datetime.datetime.now()
-    dname = os.path.join("output", "snr", "%d-%d-%d" % (d.year, d.month, d.day))
-    if not os.path.exists(dname):
-        os.makedirs(dname)
-    fname = os.path.join(dname, "results_%d.csv" % len(os.listdir(dname)))
-    print("Writing to %s ..." % fname)
-
-    header = ["repl", "method", "n", "gamma", "lbd", "snr", "rank", "noise", "mse_sig", "mse_rel", "pr_rho", "pr_pval"]
-    writer = csv.DictWriter(open(fname, "w", buffering=0),
-                            fieldnames=header, quoting=csv.QUOTE_ALL)
-    writer.writeheader()
-
-
-    count = 0
-    for repl, gamma, n, noise, lbd, rp in it.product(repeats, gamma_range, n_range,
-                                                     noise_range, lbd_range, rank_percents):
-        rank = max(5, int(rp * n))
-
-        # Generate data
-        X = np.linspace(-10, 10, n).reshape((n, 1))
-        K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": gamma})
-
-        f = mvn.rvs(mean=np.zeros((n, )), cov=K[:, :])
-        y = mvn.rvs(mean=f, cov=noise * np.eye(n, n))
-
-        # Mklaren
-        yp = None
-        rows = []
-        for method in methods:
-            # The difference is only in including lambda at the time of pivot selection
-            try:
-                if method == "Mklaren":
-                    mkl = Mklaren(rank=rank,
-                                  delta=delta, lbd=lbd)
-                    mkl.fit([K], y)
-                    yp = mkl.predict([X])
-
-                elif method == "ICD":
-                    icd = RidgeLowRank(rank=rank, lbd=lbd,
-                                       method="icd")
-                    icd.fit([K], y)
-                    yp = icd.predict([X])
-
-                elif method == "CSI":
-                    icd = RidgeLowRank(rank=rank, lbd=lbd,
-                                       method="csi", method_init_args={"delta": delta})
-                    icd.fit([K], y)
-                    yp = icd.predict([X])
-            except Exception as e:
-                print("%s exception: %s" % (method,  e.message))
-                continue
-
-            # Metrics
-            mse_sig = mse(yp, f)
-            mse_rel = mse(yp, f) / np.var(y)
-            snr = np.var(f) / noise
-            pr_rho, pr_pval = pearsonr(yp, f)
-
-            row = {"repl": repl, "method": method, "n": n, "snr": snr, "lbd": lbd,
-                   "rank": rank, "noise": np.round(np.log10(noise), 2), "mse_sig": mse_sig,
-                   "mse_rel": mse_rel, "pr_rho": pr_rho, "pr_pval": pr_pval, "gamma": gamma}
-            rows.append(row)
-
-        if len(rows) == len(methods):
-            writer.writerows(rows)
-            count += len(rows)
-            print("%s Written %d rows (n=%d)" % (str(datetime.datetime.now()), count, n))
-
 
 
 def generate_data(n, rank,
@@ -292,7 +208,8 @@ def plot_signal_2d(X, Xp, y, f, models=None, tit=""):
     plt.show()
 
 
-def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
+def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
+         methods=("Mklaren", "ICD", "CSI", "Nystrom")):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
     versus list of kernels.
@@ -305,109 +222,101 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1):
     :param f:
     :param delta:
     :param lbd:
+    :param methods:
     :return:
     """
     def flatten(l):
         return [item for sublist in l for item in sublist]
 
-    P = len(Klist)                  # Number of kernels
-    rank = len(inxs)      # Total number of inducing points over all lengthscales
+    P = len(Klist)           # Number of kernels
+    rank = len(inxs)         # Total number of inducing points over all lengthscales
     anchors = X[inxs,]
-    input_dim = X.shape[1]
+
+    # True results
+    results = {"True": {"anchors": anchors,
+              "color": "black"}}
 
     # Fit MKL for kernel sum and
-    mkl = Mklaren(rank=rank,
-                  delta=delta, lbd=lbd)
-    mkl.fit(Klist, y)
-    y_Klist = mkl.predict([X] * len(Klist))
-    yp_Klist = mkl.predict([Xp] * len(Klist))
-    # active_Klist = [mkl.data.get(gi, {}).get("act", []) for gi in range(P)]
-    # active_Klist = [np.array(mkl.data.get(gi, {}).get("act", []), dtype=int).ravel() for gi in range(P)]
-    active_Klist = [flatten([mkl.data.get(gi, {}).get("act", []) for gi in range(P)])]
-    anchors_Klist = [X[ix] for ix in active_Klist]
-
-    mkl.fit([Ksum], y)
-    y_Ksum = mkl.predict([X])
-    # yp_Ksum = mkl.predict([Xp])
+    if "Mklaren" in methods:
+        mkl = Mklaren(rank=rank,
+                      delta=delta, lbd=lbd)
+        t1 = time.time()
+        mkl.fit(Klist, y)
+        t2 = time.time() - t1
+        y_Klist = mkl.predict([X] * len(Klist))
+        yp_Klist = mkl.predict([Xp] * len(Klist))
+        active_Klist = [flatten([mkl.data.get(gi, {}).get("act", []) for gi in range(P)])]
+        anchors_Klist = [X[ix] for ix in active_Klist]
+        rho_Klist, _ = pearsonr(y_Klist, f)
+        results["Mklaren"] = {
+                     "rho": rho_Klist,
+                     "active": active_Klist,
+                     "anchors": anchors_Klist,
+                     "yp": yp_Klist,
+                     "time": t2,
+                     "color": meth2color["Mklaren"]}
 
     # Fit CSI
-    csi = RidgeLowRank(rank=rank, lbd=lbd,
-                       method="csi", method_init_args={"delta": delta},)
-    csi.fit([Ksum], y)
-    y_csi = csi.predict([X])
-    yp_csi = csi.predict([Xp])
-    # active_csi = [csi.active_set_[gi] for gi in range(P)]
-    active_csi = [csi.active_set_]
-    anchors_csi = [X[ix] for ix in active_csi]
-
-    # Fit ICD
-    icd = RidgeLowRank(rank=rank, lbd=lbd,
-                       method="icd")
-    icd.fit([Ksum], y)
-    y_icd = icd.predict([X])
-    yp_icd = icd.predict([Xp])
-    # active_icd = [icd.active_set_[gi] for gi in range(P)]
-    active_icd = [icd.active_set_]
-    anchors_icd = [X[ix] for ix in active_icd]
-
-    # Fit Nystrom
-    nystrom = RidgeLowRank(rank=rank, lbd=lbd,
-                       method="nystrom", method_init_args={"lbd": lbd, "verbose": False})
-    nystrom.fit([Ksum], y)
-    y_nystrom = nystrom.predict([X])
-    yp_nystrom = nystrom.predict([Xp])
-    # active_nystrom = [nystrom.active_set_[gi] for gi in range(P)]
-    active_nystrom = [nystrom.active_set_]
-    anchors_nystrom = [X[ix] for ix in active_nystrom]
-
-    # Correlation
-    rho_Klist, _ = pearsonr(y_Klist, f)
-    rho_Ksum, _ = pearsonr(y_Ksum, f)
-    rho_csi, _ = pearsonr(y_csi, f)
-    rho_icd, _ = pearsonr(y_icd, f)
-    rho_nystrom, _ = pearsonr(y_nystrom, f)
-
-    # Distance between anchors
-    if input_dim == 1 and P == 1:
-        idp_dist_Klist = inducing_points_distance(anchors, anchors_Klist)
-        idp_dist_CSI = inducing_points_distance(anchors, anchors_csi)
-        idp_dist_icd = inducing_points_distance(anchors, anchors_icd)
-        idp_dist_Nystrom = inducing_points_distance(anchors, anchors_nystrom)
-    else:
-        idp_dist_Klist = idp_dist_CSI = idp_dist_icd = idp_dist_Nystrom = -1
-
-    # Plot a summary figure
-    return {"True": {"anchors": anchors,
-                     "color": "black"},
-            "Mklaren": {
-                 "rho": rho_Klist,
-                 "active": active_Klist,
-                 "anchors": anchors_Klist,
-                 "idp": idp_dist_Klist,
-                 "yp": yp_Klist,
-                 "color": "green"},
-            "CSI": {
+    if "CSI" in methods:
+        csi = RidgeLowRank(rank=rank, lbd=lbd,
+                           method="csi", method_init_args={"delta": delta},)
+        t1 = time.time()
+        csi.fit([Ksum], y)
+        t2 = time.time() - t1
+        y_csi = csi.predict([X])
+        yp_csi = csi.predict([Xp])
+        active_csi = [csi.active_set_]
+        anchors_csi = [X[ix] for ix in active_csi]
+        rho_csi, _ = pearsonr(y_csi, f)
+        results["CSI"] = {
                 "rho": rho_csi,
                 "active": active_csi,
                 "anchors": anchors_csi,
-                "idp": idp_dist_CSI,
+                "time": t2,
                 "yp": yp_csi,
-                "color": "blue"},
-            "ICD": {
-                "rho": rho_icd,
+                "color": meth2color["CSI"]}
+
+    # Fit ICD
+    if "ICD" in methods:
+        icd = RidgeLowRank(rank=rank, lbd=lbd,
+                           method="icd")
+        t1 = time.time()
+        icd.fit([Ksum], y)
+        t2 = time.time() - t1
+        y_icd = icd.predict([X])
+        yp_icd = icd.predict([Xp])
+        active_icd = [icd.active_set_]
+        anchors_icd = [X[ix] for ix in active_icd]
+        rho_icd, _ = pearsonr(y_icd, f)
+        results["ICD"] = {"rho": rho_icd,
                 "active": active_icd,
                 "anchors": anchors_icd,
-                "idp": idp_dist_icd,
                 "yp": yp_icd,
-                "color": "cyan"},
-            "Nystrom": {
+                "time": t2,
+                "color": meth2color["ICD"]}
+
+    # Fit Nystrom
+    if "Nystrom" in methods:
+        nystrom = RidgeLowRank(rank=rank, lbd=lbd,
+                           method="nystrom", method_init_args={"lbd": lbd, "verbose": False})
+        t1 = time.time()
+        nystrom.fit([Ksum], y)
+        t2 = time.time() - t1
+        y_nystrom = nystrom.predict([X])
+        yp_nystrom = nystrom.predict([Xp])
+        active_nystrom = [nystrom.active_set_]
+        anchors_nystrom = [X[ix] for ix in active_nystrom]
+        rho_nystrom, _ = pearsonr(y_nystrom, f)
+        results["Nystrom"] = {
                 "rho": rho_nystrom,
                 "active": active_nystrom,
                 "anchors": anchors_nystrom,
-                "idp": idp_dist_Nystrom,
                 "yp": yp_nystrom,
-                "color": "pink"}
-            }
+                "time": t2,
+                "color": meth2color["Nystrom"]}
+
+    return results
+
 
 def hist_total_variation(h1, h2):
     """
@@ -603,7 +512,7 @@ def main():
 
     # Output file
     header = ["method", "noise.model", "sampling.model", "n", "rank", "lbd", "gamma",
-              "anchors.dist", "anchors.dist.sd", "total.variation", "kl.divergence"]
+              "total.variation", "kl.divergence"]
     writer = csv.DictWriter(open(fname, "w", buffering=0), fieldnames=header)
     writer.writeheader()
     results = []
@@ -672,11 +581,8 @@ def main():
             query = 1.0 * (query + pc ) / (query + pc).sum()
             kl = entropy(probs, query)
             tv = hist_total_variation(probs, query)
-            idp_mean = np.mean(avg_dists[m])
-            idp_std = np.std(avg_dists[m])
             row  = {"method": m, "noise.model": noise_model, "sampling.model": inducing_mode,
                     "n": n, "rank":rank, "lbd": lbd, "gamma": gamma,
-                    "anchors.dist": idp_mean, "anchors.dist.sd": idp_std,
                     "total.variation": tv, "kl.divergence": kl}
             rows.append(row)
 
