@@ -1,3 +1,7 @@
+if __name__ == "__main__":
+    import matplotlib
+    matplotlib.use("Agg")
+
 import csv
 import datetime
 import os
@@ -23,6 +27,7 @@ lbd = 0
 # Data parameters
 signals = ["T%d" % i for i in range(1, 10)]
 inxs = range(1, 19)
+methods=("Mklaren", "ICD", "CSI", "Nystrom", "FITC")
 
 # Store results
 d = datetime.datetime.now()
@@ -67,7 +72,8 @@ for sig in signals:
         try:
             models = test(Ksum=Ksum, Klist=Klist,
                           inxs=list(np.linspace(0, n-1, 7, dtype=int)),
-                          X=x, Xp=x, y=y, f=f,  delta=delta, lbd=lbd)
+                          X=x, Xp=x, y=y, f=f,  delta=delta, lbd=lbd,
+                          methods=methods)
         except:
             continue
         del models["True"]
