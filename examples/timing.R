@@ -16,6 +16,12 @@ data = read.csv("output/timing/2017-5-22/results_10.csv", stringsAsFactors = FAL
 data = read.csv("output/timing/2017-6-12/results_0.csv", stringsAsFactors = FALSE,
                 header=TRUE)
 
+# Use process2() method for general low-rank GP
+data = read.csv("output/timing/2017-6-13/results_2.csv", stringsAsFactors = FALSE,
+                header=TRUE)
+
+
+
 
 # Select resuld based on cross-validation w.r.t. hyperparamters (lambda)
 if ("expl_var_val" %in% colnames(data)){
