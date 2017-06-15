@@ -29,6 +29,7 @@ from mklaren.kernel.kernel import exponential_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
+from mklaren.regression.fitc import FITC
 from sklearn.metrics import mean_squared_error as mse
 import matplotlib.pyplot as plt
 import pickle, gzip
@@ -39,6 +40,7 @@ meth2color = {"Mklaren": "green",
               "CSI": "red",
               "ICD": "blue",
               "Nystrom": "pink",
+              "FITC": "orange",
               "True": "black"}
 
 
@@ -210,7 +212,7 @@ def plot_signal_2d(X, Xp, y, f, models=None, tit=""):
 
 
 def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
-         methods=("Mklaren", "ICD", "CSI", "Nystrom")):
+         methods=("Mklaren", "ICD", "CSI", "Nystrom", "FITC")):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
     versus list of kernels.
@@ -268,7 +270,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
         t2 = time.time() - t1
         y_csi = csi.predict([X])
         yp_csi = csi.predict([Xp])
-        active_csi = [csi.active_set_]
+        active_csi = csi.active_set_
         anchors_csi = [X[ix] for ix in active_csi]
         rho_csi, _ = pearsonr(y_csi, f)
         evar = (np.var(y) - np.var(y - y_csi)) / np.var(y)
@@ -281,6 +283,30 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
                 "evar": evar,
                 "color": meth2color["CSI"]}
 
+    # Fit CSI
+    if "FITC" in methods:
+        fitc = FITC(rank=rank)
+        t1 = time.time()
+        fitc.fit(Klist, y)
+        t2 = time.time() - t1
+        y_fitc = fitc.predict([X]).ravel()
+        yp_fitc = fitc.predict([Xp]).ravel()
+        rho_fitc, _ = pearsonr(y_fitc, f)
+        evar = (np.var(y) - np.var(y - y_fitc)) / np.var(y)
+
+        # Approximate closest active index to each inducing point
+        anchors = fitc.anchors_
+        actives = [[np.argmin((a - X.ravel())**2) for a in anchors]]
+
+        results["FITC"] = {
+            "rho": rho_fitc,
+            "active": actives,
+            "anchors": anchors,
+            "time": t2,
+            "yp": yp_fitc,
+            "evar": evar,
+            "color": meth2color["FITC"]}
+
     # Fit ICD
     if "ICD" in methods:
         icd = RidgeLowRank(rank=rank, lbd=lbd,
@@ -290,7 +316,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
         t2 = time.time() - t1
         y_icd = icd.predict([X])
         yp_icd = icd.predict([Xp])
-        active_icd = [icd.active_set_]
+        active_icd = icd.active_set_
         anchors_icd = [X[ix] for ix in active_icd]
         rho_icd, _ = pearsonr(y_icd, f)
         evar = (np.var(y) - np.var(y - y_icd)) / np.var(y)
@@ -311,7 +337,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
         t2 = time.time() - t1
         y_nystrom = nystrom.predict([X])
         yp_nystrom = nystrom.predict([Xp])
-        active_nystrom = [nystrom.active_set_]
+        active_nystrom = nystrom.active_set_
         anchors_nystrom = [X[ix] for ix in active_nystrom]
         rho_nystrom, _ = pearsonr(y_nystrom, f)
         evar = (np.var(y) - np.var(y - y_nystrom)) / np.var(y)
@@ -494,8 +520,8 @@ def generate_GP_samples():
 
 def main():
     # Experiment paramaters
-    n_range = (20, )
-    input_dim = 2
+    n_range = (100, )
+    input_dim = 1
 
     rank_range = (3, 5,)
     lbd_range = (0, )
@@ -504,7 +530,7 @@ def main():
     pc = 0.1 # pseudocount; prevents inf in KL-divergence.
     noise_models = ("fixed", "increasing")
     sampling_models = ("uniform", "biased")
-    methods = ("Mklaren", "CSI", "ICD", "Nystrom")
+    methods = ("Mklaren", "CSI", "ICD", "Nystrom", "FITC")
 
     # Create output directory
     d = datetime.datetime.now()
@@ -538,7 +564,6 @@ def main():
 
         avg_actives = dict()
         avg_anchors = dict()
-        avg_dists = dict()
 
         r = None
         for seed in range(repeats):
@@ -552,7 +577,7 @@ def main():
                                                            input_dim=input_dim)
             # Evaluate methods
             try:
-                r = test(Ksum, Klist, inxs, X, Xp, y, f)
+                r = test(Ksum, Klist, inxs, X, Xp, y, f, methods=methods)
                 # plot_signal(X, Xp, y, f, models=r, tit="")
                 # plot_signal_2d(X, Xp, y, f, models=r, tit="")
             except Exception as e:
@@ -565,7 +590,6 @@ def main():
             for m in methods:
                 avg_actives[m] = avg_actives.get(m, []) + list(r[m]["active"][0])
                 avg_anchors[m] = avg_anchors.get(m, []) + list(r[m]["anchors"][0])
-                avg_dists[m] = avg_dists.get(m, []) + [r[m]["idp"]]
 
         # Compare distributions
         bins = None
@@ -597,7 +621,6 @@ def main():
 
             # Extended row for details
             row_extd = row.copy()
-            row_extd["avg.dists"] = avg_dists[m]
             row_extd["avg.anchors"] = avg_anchors[m]
             row_extd["avg.actives"] = avg_actives[m]
             results.append(row_extd)
