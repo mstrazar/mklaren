@@ -56,3 +56,7 @@ class TestFITC(unittest.TestCase):
             v1 = np.var(y.ravel())
             v2 = np.var((y-yp).ravel())
             self.assertTrue(v2 < v1)
+
+
+if __name__ == "__main__":
+    unittest.main()
