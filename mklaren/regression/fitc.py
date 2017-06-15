@@ -45,6 +45,8 @@ class FITC:
                                         lengthscale=self.gamma2lengthscale(gm))
 
         X = Ks[0].data
+        n = X.shape[0]
+        y = y.reshape((n, 1))
         self.model = GPy.models.SparseGPRegression(X, y,
                                                   num_inducing=self.rank,
                                                   kernel=self.kernel)
