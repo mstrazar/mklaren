@@ -29,7 +29,7 @@ class FITC:
         self.model = None
         self.kernel  = None
 
-    def fit(self, Ks, y):
+    def fit(self, Ks, y, optimize=False):
         """
         :param Ks: Kernel interfaces. Must contain exponential kernels.
         :param y: Output (target) values.
@@ -50,7 +50,7 @@ class FITC:
         self.model = GPy.models.SparseGPRegression(X, y,
                                                   num_inducing=self.rank,
                                                   kernel=self.kernel)
-        self.model.optimize()
+        if optimize: self.model.optimize()
         self.anchors_ = np.array(self.model.Z)
 
 
