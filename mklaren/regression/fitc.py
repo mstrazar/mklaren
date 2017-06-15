@@ -50,6 +50,7 @@ class FITC:
         self.model = GPy.models.SparseGPRegression(X, y,
                                                   num_inducing=self.rank,
                                                   kernel=self.kernel)
+        self.model.optimize()
         self.anchors_ = np.array(self.model.Z)
 
 
