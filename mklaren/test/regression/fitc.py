@@ -46,7 +46,7 @@ class TestFITC(unittest.TestCase):
 
             # Fit a model
             model = FITC()
-            model.fit(Ks, y)
+            model.fit(Ks, y, optimize=False)
 
             # Compare kernels
             self.assertAlmostEqual(np.linalg.norm(model.kernel.K(X, X) - Km[:, :]), 0, places=3)

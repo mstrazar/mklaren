@@ -29,10 +29,11 @@ class FITC:
         self.model = None
         self.kernel  = None
 
-    def fit(self, Ks, y, optimize=False):
+    def fit(self, Ks, y, optimize=True):
         """
         :param Ks: Kernel interfaces. Must contain exponential kernels.
         :param y: Output (target) values.
+        :param optimize: Optimize hyperparameters. This affects the kernel object too.
         """
         assert all(map(lambda K: K.kernel == exponential_kernel, Ks))
         gammas = map(lambda K: K.kernel_args["gamma"], Ks)
