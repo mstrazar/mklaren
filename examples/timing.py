@@ -81,9 +81,9 @@ def process2():
     repeats = 10
     n = 1000
     inducing_mode = "biased"
-    noise = 0.1
-    gamma = 10
-    max_rank = 30
+    noise = 0.01
+    gamma = 20
+    max_rank = 3
     methods = ("Mklaren", "ICD", "Nystrom")
     lbd_range   = np.power(10, np.linspace(-2, 2, 5))           # Arbitrary lambda hyperparameters
     rank_range  = range(2, max_rank, int(0.1 * max_rank))
@@ -112,7 +112,8 @@ def process2():
         for rank, lbd in it.product(rank_range, lbd_range):
             jx = inxs[:rank]
             try:
-                r = snr_test(Ksum, Klist, jx, X, Xp, y, f, methods=methods, lbd=lbd)
+                r = snr_test(Ksum, Klist, jx, X, Xp, y, f, methods=methods, lbd=lbd, delta=20)
+                plot_signal(X, Xp, y, f, models=r)
             except: continue
 
             rows = list()
