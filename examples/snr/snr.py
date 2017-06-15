@@ -287,7 +287,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
     if "FITC" in methods:
         fitc = FITC(rank=rank)
         t1 = time.time()
-        fitc.fit(Klist, y)
+        fitc.fit(Klist, y, optimize=True)
         t2 = time.time() - t1
         y_fitc = fitc.predict([X]).ravel()
         yp_fitc = fitc.predict([Xp]).ravel()
