@@ -534,7 +534,7 @@ def main():
 
     # Create output directory
     d = datetime.datetime.now()
-    dname = os.path.join("output", "snr", "%d-%d-%d" % (d.year, d.month, d.day))
+    dname = os.path.join("..", "output", "snr", "%d-%d-%d" % (d.year, d.month, d.day))
     if not os.path.exists(dname):
         os.makedirs(dname)
     rcnt = len(os.listdir(dname))
