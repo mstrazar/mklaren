@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from mklaren.kernel.kernel import exponential_kernel
-from mklaren.projection.rff import RFF
+from mklaren.projection.rff import RFF, RBFSampler
 
 class TestRFF(unittest.TestCase):
 
@@ -10,7 +10,7 @@ class TestRFF(unittest.TestCase):
         self.p = 100
         self.rank_range = [10, 30, 50, 90]
         self.X = np.random.rand(self.n, self.p)
-        self.gamma_range = np.logspace(-2, 2, 5)
+        self.gamma_range = np.logspace(-3, -1, 5)
         self.lbd_range = np.logspace(-2, 2, 5)
 
         # Generate a random signal by employing one of the kernels
@@ -67,3 +67,26 @@ class TestRFF(unittest.TestCase):
         # Vector norm drops
         self.assertTrue(np.all(errors[:-1] < errors[1:]))
         self.assertTrue(np.all(beta_norms[:-1] > beta_norms[1:]))
+
+    def testConvergence(self):
+        """
+        Make sure both definitions of gamma are equivalent.
+        :return:
+        """
+
+        for g in self.gamma_range:
+            K = exponential_kernel(self.X, self.X, gamma=g)[:, :]
+            y = K.dot(np.ones((self.n, 1)))
+
+            model = RFF(delta=0, rank=100,
+                        gamma_range=[g], random_state=42, lbd=0.0,
+                        normalize=False)
+            model.fit(self.X, y)
+
+            errors = np.zeros((len(self.rank_range),))
+            for ri, rank in enumerate(self.rank_range):
+                Gt = model.transform(X=self.X)[:, :rank]
+                Kt = Gt.dot(Gt.T)
+                errors[ri] = np.linalg.norm(K - Kt)
+
+            self.assertTrue(np.all(errors[:-1] > errors[1:]))
