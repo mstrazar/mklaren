@@ -27,7 +27,7 @@ lbd = 0
 # Data parameters
 signals = ["T%d" % i for i in range(1, 10)]
 inxs = range(1, 19)
-methods=("Mklaren", "ICD", "CSI", "Nystrom", "FITC")
+methods=("Mklaren", "ICD", "CSI", "Nystrom", "FITC", "RFF")
 
 # Store results
 d = datetime.datetime.now()
@@ -55,14 +55,18 @@ for sig in signals:
     # Assume true signal is the mean of the signals
     Y = X - X_out
     N, n = Y.shape
-    x = np.arange(n).reshape((n, 1))
-    f = Y[1:19, :n].mean(axis=0)
+    x  = np.atleast_2d(np.arange(0, n, 2)).T
+    xp = np.atleast_2d(np.arange(1, n, 2)).T
+    Nt, Np = x.shape[0], xp.shape[0]
+    f = Y[1:19, xp].mean(axis=0).ravel()
 
     for tsi in inxs:
-        y = Y[tsi, :n].reshape((n, 1))
+        y = Y[tsi, x].reshape((Nt, 1))
+        yp = Y[tsi, xp].reshape((Np, 1))
 
         # Sum and List of kernels
-        Klist = [Kinterface(data=x, kernel=exponential_kernel, kernel_args={"gamma": g}) for g in gamma_range]
+        Klist = [Kinterface(data=x, kernel=exponential_kernel,
+                            kernel_args={"gamma": g}) for g in gamma_range]
         Ksum = Kinterface(data=x, kernel=kernel_sum,
                             kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
                                          "kernels_args": [{"gamma": g} for g in gamma_range]})
@@ -71,8 +75,8 @@ for sig in signals:
         # Remove True anchors, as they are non-existent
         try:
             models = test(Ksum=Ksum, Klist=Klist,
-                          inxs=list(np.linspace(0, n-1, 7, dtype=int)),
-                          X=x, Xp=x, y=y, f=f,  delta=delta, lbd=lbd,
+                          inxs=list(np.linspace(0, Nt-1, 7, dtype=int)),
+                          X=x, Xp=xp, y=y, f=f,  delta=delta, lbd=lbd,
                           methods=methods)
         except:
             continue
@@ -84,9 +88,8 @@ for sig in signals:
                     typ="plot_models")
 
         for ky in models.keys():
-            mse_yp = mse(models[ky]["yp"].ravel(), y.ravel())
+            mse_yp = mse(models[ky]["yp"].ravel(), yp.ravel())
             mse_f = mse(models[ky]["yp"].ravel(), f.ravel())
-
             row = {"signal": sig,  "tsi": tsi, "method": ky,
                    "mse_f": mse_f, "mse_y": mse_yp,
                    "rank": rank, "lbd": lbd, "n": n}
