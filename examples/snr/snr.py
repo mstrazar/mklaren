@@ -30,6 +30,7 @@ from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
 from mklaren.regression.fitc import FITC
+from mklaren.projection.rff import RFF
 from sklearn.metrics import mean_squared_error as mse
 import matplotlib.pyplot as plt
 import pickle, gzip
@@ -41,6 +42,7 @@ meth2color = {"Mklaren": "green",
               "ICD": "blue",
               "Nystrom": "pink",
               "FITC": "orange",
+              "RFF": "magenta",
               "True": "black"}
 
 
@@ -283,7 +285,27 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
                 "evar": evar,
                 "color": meth2color["CSI"]}
 
-    # Fit CSI
+    # Fit RFF
+    if "RFF" in methods:
+        gamma_range = map(lambda k: k.kernel_args["gamma"], Klist)
+        rff = RFF(delta=delta, rank=rank, lbd=lbd, gamma_range=gamma_range)
+        t1 = time.time()
+        rff.fit(X, y)
+        t2 = time.time() - t1
+        y_rff = rff.predict(X)
+        yp_rff = rff.predict(Xp)
+        rho_rff, _ = pearsonr(y_rff, f)
+        evar = (np.var(y) - np.var(y - y_rff)) / np.var(y)
+        results["RFF"] = {
+            "rho": rho_rff,
+            # "active": active_rff,
+            # "anchors": anchors_rff,
+            "time": t2,
+            "yp": yp_rff,
+            "evar": evar,
+            "color": meth2color["RFF"]}
+
+    # Fit FITC
     if "FITC" in methods:
         fitc = FITC(rank=rank)
         t1 = time.time()
@@ -306,6 +328,8 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
             "yp": yp_fitc,
             "evar": evar,
             "color": meth2color["FITC"]}
+
+
 
     # Fit ICD
     if "ICD" in methods:
