@@ -27,7 +27,7 @@ class RFF:
             (NIPS) (2009), vol. 1, pp. 1177-1184.
     """
 
-    def __init__(self, rank, delta, lbd=0, gamma_range=[1.0], random_state=None):
+    def __init__(self, rank, delta, lbd=0, gamma_range=[1.0], random_state=None, normalize=True):
         """
         :param rank:
             Rank of approximation.
@@ -38,6 +38,8 @@ class RFF:
             Hyperparameter to RBF kernels to be modeled
         :param random_state:
             Random state.
+        :param normalize:
+            Normalize the implicit feature space.
         """
         assert isinstance(gamma_range, list) or isinstance(gamma_range, ndarray)
 
@@ -53,6 +55,7 @@ class RFF:
         self.rank = rank
         self.delta = delta
         self.lbd = lbd
+        self.normalize = normalize
         self.samplers = [RBFSampler(gamma=g,
                                     random_state = random_state,
                                     n_components = delta + rank) for g in gamma_range]
@@ -91,8 +94,12 @@ class RFF:
             Xt = samp.fit_transform(X)
             self.gmeans[si] = Xt.mean(axis=0).reshape((1, p))
             self.gnorms[si] = norm(Xt - self.gmeans[si], axis=0).reshape((1, p))
-            Rff[si, :n, :] = sqrt(1 + self.lbd) * (Xt - self.gmeans[si]) / self.gnorms[si]
-            Rff[si, n:, :] = sqrt(1 + self.lbd) * sqrt(self.lbd) * eye(p, p)
+            if self.normalize:
+                Rff[si, :n, :] = sqrt(1 + self.lbd) * (Xt - self.gmeans[si]) / self.gnorms[si]
+                Rff[si, n:, :] = sqrt(1 + self.lbd) * sqrt(self.lbd) * eye(p, p)
+            else:
+                Rff[si, :n, :] = sqrt(1 + self.lbd) * Xt
+                Rff[si, n:, :] = sqrt(1 + self.lbd) * sqrt(self.lbd) * eye(p, p)
 
         # Compute costs and select best features
         costs = zeros((len(self.samplers), p))
@@ -136,7 +143,10 @@ class RFF:
         Rff = zeros((len(self.samplers), nt, p))
         for si, samp in enumerate(self.samplers):
             if si not in self.active_set[:, 0]: continue
-            Rff[si] = (samp.transform(X) - self.gmeans[si]) / self.gnorms[si]
+            if self.normalize:
+                Rff[si] = (samp.transform(X) - self.gmeans[si]) / self.gnorms[si]
+            else:
+                Rff[si] = samp.transform(X)
 
         # Return matching columns
         for ri in xrange(self.rank):
