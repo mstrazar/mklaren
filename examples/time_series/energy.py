@@ -7,6 +7,7 @@ import datetime
 import os
 
 import numpy as np
+import itertools as it
 from mklaren.kernel.kernel import exponential_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from sklearn.metrics import mean_squared_error as mse
@@ -21,8 +22,8 @@ from examples.snr.snr import plot_signal, test
 # Hyperparameters
 gamma_range = np.logspace(-4, 4, 5)
 delta = 10
-rank = 7
-lbd = 0
+rank_range = (7, 14, 21)
+lambda_range = [0] + list(np.logspace(-1, 1, 5))
 
 # Data parameters
 signals = ["T%d" % i for i in range(1, 10)]
@@ -39,7 +40,7 @@ subdname = os.path.join(dname, "details_%d" % rcnt)
 if not os.path.exists(subdname):
     os.makedirs(subdname)
 
-header = ["signal",  "tsi", "method", "mse_f", "mse_y", "rank", "lbd", "n"]
+header = ["signal",  "tsi", "method", "mse_val", "mse_f", "mse_y", "rank", "lbd", "n"]
 writer = csv.DictWriter(open(fname, "w", buffering=0), fieldnames=header)
 writer.writeheader()
 
@@ -55,42 +56,53 @@ for sig in signals:
     # Assume true signal is the mean of the signals
     Y = X - X_out
     N, n = Y.shape
-    x  = np.atleast_2d(np.arange(0, n, 2)).T
-    xp = np.atleast_2d(np.arange(1, n, 2)).T
-    Nt, Np = x.shape[0], xp.shape[0]
-    f = Y[1:19, xp].mean(axis=0).ravel()
 
-    for tsi in inxs:
-        y = Y[tsi, x].reshape((Nt, 1))
-        yp = Y[tsi, xp].reshape((Np, 1))
+    # Training, validation, test
+    x  = np.atleast_2d(np.arange(0, n, 3)).T
+    xv = np.atleast_2d(np.arange(1, n, 3)).T
+    xp = np.atleast_2d(np.arange(2, n, 3)).T
+    Nt, Nv, Np = x.shape[0], xv.shape[0], xp.shape[0]
+    fv = Y[1:19, xv].mean(axis=0).ravel()
+    fp = Y[1:19, xp].mean(axis=0).ravel()
 
-        # Sum and List of kernels
-        Klist = [Kinterface(data=x, kernel=exponential_kernel,
-                            kernel_args={"gamma": g}) for g in gamma_range]
-        Ksum = Kinterface(data=x, kernel=kernel_sum,
-                            kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
-                                         "kernels_args": [{"gamma": g} for g in gamma_range]})
+    for rank, lbd in it.product(rank_range, lambda_range):
+        for tsi in inxs:
+            y = Y[tsi, x].reshape((Nt, 1))
+            yv = Y[tsi, xv].reshape((Nv, 1))
+            yp = Y[tsi, xp].reshape((Np, 1))
 
-        # Fit models and plot signal
-        # Remove True anchors, as they are non-existent
-        try:
-            models = test(Ksum=Ksum, Klist=Klist,
-                          inxs=list(np.linspace(0, Nt-1, 7, dtype=int)),
-                          X=x, Xp=xp, y=y, f=f,  delta=delta, lbd=lbd,
-                          methods=methods)
-        except:
-            continue
-        del models["True"]
+            # Sum and List of kernels
+            Klist = [Kinterface(data=x, kernel=exponential_kernel,
+                                kernel_args={"gamma": g}) for g in gamma_range]
+            Ksum = Kinterface(data=x, kernel=kernel_sum,
+                                kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
+                                             "kernels_args": [{"gamma": g} for g in gamma_range]})
 
-        # Store file
-        fname = os.path.join(subdname, "plot_sig-%s_tsi-%d.pdf" % (sig, tsi))
-        plot_signal(X=x, Xp=x, y=y, f=f, models=models, f_out=fname,
-                    typ="plot_models")
+            # Fit models and plot signal
+            # Remove True anchors, as they are non-existent
+            try:
+                models_val = test(Ksum=Ksum, Klist=Klist,
+                              inxs=range(rank),
+                              X=x, Xp=xv, y=y, f=fv,  delta=delta, lbd=lbd,
+                              methods=methods)
+                models = test(Ksum=Ksum, Klist=Klist,
+                              inxs=range(rank),
+                              X=x, Xp=xp, y=y, f=fp, delta=delta, lbd=lbd,
+                              methods=methods)
+            except:
+                continue
+            del models["True"]
 
-        for ky in models.keys():
-            mse_yp = mse(models[ky]["yp"].ravel(), yp.ravel())
-            mse_f = mse(models[ky]["yp"].ravel(), f.ravel())
-            row = {"signal": sig,  "tsi": tsi, "method": ky,
-                   "mse_f": mse_f, "mse_y": mse_yp,
-                   "rank": rank, "lbd": lbd, "n": n}
-            writer.writerow(row)
+            # Store file
+            fname = os.path.join(subdname, "plot_sig-%s_tsi-%d_lbd-%.3f_rank-%d.pdf" % (sig, tsi, lbd, rank))
+            plot_signal(X=x, Xp=x, y=y, f=fp, models=models, f_out=fname,
+                        typ="plot_models")
+
+            for ky in models.keys():
+                mse_yv = mse(models_val[ky]["yp"].ravel(), yv.ravel())
+                mse_yp = mse(models[ky]["yp"].ravel(), yp.ravel())
+                mse_f = mse(models[ky]["yp"].ravel(), fp.ravel())
+                row = {"signal": sig,  "tsi": tsi, "method": ky,
+                       "mse_f": mse_f, "mse_y": mse_yp, "mse_val": mse_yv,
+                       "rank": rank, "lbd": lbd, "n": n}
+                writer.writerow(row)
