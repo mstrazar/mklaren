@@ -7,6 +7,7 @@ Implemented for Nystrom and Cholesky-type decompositions.
 
 from ..mkl.align import Align, AlignLowRank
 from ..mkl.alignf import Alignf, AlignfLowRank
+from ..mkl.l2krr import L2KRR
 from ..mkl.uniform import UniformAlignment, UniformAlignmentLowRank
 
 from ..kernel.kernel import center_kernel_low_rank
@@ -32,6 +33,7 @@ class RidgeMKL:
         "align": Align,
         "alignf": Alignf,
         "alignfc": Alignf,
+        "l2krr": L2KRR,
         "uniform": UniformAlignment,
     }
 
@@ -44,7 +46,7 @@ class RidgeMKL:
 
     #  alignf expects kernels to be centered
     centered   = {"alignf", "alignfc"}
-    supervised = {"align", "alignf", "alignfc"}
+    supervised = {"align", "alignf", "alignfc", "l2krr"}
 
     def __init__(self, lbd=0, method="align", method_init_args={}, low_rank=False):
         """
