@@ -38,7 +38,7 @@ class L2KRR(Align):
         self.max_iter = max_iter
         self.nu = nu
         self.mu = self.Kappa = self.trained = None
-        self.alpha = self.itr = 0
+        self.alpha = self.iter = 0
 
     def fit(self, Ks, y, holdout=None, mu0=None):
         """
@@ -61,18 +61,19 @@ class L2KRR(Align):
             mu0 = ones((p, 1))
 
         # Filter out hold out values
-        if not isinstance(holdout, type(None)):
+        if holdout is not None:
             holdin = sorted(list(set(range(m)) - set(holdout)))
             y = y[holdin]
-            Ksa = map(lambda k: k[holdin, :][:, holdin], Ks)
+            Ksa = list(map(lambda k: k[holdin, :][:, holdin], Ks))
             en = enumerate(Ksa)
+            m = Ksa[0].shape[0]
         else:
             Ksa = Ks
             en = enumerate(Ksa)
 
         v = zeros((p, 1))
         mu = ones((p, 1))
-        Kappa = array(sum([mu_i * k_i for mu_i, k_i in zip(mu0, Ks)]))
+        Kappa = array(sum([mu_i * k_i for mu_i, k_i in zip(mu0, Ksa)]))
         alpha1 = inv(Kappa + self.lbd * eye(m, m)).dot(y)
 
         for itr in range(self.max_iter):
@@ -81,7 +82,7 @@ class L2KRR(Align):
                  v[i] = alpha.T.dot(K).dot(alpha)
             mu = mu0 + self.lbd2 * (v / norm(v))
 
-            Kappa = array(sum([mu_i * k_i for mu_i, k_i in zip(mu, Ks)]))
+            Kappa = array(sum([mu_i * k_i for mu_i, k_i in zip(mu, Ksa)]))
             alpha1 = self.nu * alpha + \
                      (1 - self.nu) * inv(Kappa + self.lbd * eye(m, m)).dot(y)
             if norm(alpha1 - alpha) < self.eps:
@@ -89,6 +90,6 @@ class L2KRR(Align):
 
         self.mu = mu
         self.trained = True
-        self.Kappa = Kappa
+        self.Kappa = array(sum([mu_i * k_i for mu_i, k_i in zip(mu, Ks)]))
         self.alpha = alpha
         self.iter = itr
