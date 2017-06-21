@@ -6,9 +6,10 @@ import csv
 import datetime
 import os
 
+import sys
 import numpy as np
 import itertools as it
-from mklaren.kernel.kernel import exponential_kernel, kernel_sum
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern_kernel, periodic_kernel
 from mklaren.kernel.kinterface import Kinterface
 from sklearn.metrics import mean_squared_error as mse
 
@@ -18,9 +19,34 @@ from examples.snr.snr import plot_signal, test
 
 # Dataset description
 # https://archive.ics.uci.edu/ml/datasets/Appliances+energy+prediction#
+args = dict(enumerate(sys.argv))
+ename = args.get(1, "exponential")
+print("Proceeding with %s scenario ..." % ename)
+
+kernel_function = None
+pars = dict()
+methods = []
+
+# Experiment parameters
+if ename == "exponential":
+    kernel_function = exponential_kernel
+    pars = {"gamma": np.logspace(-4, 4, 5),}
+    methods = ("Mklaren", "ICD", "CSI", "Nystrom",
+               "FITC", "RFF")
+
+elif ename == "matern":
+    kernel_function = matern_kernel
+    pars = {"l": np.logspace(-4, 4, 5)}
+    methods = ("Mklaren", "ICD", "CSI", "Nystrom", )
+
+elif ename == "periodic":
+    kernel_function = periodic_kernel
+    pars = {"sigma": np.logspace(-2, 2, 5),
+            "per": np.logspace(-1, 1, 5)}
+    methods = ("Mklaren", "ICD", "CSI", "Nystrom", )
+
 
 # Hyperparameters
-gamma_range = np.logspace(-4, 4, 5)
 delta = 10
 rank_range = (7, 14, 21)
 lambda_range = [0] + list(np.logspace(-1, 1, 5))
@@ -28,7 +54,6 @@ lambda_range = [0] + list(np.logspace(-1, 1, 5))
 # Data parameters
 signals = ["T%d" % i for i in range(1, 10)]
 inxs = range(1, 19)
-methods=("Mklaren", "ICD", "CSI", "Nystrom", "FITC", "RFF")
 
 # Store results
 d = datetime.datetime.now()
@@ -40,7 +65,8 @@ subdname = os.path.join(dname, "details_%d" % rcnt)
 if not os.path.exists(subdname):
     os.makedirs(subdname)
 
-header = ["signal",  "tsi", "method", "mse_val", "mse_f", "mse_y", "rank", "lbd", "n"]
+header = ["experiment", "signal",  "tsi", "method",
+          "mse_val", "mse_f", "mse_y", "rank", "lbd", "n"]
 writer = csv.DictWriter(open(fname, "w", buffering=0), fieldnames=header)
 writer.writeheader()
 
@@ -58,9 +84,15 @@ for sig in signals:
     N, n = Y.shape
 
     # Training, validation, test
-    x  = np.atleast_2d(np.arange(0, n, 3)).T
-    xv = np.atleast_2d(np.arange(1, n, 3)).T
-    xp = np.atleast_2d(np.arange(2, n, 3)).T
+    if ename == "periodic":
+        x = np.atleast_2d(np.arange(0, n/2)).T
+        xv = np.atleast_2d(np.arange(n/2, n, 2)).T
+        xp = np.atleast_2d(np.arange(n/2+1, n, 2)).T
+    else:
+        x  = np.atleast_2d(np.arange(0, n, 3)).T
+        xv = np.atleast_2d(np.arange(1, n, 3)).T
+        xp = np.atleast_2d(np.arange(2, n, 3)).T
+
     Nt, Nv, Np = x.shape[0], xv.shape[0], xp.shape[0]
     fv = Y[1:19, xv].mean(axis=0).ravel()
     fp = Y[1:19, xp].mean(axis=0).ravel()
@@ -72,11 +104,15 @@ for sig in signals:
             yp = Y[tsi, xp].reshape((Np, 1))
 
             # Sum and List of kernels
-            Klist = [Kinterface(data=x, kernel=exponential_kernel,
-                                kernel_args={"gamma": g}) for g in gamma_range]
+            vals = list(it.product(*pars.values()))
+            names = pars.keys()
+            Klist = [Kinterface(data=x, kernel=kernel_function, row_normalize=True,
+                                kernel_args=dict([(n, v) for n, v in zip(names, vlist)])) for vlist in vals]
             Ksum = Kinterface(data=x, kernel=kernel_sum,
-                                kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
-                                             "kernels_args": [{"gamma": g} for g in gamma_range]})
+                                kernel_args={"kernels": [kernel_function] * len(vals),
+                                             "kernels_args": [dict([(n, v) for n, v in zip(names, vlist)])
+                                                              for vlist in vals]},
+                              row_normalize=True)
 
             # Fit models and plot signal
             # Remove True anchors, as they are non-existent
@@ -102,7 +138,8 @@ for sig in signals:
                 mse_yv = mse(models_val[ky]["yp"].ravel(), yv.ravel())
                 mse_yp = mse(models[ky]["yp"].ravel(), yp.ravel())
                 mse_f = mse(models[ky]["yp"].ravel(), fp.ravel())
-                row = {"signal": sig,  "tsi": tsi, "method": ky,
+                row = {"experiment": ename,
+                       "signal": sig,  "tsi": tsi, "method": ky,
                        "mse_f": mse_f, "mse_y": mse_yp, "mse_val": mse_yv,
                        "rank": rank, "lbd": lbd, "n": n}
                 writer.writerow(row)
