@@ -225,7 +225,7 @@ def center_kernel(K):
     :return: (``numpy.ndarray``) Centered kernel for a sample of points.
 
     """
-    m = float(K.shape[0])
+    m = int(K.shape[0])
     o = np.ones((m, 1))
     I = np.eye(m, m)
     Ic = (I-o.dot(o.T)/m)
