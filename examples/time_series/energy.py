@@ -9,7 +9,7 @@ import os
 import sys
 import numpy as np
 import itertools as it
-from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern_kernel, periodic_kernel
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern32_gpy, periodic_kernel
 from mklaren.kernel.kinterface import Kinterface
 from sklearn.metrics import mean_squared_error as mse
 
@@ -31,18 +31,17 @@ methods = []
 if ename == "exponential":
     kernel_function = exponential_kernel
     pars = {"gamma": np.logspace(-4, 4, 5),}
-    methods = ("Mklaren", "ICD", "CSI", "Nystrom",
-               "FITC", "RFF")
+    methods = ("Mklaren", "ICD", "CSI", "Nystrom", "FITC", "RFF")
 
 elif ename == "matern":
-    kernel_function = matern_kernel
-    pars = {"l": np.logspace(-4, 4, 5)}
-    methods = ("Mklaren", "ICD", "CSI", "Nystrom", )
+    kernel_function = matern32_gpy
+    pars = {"lengthscale": np.logspace(-4, 4, 5)}
+    methods = ("Mklaren", "ICD", "CSI", "Nystrom", "FITC")
 
 elif ename == "periodic":
     kernel_function = periodic_kernel
     pars = {"sigma": np.logspace(-2, 2, 5),
-            "per": np.logspace(-1, 1, 5)}
+            "per": np.logspace(1, 3, 10)}
     methods = ("Mklaren", "ICD", "CSI", "Nystrom", )
 
 
@@ -66,7 +65,7 @@ if not os.path.exists(subdname):
     os.makedirs(subdname)
 
 header = ["experiment", "signal",  "tsi", "method",
-          "mse_val", "mse_f", "mse_y", "rank", "lbd", "n"]
+          "mse_val", "mse_f", "mse_y", "rank", "lbd", "n", "time"]
 writer = csv.DictWriter(open(fname, "w", buffering=0), fieldnames=header)
 writer.writeheader()
 
@@ -94,8 +93,7 @@ for sig in signals:
         xp = np.atleast_2d(np.arange(2, n, 3)).T
 
     Nt, Nv, Np = x.shape[0], xv.shape[0], xp.shape[0]
-    fv = Y[1:19, xv].mean(axis=0).ravel()
-    fp = Y[1:19, xp].mean(axis=0).ravel()
+    f = Y[1:19, x].mean(axis=0).ravel()
 
     for rank, lbd in it.product(rank_range, lambda_range):
         for tsi in inxs:
@@ -108,22 +106,20 @@ for sig in signals:
             names = pars.keys()
             Klist = [Kinterface(data=x, kernel=kernel_function, row_normalize=True,
                                 kernel_args=dict([(n, v) for n, v in zip(names, vlist)])) for vlist in vals]
-            Ksum = Kinterface(data=x, kernel=kernel_sum,
+            Ksum = Kinterface(data=x, kernel=kernel_sum, row_normalize=True,
                                 kernel_args={"kernels": [kernel_function] * len(vals),
                                              "kernels_args": [dict([(n, v) for n, v in zip(names, vlist)])
-                                                              for vlist in vals]},
-                              row_normalize=True)
-
+                                                              for vlist in vals]})
             # Fit models and plot signal
             # Remove True anchors, as they are non-existent
             try:
                 models_val = test(Ksum=Ksum, Klist=Klist,
                               inxs=range(rank),
-                              X=x, Xp=xv, y=y, f=fv,  delta=delta, lbd=lbd,
+                              X=x, Xp=xv, y=y, f=f,  delta=delta, lbd=lbd,
                               methods=methods)
                 models = test(Ksum=Ksum, Klist=Klist,
                               inxs=range(rank),
-                              X=x, Xp=xp, y=y, f=fp, delta=delta, lbd=lbd,
+                              X=x, Xp=xp, y=y, f=f, delta=delta, lbd=lbd,
                               methods=methods)
             except:
                 continue
@@ -131,15 +127,16 @@ for sig in signals:
 
             # Store file
             fname = os.path.join(subdname, "plot_sig-%s_tsi-%d_lbd-%.3f_rank-%d.pdf" % (sig, tsi, lbd, rank))
-            plot_signal(X=x, Xp=x, y=y, f=fp, models=models, f_out=fname,
+            plot_signal(X=xp, Xp=xp, y=yp, f=yp, models=models, f_out=fname,
                         typ="plot_models")
 
             for ky in models.keys():
                 mse_yv = mse(models_val[ky]["yp"].ravel(), yv.ravel())
                 mse_yp = mse(models[ky]["yp"].ravel(), yp.ravel())
                 mse_f = mse(models[ky]["yp"].ravel(), fp.ravel())
+                time = models[ky]["time"]
                 row = {"experiment": ename,
                        "signal": sig,  "tsi": tsi, "method": ky,
                        "mse_f": mse_f, "mse_y": mse_yp, "mse_val": mse_yv,
-                       "rank": rank, "lbd": lbd, "n": n}
+                       "rank": rank, "lbd": lbd, "n": n, "time": time}
                 writer.writerow(row)
