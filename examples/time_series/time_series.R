@@ -8,7 +8,15 @@ data = read.csv("../output/energy/2017-6-15/results_0.csv", header = TRUE)
 data = read.csv("../output/energy/2017-6-20/results_2.csv", header = TRUE)
 
 # Results for CV for different values of lambda and ranks
+
+# Exponetial kernel
 alldata = read.csv("../output/energy/2017-6-20/results_4.csv", header = TRUE)
+
+# Matern kernel
+alldata = read.csv("../output/energy/2017-6-21/results_4.csv", header = TRUE)
+
+
+
 alldata$name = sprintf("%s.%s.%s.%s", alldata$method, alldata$tsi, 
                                       alldata$signal, alldata$rank)
     # Select rows via CV
