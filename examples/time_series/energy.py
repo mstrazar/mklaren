@@ -133,7 +133,7 @@ for sig in signals:
             for ky in models.keys():
                 mse_yv = mse(models_val[ky]["yp"].ravel(), yv.ravel())
                 mse_yp = mse(models[ky]["yp"].ravel(), yp.ravel())
-                mse_f = mse(models[ky]["yp"].ravel(), fp.ravel())
+                mse_f = mse(models[ky]["yp"].ravel(), f.ravel())
                 time = models[ky]["time"]
                 row = {"experiment": ename,
                        "signal": sig,  "tsi": tsi, "method": ky,
