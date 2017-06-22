@@ -46,7 +46,7 @@ class TestFITC(unittest.TestCase):
 
             # Fit a model
             model = FITC()
-            model.fit(Ks, y, optimize=False)
+            model.fit(Ks, y, optimize=False, fix_kernel=False)
 
             # Compare kernels
             self.assertAlmostEqual(np.linalg.norm(model.kernel.K(X, X) - Km[:, :]), 0, places=3)
@@ -56,6 +56,13 @@ class TestFITC(unittest.TestCase):
             v1 = np.var(y.ravel())
             v2 = np.var((y-yp).ravel())
             self.assertTrue(v2 < v1)
+
+            # Fixed model
+            model_fix = FITC()
+            model_fix.fit(Ks, y, optimize=False, fix_kernel=True)
+            ypf = model_fix.predict([X])
+            v3 = np.var((y - ypf).ravel())
+            self.assertTrue(v3 < v1)
 
 
 if __name__ == "__main__":

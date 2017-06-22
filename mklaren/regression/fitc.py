@@ -29,11 +29,12 @@ class FITC:
         self.model = None
         self.kernel  = None
 
-    def fit(self, Ks, y, optimize=True):
+    def fit(self, Ks, y, optimize=True, fix_kernel=False):
         """
         :param Ks: Kernel interfaces. Must contain exponential kernels.
         :param y: Output (target) values.
         :param optimize: Optimize hyperparameters. This affects the kernel object too.
+        :param fix_kernel: Fix kernel hyperparameters.
         """
         assert all(map(lambda K: K.kernel == exponential_kernel, Ks))
         gammas = map(lambda K: K.kernel_args["gamma"], Ks)
@@ -51,6 +52,7 @@ class FITC:
         self.model = GPy.models.SparseGPRegression(X, y,
                                                   num_inducing=self.rank,
                                                   kernel=self.kernel)
+        if fix_kernel: self.model.kern.fix()
         if optimize: self.model.optimize()
         self.anchors_ = np.array(self.model.Z)
 
