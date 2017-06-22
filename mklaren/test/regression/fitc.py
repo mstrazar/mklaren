@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import GPy
 from mklaren.regression.fitc import FITC
-from mklaren.kernel.kernel import exponential_kernel, kernel_sum
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern52_gpy, matern32_gpy, periodic_gpy
 from mklaren.kernel.kinterface import Kinterface
 from scipy.stats import multivariate_normal as mvn
 
@@ -63,6 +63,33 @@ class TestFITC(unittest.TestCase):
             ypf = model_fix.predict([X])
             v3 = np.var((y - ypf).ravel())
             self.assertTrue(v3 < v1)
+
+
+    def testAllKernels(self):
+        X = self.X
+        y = np.random.rand(X.shape[0], 1)
+
+        Ks = [Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),
+              Kinterface(data=X, kernel=matern32_gpy, kernel_args={"lengthscale": 3.0}),
+              Kinterface(data=X, kernel=matern52_gpy, kernel_args={"lengthscale": 5.0}),
+              # Kinterface(data=X, kernel=periodic_gpy, kernel_args={"lengthscale": 5.0, "period": 4.0}),
+              ]
+        Km = sum([K[:, :] for K in Ks])
+
+        kern = GPy.kern.RBF(1, lengthscale=FITC.gamma2lengthscale(0.1)) \
+               + GPy.kern.Matern32(1, lengthscale=3) \
+               + GPy.kern.Matern52(1, lengthscale=5)
+               # + GPy.kern.PeriodicExponential(1, lengthscale=5, period=4)
+
+        Ky = kern.K(X, X)
+        self.assertAlmostEqual(np.linalg.norm(Ky - Km[:, :]), 0, places=3)
+
+        model = FITC()
+        model.fit(Ks, y, optimize=True, fix_kernel=True)
+        yp = model.predict([X])
+        v1 = np.var(y.ravel())
+        v2 = np.var((y - yp).ravel())
+        self.assertTrue(v2 < v1)
 
 
 if __name__ == "__main__":

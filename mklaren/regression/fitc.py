@@ -1,6 +1,6 @@
 import GPy
 import numpy as np
-from mklaren.kernel.kernel import exponential_kernel
+from mklaren.kernel.kernel import exponential_kernel, matern32_gpy, matern52_gpy, periodic_gpy
 
 class FITC:
     """
@@ -29,26 +29,38 @@ class FITC:
         self.model = None
         self.kernel  = None
 
+
     def fit(self, Ks, y, optimize=True, fix_kernel=False):
         """
-        :param Ks: Kernel interfaces. Must contain exponential kernels.
+        :param Ks: Kernel interfaces. Must contain supported kernels.
         :param y: Output (target) values.
         :param optimize: Optimize hyperparameters. This affects the kernel object too.
         :param fix_kernel: Fix kernel hyperparameters.
         """
-        assert all(map(lambda K: K.kernel == exponential_kernel, Ks))
-        gammas = map(lambda K: K.kernel_args["gamma"], Ks)
-
-        # Combine with a sum of the kernel matrix
-        self.kernel = GPy.kern.RBF(1, variance=1,
-                                   lengthscale=self.gamma2lengthscale(gammas[0]))
-        for gm in gammas[1:]:
-            self.kernel += GPy.kern.RBF(1, variance=1,
-                                        lengthscale=self.gamma2lengthscale(gm))
-
         X = Ks[0].data
-        n = X.shape[0]
+        n, d = X.shape
         y = y.reshape((n, 1))
+
+        kernels = []
+        for Kint in Ks:
+            if Kint.kernel == exponential_kernel:
+                assert "gamma" in Kint.kernel_args
+                kern = GPy.kern.RBF(d, lengthscale=self.gamma2lengthscale(Kint.kernel_args["gamma"]))
+            elif Kint.kernel == matern32_gpy:
+                kern = GPy.kern.Matern32(d, **Kint.kernel_args)
+            elif Kint.kernel == matern52_gpy:
+                kern = GPy.kern.Matern52(d, **Kint.kernel_args)
+            elif Kint.kernel == periodic_gpy:
+                # kern = GPy.kern.PeriodicExponential(d, **Kint.kernel_args)
+                raise ValueError("GPy.kern.PeriodicExponential is currently "
+                                 "not supported by SparseGPRegression!")
+            else:
+                raise ValueError("Unknown kernel: %s" % str(Kint.kernel))
+            kernels.append(kern)
+
+        self.kernel = kernels[0]
+        for k in kernels[1:]: self.kernel += k
+
         self.model = GPy.models.SparseGPRegression(X, y,
                                                   num_inducing=self.rank,
                                                   kernel=self.kernel)
