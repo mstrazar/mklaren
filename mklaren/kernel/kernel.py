@@ -3,10 +3,9 @@
 """
 
 import numpy as np
-import numpy.ma as ma
-from itertools import product
 import scipy.sparse as sp
 from sklearn.gaussian_process.kernels import Matern
+from scipy.spatial.distance import cdist
 
 def linear_kernel(x, y, b=0):
         """
@@ -116,12 +115,9 @@ def exponential_kernel(x, y, sigma=2.0, gamma=None):
     if np.asarray(x).ndim == 0:
         return np.exp(-gamma  * (x - y)**2)
     if len(x.shape) >= 2 or len(y.shape) >= 2:
-        K = np.zeros((x.shape[0], y.shape[0]))
-        for i, xi in enumerate(x):
-            for j, yj in enumerate(y):
-                K[i, j] = np.exp(-gamma * np.linalg.norm(xi - yj, ord=2)**2)
-        return K
+        return np.exp(-gamma * cdist(x, y, metric="euclidean")**2)
     return np.exp(-gamma  * np.linalg.norm(x - y, ord=2)**2)
+
 
 rbf_kernel = exponential_kernel
 
@@ -152,15 +148,10 @@ def periodic_kernel(x, y, sigma=1, per=1, l=1):
         y = np.array(y.todense())
     if not hasattr(x, "shape"):
         return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / per) ** 2 / l ** 2)
-
     if np.asarray(x).ndim == 0:
         return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / per) ** 2 / l ** 2)
     if len(x.shape) >= 2 or len(y.shape) >= 2:
-        K = np.zeros((x.shape[0], y.shape[0]))
-        for i, xi in enumerate(x):
-            for j, yj in enumerate(y):
-                K[i, j] = sigma**2 * np.exp(- 2 * np.sin(np.pi * np.linalg.norm(xi - yj, ord=2) / per) ** 2 / l ** 2)
-        return K
+        return sigma ** 2 * np.exp(- 2 * np.sin(np.pi * cdist(x, y, metric="euclidean") / per) ** 2 / l ** 2)
     return sigma**2 * np.exp(- 2 * np.sin(np.pi * np.absolute(x - y) / per) ** 2 / l ** 2)
 
 
