@@ -1,11 +1,31 @@
 """ Methods related to calculation of kernel function values and kernel
     matrices.
 """
-
+import GPy
 import numpy as np
 import scipy.sparse as sp
 from sklearn.gaussian_process.kernels import Matern
 from scipy.spatial.distance import cdist
+
+
+def correct_xy(x, y):
+    """
+    :param x: 2D or 1D array
+    :param y: 2D or 1D array
+    :return: Convert x, y to dense, 2D arrays.
+    """
+    if sp.isspmatrix(x) and sp.isspmatrix(y):
+        x = np.array(x.todense())
+        y = np.array(y.todense())
+    if not hasattr(x, "shape") or np.asarray(x).ndim == 0:
+        x = np.reshape(np.array([x]), (1, 1))
+    if not hasattr(y, "shape") or np.asarray(y).ndim == 0:
+        y = np.reshape(np.array([y]), (1, 1))
+
+    if np.asarray(x).ndim == 1: x = np.reshape(np.array([x]), (len(x), 1))
+    if np.asarray(y).ndim == 1: y = np.reshape(np.array([y]), (len(y), 1))
+    return x, y
+
 
 def linear_kernel(x, y, b=0):
         """
@@ -191,6 +211,33 @@ def matern_kernel(x, y, l=1.0, nu=1.5):
     return mk(x, y)
 
 
+def matern32_gpy(x, y, lengthscale=1):
+    """
+    Temp: GPy wrapper for the matern kernel.
+    """
+    x, y = correct_xy(x, y)
+    k = GPy.kern.Matern32(input_dim=x.shape[1], lengthscale=lengthscale)
+    return k.K(x, y)
+
+
+def matern52_gpy(x, y, lengthscale=1):
+    """
+    Temp: GPy wrapper for the matern kernel.
+    """
+    x, y = correct_xy(x, y)
+    k = GPy.kern.Matern52(input_dim=x.shape[1], lengthscale=lengthscale)
+    return k.K(x, y)
+
+
+def periodic_gpy(x, y, lengthscale=1, period=6.28):
+    """
+    Temp: GPy wrapper for the matern kernel.
+    """
+    x, y = correct_xy(x, y)
+    k = GPy.kern.PeriodicExponential(input_dim=x.shape[1], lengthscale=lengthscale, period=period)
+    return k.K(x, y)
+
+
 def random_kernel(n):
     """
     Generate a random kernel matrix of shape ``(n, n)``.
@@ -201,6 +248,7 @@ def random_kernel(n):
     """
     G = np.random.rand(n, n)
     return G.T.dot(G)
+
 
 def center_kernel(K):
     """
