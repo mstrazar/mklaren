@@ -69,19 +69,21 @@ class CSI:
                     verbose=False)
         G, P, Q, R, error1, error2, error, predicted_gain, true_gain = \
             octave.pull(["G", "P", "Q", "R", "error1", "error2", "error", "predicted_gain", "true_gain"])
+        R = np.atleast_2d(np.array(R))
 
         # Octave indexes from 1
         P = P.ravel().astype(int) - 1
 
         # Resort rows to respect the order
-        n, k = G.shape
+        n, k = K.shape[0], self.rank
         self.I = self.active_set_= list(P[:k])
 
         Go = np.zeros((n, k))
         Qo = np.zeros((n, k))
+        Ro = np.zeros((k, k))
         Go[P, :] = G[:, :k]
         Qo[P, :] = Q[:, :k]
-        Ro = R[:k, :k]
+        Ro[:, :] = R[:k, :k]
         self.G = Go[:, :self.rank]
         self.P = P[:self.rank]
         self.Q = Qo[:, :]

@@ -288,6 +288,6 @@ class RidgeLowRank:
         for K, X, Trn, active in zip(self.Ks, Xs, self.Ts, self.As,):
             K_ST = K(K.data[active], X)
             G    = Trn.dot(K_ST).T
-            Gs.append(G)
+            Gs.append(G.reshape((len(X), self.rank)))
             XT = hstack(Gs)
         return self.reg_model.predict(X=XT).ravel()
