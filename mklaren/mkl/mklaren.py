@@ -57,6 +57,7 @@ class Mklaren:
         self.trained   = False
         self.debug     = debug
         self.nystrom   = None
+        self.sol_path  = []
         assert self.lbd >= 0
 
 
@@ -236,6 +237,7 @@ class Mklaren:
                 # Update regression line and residual
                 regr     = regr + grad * bisec
                 residual = residual - grad * bisec
+                self.sol_path.append(regr[:-self.rank])
 
                 # Update maximum correlation
                 C  = max(absolute(Xa.T.dot(residual)))
@@ -248,9 +250,11 @@ class Mklaren:
                 grad = C / A
                 regr = regr + grad * bisec
                 residual = residual - grad * bisec
+                self.sol_path.append(regr[:-self.rank])
 
             # Increase column counter
             data[pi]["k"] = k + 1
+
 
         # Recover beta when both transforms are applied
         Q, R            = qr(Xa)

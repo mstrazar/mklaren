@@ -258,6 +258,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
                      "rho": rho_Klist,
                      "active": active_Klist,
                      "anchors": anchors_Klist,
+                     "sol_path": mkl.sol_path,
                      "yp": yp_Klist,
                      "time": t2,
                      "evar": evar,
@@ -500,7 +501,6 @@ def example_models(out_dir):
     :return:
     """
     n = 100
-
     for noise_model, inducing_model, seed in it.product(("fixed", "increasing"), ("uniform", "biased"), range(0, 3)):
         fname = os.path.join(out_dir, "example_%s_%s_%d.pdf" % (noise_model, inducing_model, seed))
         noise = generate_noise(n, noise_model, 1)
