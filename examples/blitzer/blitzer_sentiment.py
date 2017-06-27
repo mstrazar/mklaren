@@ -1,8 +1,11 @@
 import sys
+import os
+import csv
+import datetime
 
 # Methods
 from mklaren.mkl.mklaren import Mklaren
-from mklaren.mkl.align import AlignLowRank, Align
+from mklaren.mkl.align import AlignLowRank
 from mklaren.regression.ridge import RidgeMKL
 
 # Kernels
@@ -14,7 +17,7 @@ from datasets.blitzer import load_books, load_dvd,\
     load_electronics, load_kitchen
 
 # Utils
-from numpy import logspace, array, vstack, log10, argsort, var
+from numpy import logspace, array, vstack, argsort, var
 from random import shuffle, seed
 
 # Dataset and number of samples
@@ -23,12 +26,34 @@ dset    = argv.get(1, "books")
 n       = None
 max_features = 500
 delta   = 1     # Number of look-ahead columns
-
-
-# Hyperparameters
 lbd_range    = list(logspace(-3, 3, 7))
 center       = True
-cv_iter      = 5      # Cross-validation iterations
+cv_iter      = 5        # Cross-validation iterations
+training_size   = 0.8   # Training set
+validation_size = 0.2   # Validation set (for selecting hyperparameters, etc.)
+
+# Set rank range wrt. training size
+rank_range = [10, 20, 40, 80, 160, 320]
+
+# Fixed output
+# Create output directory
+d = datetime.datetime.now()
+dname = os.path.join("..", "output", "blitzer_sentiment",
+                     "%d-%d-%d" % (d.year, d.month, d.day))
+if not os.path.exists(dname): os.makedirs(dname)
+rcnt = len(os.listdir(dname))
+fname = os.path.join(dname, "results_%d.csv" % rcnt)
+
+print("Running on dataset % s" % dset)
+print("Writing output to %s" % fname)
+
+
+# Output
+header = ["dataset", "method", "rank", "iteration", "lambda", "RMSE"]
+fp = open(fname, "w", buffering=0)
+writer = csv.DictWriter(fp, fieldnames=header)
+writer.writeheader()
+
 
 # Methods and order
 methods = {
@@ -50,9 +75,6 @@ datasets = {
     "electronics":  (load_electronics, {"n": n, "max_features": max_features}),
 }
 
-
-training_size   = 0.8   # Training set
-validation_size = 0.2   # Validation set (for selecting hyperparameters, etc.)
 
 
 load, load_args = datasets[dset]
@@ -78,7 +100,6 @@ y  = vstack([y1 ,y2])
 inxs_tr = range(0, ndata)
 inxs_te = range(ndata, ndata + ndata_test)
 
-print X.shape
 # Center targets with *training* mean
 y = y - y[inxs_tr].mean()
 n = X.shape[0]
@@ -87,9 +108,6 @@ n = X.shape[0]
 Vs = [X[:, i].reshape((n, 1)) for i in range(X.shape[1])]
 if center:
     Vs = map(center_kernel_low_rank, Vs)
-
-# Set rank range wrt. training size
-rank_range = [10, 20, 40, 80, 160, 320][:1]
 
 for cv in range(cv_iter):
     seed(cv)
@@ -104,9 +122,6 @@ for cv in range(cv_iter):
     Ks_tr  = [Kinterface(data=v[tr], kernel=linear_kernel) for v in Vs]
     V_val = [v[tval] for v in Vs]
     V_te  = [v[te] for v in Vs]
-
-    output = "\t".join(["Method", "effective rank", "iteration", "lambda", "RMSE"])
-    print(output)
 
     for rank in rank_range:
 
@@ -148,7 +163,11 @@ for cv in range(cv_iter):
                 model.fit(Vs_subset, y, holdout=holdout)
                 yp    = model.predict(te).ravel()
 
-            score = var(y_te.ravel() - yp)**0.5
-            output = "\t".join(map(str, [mname, rank, cv, \
-                                         best_lambda, score]))
-            print(output)
+            score = var(y_te.ravel() - yp) ** 0.5
+            row = {"dataset": dset,
+                   "method": mname,
+                   "rank": rank,
+                   "iteration": cv,
+                   "lambda": best_lambda,
+                   "RMSE": score}
+            writer.writerow(row)
