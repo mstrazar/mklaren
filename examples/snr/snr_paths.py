@@ -14,7 +14,7 @@ n = 100
 rank = 3
 inducing_model = "biased"
 noise = 0.03
-for seed in xrange(42, 48):
+for seed in xrange(42, 42+30):
 
     Ksum, Klist, inxs, X, Xp, y, f = generate_data(n=n,
                                                    rank=rank,
