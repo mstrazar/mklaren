@@ -74,6 +74,7 @@ class RidgeMKL:
                 self.mkl_model  = self.mkls_low_rank[method](**init_args)
         self.lbd        = lbd
         self.low_rank   = low_rank
+        self.mu         = None
         self.trained    = False
 
 
@@ -99,6 +100,7 @@ class RidgeMKL:
             self.mkl_model.fit(Hs, y, holdout=holdout)
         else:
             self.mkl_model.fit(Hs)
+        self.mu = self.mkl_model.mu
 
         if self.low_rank:
             self.X = hstack(map(lambda e: sqrt(e[0]) * e[1],
