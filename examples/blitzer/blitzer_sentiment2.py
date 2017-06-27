@@ -57,13 +57,12 @@ writer.writeheader()
 
 # Methods and order
 methods = {
-    "Mklaren": (Mklaren,  {"delta": delta, "rank": 1}),
+    # "Mklaren": (Mklaren,  {"delta": delta, "rank": 1}),
     "uniform": (RidgeMKL, {"method": "uniform", "low_rank": True}),
     "align":   (RidgeMKL, {"method": "align", "low_rank": True}),
     "alignf":  (RidgeMKL, {"method": "alignf", "low_rank": True}),
     "alignfc": (RidgeMKL, {"method": "alignfc", "low_rank": True}),
     "l2krr":   (RidgeMKL, {"method": "alignfc", "low_rank": True})
-
 }
 
 
@@ -130,6 +129,7 @@ for cv in range(cv_iter):
 
             best_lambda = lbd_range[0]
             best_score  = float("inf")
+            best_subset = None
             if mname == "Mklaren":
                 kwargs["rank"] = rank
 
@@ -138,6 +138,7 @@ for cv in range(cv_iter):
                 if mname == "Mklaren":
                     model.fit(Ks_tr, y_tr)
                     yp    = model.predict(V_val).ravel()
+                    subset = None
                 else:
                     holdout = tval + te
                     model.fit(Vs, y, holdout=holdout)
@@ -145,10 +146,12 @@ for cv in range(cv_iter):
                     Vs_subset = [Vs[kernel_order[i]] for i in range(rank)]
                     model.fit(Vs_subset, y, holdout=holdout)
                     yp    = model.predict(tval).ravel()
+                    subset = Vs_subset
                 score = var(y_val.ravel() - yp)**0.5
                 if score < best_score:
                     best_score = score
                     best_lambda = lbd
+                    best_subset = subset
 
             # Fit model with best hyperparameters
             model = Mclass(lbd=best_lambda, **kwargs)
@@ -157,7 +160,7 @@ for cv in range(cv_iter):
                 yp    = model.predict(V_te).ravel()
             else:
                 holdout = tval + te
-                model.fit(Vs_subset, y, holdout=holdout)
+                model.fit(best_subset, y, holdout=holdout)
                 yp    = model.predict(te).ravel()
 
             score = var(y_te.ravel() - yp) ** 0.5
