@@ -48,7 +48,7 @@ for seed in xrange(42, 48):
                                                 [sol_path_mkl, sol_path_csi],
                                                 [sol_anchors_mkl, sol_anchors_csi]):
         fname = os.path.join(out_dir, "sol_path_%s-seed-%d.pdf" % (sol_name, seed))
-        plt.figure()
+        plt.figure(figsize=(3.38, 2.0))
         plt.title(sol_name)
         plt.plot(X.ravel(), y, ".", color="gray")
         plt.plot(X.ravel(), f, "--", color="gray")
@@ -59,8 +59,8 @@ for seed in xrange(42, 48):
             plt.text(X.ravel()[ai], sol.ravel()[ai] + 0.05, str(si))
         plt.xlabel("Input space (x)")
         plt.ylabel("Output space (y)")
-        plt.legend(loc=2)
-        plt.savefig(fname)
+        # plt.legend(loc=2)
+        plt.savefig(fname, bbox_inches="tight")
         plt.close()
         print("Written %s" % fname)
 
