@@ -39,7 +39,7 @@ for seed in xrange(42, 48):
     # Generate CSI solution path
     sol_path_csi = []
     for rk in range(1, rank+1):
-        models = test(Ksum, Klist, inxs[:rk], X, Xp, y, f, methods=["CSI"])
+        models = test(Ksum, Klist, inxs[:rk], X, Xp, y, f, methods=["CSI"], kappa=0.99999)
         sol_path_csi.append(models["CSI"]["yp"].ravel())
         sol_anchors_csi = r["CSI"]["active"]
 

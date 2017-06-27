@@ -213,7 +213,7 @@ def plot_signal_2d(X, Xp, y, f, models=None, tit=""):
     plt.show()
 
 
-def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
+def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
          methods=("Mklaren", "ICD", "CSI", "Nystrom", "FITC")):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
@@ -267,7 +267,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1,
     # Fit CSI
     if "CSI" in methods:
         csi = RidgeLowRank(rank=rank, lbd=lbd,
-                           method="csi", method_init_args={"delta": delta},)
+                           method="csi", method_init_args={"delta": delta, "kappa": kappa},)
         t1 = time.time()
         csi.fit([Ksum], y)
         t2 = time.time() - t1
