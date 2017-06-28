@@ -7,7 +7,7 @@ Implemented for Nystrom and Cholesky-type decompositions.
 
 from ..mkl.align import Align, AlignLowRank
 from ..mkl.alignf import Alignf, AlignfLowRank
-from ..mkl.l2krr import L2KRR
+from ..mkl.l2krr import L2KRR, L2KRRlowRank
 from ..mkl.uniform import UniformAlignment, UniformAlignmentLowRank
 
 from ..kernel.kernel import center_kernel_low_rank
@@ -41,6 +41,7 @@ class RidgeMKL:
         "align": AlignLowRank,
         "alignf": AlignfLowRank,
         "alignfc": AlignfLowRank,
+        "l2krr": L2KRRlowRank,
         "uniform": UniformAlignmentLowRank,
     }
 
@@ -118,7 +119,6 @@ class RidgeMKL:
             inxs = list(set(range(Hs[0].shape[0])) - set(holdout))
             self.ridge.fit(self.X[inxs], y[inxs])
             self.trained = True
-
         else:
             # Fit ridge model with given lbd and MKL model
             self.ridge = KernelRidge(alpha=self.lbd,
