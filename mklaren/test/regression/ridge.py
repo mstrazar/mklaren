@@ -22,17 +22,43 @@ class TestRidge(unittest.TestCase):
                                   kernel=exponential_kernel,
                                   kernel_args={"gamma": g}) for g in self.gamma_range]
 
-            inxs = np.random.choice(tr.ravel(), size=3)
+            inxs = np.random.choice(tr.ravel(), size=self.n/3)
             alpha = np.zeros((self.n, 1))
-            alpha[inxs] = np.random.randn(3, 1)
+            alpha[inxs] = np.random.randn(len(inxs), 1)
             mu0 = np.random.randn(len(Ks), 1)
             K0 = sum([w * K[:, :] for K, w in zip(Ks, mu0)])
             y = K0.dot(alpha).ravel()
             y = y - y.mean()    # y necessarily 1D array
+            y += np.random.randn(len(K0), 1).ravel() * 0.001
 
             for method in RidgeMKL.mkls.keys():
+
                 model = RidgeMKL(method=method)
                 model.fit(Ks, y, holdout=te)
                 yp = model.predict(te)
                 expl_var = (np.var(y[te]) - np.var(y[te] - yp)) / np.var(y[te])
                 self.assertGreater(expl_var, 0.5)
+
+
+class TestRidgeLowRank(unittest.TestCase):
+
+    def setUp(self):
+        self.n = 100
+        self.m = 10
+        self.gamma_range = np.logspace(-1, 1, 5)
+        self.trials = 5
+
+    def testPrediction(self):
+        for t in range(self.trials):
+            X = np.random.rand(self.n, self.m)
+            te = np.arange(5*self.n/6, self.n).astype(int)
+            Vs = [X[:, i].reshape(self.n, 1) for i in range(self.m)]
+            y = X[:, :3].sum(axis=1)
+            y = y - y.mean()
+            for method in RidgeMKL.mkls_low_rank.keys():
+                model = RidgeMKL(method=method, low_rank=True, lbd=0.01)
+                model.fit(Vs, y, holdout=te)
+                yp = model.predict(te)
+                expl_var = (np.var(y[te]) - np.var(y[te] - yp)) / np.var(y[te])
+                method, expl_var, model.mu.ravel()
+                self.assertGreater(expl_var, 0.1)
