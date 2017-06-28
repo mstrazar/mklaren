@@ -7,8 +7,9 @@ Kernel alignment based on kernel Ridge regression. The kernels are not assumed t
 
 """
 from align import Align
-from numpy import ones, zeros, eye, array
+from numpy import ones, zeros, eye, array, hstack
 from numpy.linalg import inv, norm
+from ..util.la import woodbury_inverse
 
 class L2KRR(Align):
 
@@ -19,7 +20,7 @@ class L2KRR(Align):
 
     """
 
-    def __init__(self, lbd=0, lbd2=1, eps = 0.01, max_iter=1000, nu=0.5):
+    def __init__(self, lbd=0.01, lbd2=1, eps = 0.01, max_iter=1000, nu=0.5):
         """
         :param lbd: (``float``) Regularization parameter (instance weights).
 
@@ -92,4 +93,58 @@ class L2KRR(Align):
         self.trained = True
         self.Kappa = array(sum([mu_i * k_i for mu_i, k_i in zip(mu, Ks)]))
         self.alpha = alpha
+        self.iter = itr
+
+
+class L2KRRlowRank(L2KRR):
+
+    def fit(self, Vs, y, holdout=None, mu0=None):
+        """
+        Learn weights for kernel matrices or Kinterfaces.
+
+        :param Vs: (``list``) of (``numpy.ndarray``) or of (``Kinterface``) to be aligned.
+
+        :param y: (``numpy.ndarray``) Class labels :math:`y_i \in {-1, 1}` or regression targets.
+
+        :param holdout: (``list``) List of indices to exlude from alignment.
+        """
+        assert self.lbd > 0
+        self.X = hstack(Vs)
+        m = len(y)
+        p = len(Vs)
+        y = y.reshape((m, 1))
+
+        if mu0 is None:
+            mu0 = ones((p, 1))
+
+        # Filter out hold out values
+        if holdout is not None:
+            holdin = sorted(list(set(range(m)) - set(holdout)))
+            y = y[holdin]
+            Vs = list(map(lambda v: v[holdin, :], Vs))
+            en = enumerate(Vs)
+        else:
+            Vs = Vs
+            en = enumerate(Vs)
+
+        V = hstack(Vs)
+        n = V.shape[0]
+        v = zeros((p, 1))
+        mu = ones((p, 1))
+        Kinv = woodbury_inverse(G=V * mu0.T, sigma2=self.lbd)
+        alpha1 = Kinv.dot(y).reshape(n, 1)
+
+        for itr in range(self.max_iter):
+            alpha = alpha1.copy()
+            for i, u in en:
+                v[i] = alpha.T.dot(u).dot(u.T).dot(alpha)
+            mu = mu0 + self.lbd2 * (v / norm(v))
+            Kinv = woodbury_inverse(G=V * mu.T, sigma2=self.lbd)
+            alpha1 = self.nu * alpha + (1 - self.nu) * Kinv.dot(y)
+            if norm(alpha1 - alpha) < self.eps:
+                break
+
+        self.mu = mu
+        self.trained = True
+        self.alpha = alpha1
         self.iter = itr
