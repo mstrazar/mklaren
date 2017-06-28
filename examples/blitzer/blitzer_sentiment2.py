@@ -5,7 +5,6 @@ import datetime
 
 # Methods
 from mklaren.mkl.mklaren import Mklaren
-from mklaren.mkl.align import AlignLowRank
 from mklaren.regression.ridge import RidgeMKL
 
 # Kernels
@@ -57,12 +56,12 @@ writer.writeheader()
 
 # Methods and order
 methods = {
-    # "Mklaren": (Mklaren,  {"delta": delta, "rank": 1}),
+    "Mklaren": (Mklaren,  {"delta": delta, "rank": 1}),
     "uniform": (RidgeMKL, {"method": "uniform", "low_rank": True}),
     "align":   (RidgeMKL, {"method": "align", "low_rank": True}),
     "alignf":  (RidgeMKL, {"method": "alignf", "low_rank": True}),
     "alignfc": (RidgeMKL, {"method": "alignfc", "low_rank": True}),
-    "l2krr":   (RidgeMKL, {"method": "alignfc", "low_rank": True})
+    "l2krr":   (RidgeMKL, {"method": "l2krr", "low_rank": True})
 }
 
 
@@ -140,6 +139,8 @@ for cv in range(cv_iter):
                     yp    = model.predict(V_val).ravel()
                     subset = None
                 else:
+                    if mname == "l2krr":
+                        kwargs["method_init_args"] = {"lbd": lbd, "lbd2": lbd}
                     holdout = tval + te
                     model.fit(Vs, y, holdout=holdout)
                     kernel_order = argsort(absolute(model.mu))[::-1]
@@ -154,6 +155,8 @@ for cv in range(cv_iter):
                     best_subset = subset
 
             # Fit model with best hyperparameters
+            if mname == "l2krr":
+                kwargs["method_init_args"] = {"lbd": best_lambda, "lbd2": best_lambda}
             model = Mclass(lbd=best_lambda, **kwargs)
             if mname == "Mklaren":
                 model.fit(Ks_tr, y_tr)
