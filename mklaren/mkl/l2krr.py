@@ -7,7 +7,7 @@ Kernel alignment based on kernel Ridge regression. The kernels are not assumed t
 
 """
 from align import Align
-from numpy import ones, zeros, eye, array, hstack
+from numpy import ones, zeros, eye, array, hstack, sqrt
 from numpy.linalg import inv, norm
 from ..util.la import woodbury_inverse
 
@@ -109,7 +109,6 @@ class L2KRRlowRank(L2KRR):
         :param holdout: (``list``) List of indices to exlude from alignment.
         """
         assert self.lbd > 0
-        self.X = hstack(Vs)
         m = len(y)
         p = len(Vs)
         y = y.reshape((m, 1))
@@ -131,15 +130,15 @@ class L2KRRlowRank(L2KRR):
         n = V.shape[0]
         v = zeros((p, 1))
         mu = ones((p, 1))
-        Kinv = woodbury_inverse(G=V * mu0.T, sigma2=self.lbd)
+        Kinv = woodbury_inverse(G=V * sqrt(mu0.T), sigma2=self.lbd)
         alpha1 = Kinv.dot(y).reshape(n, 1)
 
         for itr in range(self.max_iter):
             alpha = alpha1.copy()
             for i, u in en:
-                v[i] = alpha.T.dot(u).dot(u.T).dot(alpha)
+                v[i] = alpha.T.dot(u) ** 2
             mu = mu0 + self.lbd2 * (v / norm(v))
-            Kinv = woodbury_inverse(G=V * mu.T, sigma2=self.lbd)
+            Kinv = woodbury_inverse(G=V * sqrt(mu.T), sigma2=self.lbd)
             alpha1 = self.nu * alpha + (1 - self.nu) * Kinv.dot(y)
             if norm(alpha1 - alpha) < self.eps:
                 break
