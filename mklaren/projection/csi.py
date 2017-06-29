@@ -81,9 +81,10 @@ class CSI:
         Go = np.zeros((n, k))
         Qo = np.zeros((n, k))
         Ro = np.zeros((k, k))
-        Go[P, :] = G[:, :k]
-        Qo[P, :] = Q[:, :k]
-        Ro[:, :] = R[:k, :k]
+        km = min(k, G.shape[1])
+        Go[P, :km] = G[:, :km]
+        Qo[P, :km] = Q[:, :km]
+        Ro[:km, :km] = R[:km, :km]
         self.G = Go[:, :self.rank]
         self.P = P[:self.rank]
         self.Q = Qo[:, :]
