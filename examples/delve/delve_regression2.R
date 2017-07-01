@@ -1,11 +1,17 @@
 require(ggplot2)
 setwd("/Users/martin/Dev/mklaren/examples/delve/")
 
-in_files = c("../output/delve_regression/2017-6-30/results_0.csv",  # boston
-             "../output/delve_regression/2017-6-30/results_1.csv",  # abalone
-             "../output/delve_regression/2017-6-30/results_2.csv",  # bank
-             "../output/delve_regression/2017-6-30/results_3.csv",  # comp
-             "../output/delve_regression/2017-6-30/results_4.csv")  # pumadyn
+# Nice results of different number of kernels for p in 1-4
+in_dir = "2017-6-30"
+
+# testing kernels in range 3, 5, ..., 100
+# in_dir = "2017-7-01"
+
+in_files = c(file.path("../output/delve_regression/", in_dir, "/results_0.csv"),  # boston
+             file.path("../output/delve_regression/", in_dir, "/results_1.csv"),  # abalone
+             file.path("../output/delve_regression/", in_dir, "/results_2.csv"),  # bank
+             file.path("../output/delve_regression/", in_dir, "/results_3.csv"),  # comp
+             file.path("../output/delve_regression/", in_dir, "/results_4.csv"))  # pumadyn
 
 for (in_file in in_files){
   
