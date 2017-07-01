@@ -163,7 +163,7 @@ for cv, p in it.product(range(cv_iter), p_range):
                         ypva = model.predict([X_val])
                         ypte = model.predict([X_te])
                 except Exception as e:
-                    sys.stderr.write("Method: %s error: %s \n" % (mname, str(e)))
+                    sys.stderr.write("Method: %s rank: %d iter: %d error: %s \n" % (mname, rank, cv, str(e)))
                     continue
 
                 # Compute errors
