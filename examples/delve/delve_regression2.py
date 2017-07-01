@@ -51,7 +51,7 @@ datasets = {
 rank_range = range(5, 65, 5)                # Rank range
 lbd_range  = [0] + list(logspace(-5, 1, 7)) # Regularization parameter
 delta      = 10                             # Number of look-ahead columns (CSI and mklaren)
-p_range    = (5, 10, 30, 100)
+p_range    = (3, 5, 10, 30, 100)
 
 # Method classes and fixed hyperparameters
 methods = {
@@ -107,7 +107,7 @@ n = len(X)
 
 
 # Perform model cross-validation with internal parameter selection
-for p, cv in it.product(range(cv_iter), p_range):
+for cv, p in it.product(range(cv_iter), p_range):
     gam_range = logspace(-6, 6, p, base=2)  # RBF kernel parameter
 
     # Split into training, validation, test sets.
