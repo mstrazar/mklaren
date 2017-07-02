@@ -26,7 +26,7 @@ class CSI:
     :ivar R: (``numpy.ndarray``) QR decomposition of ``G`` (R matrix).
     """
 
-    def __init__(self, rank=40, kappa=0.99, centering=1, delta=40, eps=1e-4,):
+    def __init__(self, rank=40, kappa=0.99, centering=1, delta=40, eps=1e-20,):
         """
         :param rank: (``int``) Maximal decomposition rank.
 
