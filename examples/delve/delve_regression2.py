@@ -12,6 +12,7 @@ import itertools as it
 from mklaren.regression.ridge import RidgeLowRank
 from mklaren.regression.ridge import RidgeMKL
 from mklaren.regression.fitc import FITC
+from mklaren.projection.rff import RFF
 from mklaren.mkl.mklaren import Mklaren
 
 # Kernels
@@ -51,7 +52,7 @@ datasets = {
 rank_range = range(5, 65, 5)                # Rank range
 lbd_range  = [0] + list(logspace(-5, 1, 7)) # Regularization parameter
 delta      = 10                             # Number of look-ahead columns (CSI and mklaren)
-p_range    = (3, 5, 10, 30, 100)
+p_range    = (1, 2, 3, 5, 10, 30)
 
 # Method classes and fixed hyperparameters
 methods = {
@@ -61,6 +62,7 @@ methods = {
     "Nystrom":     (RidgeLowRank, {"method": "nystrom"}),
     "Mklaren":      (Mklaren,      {"delta": delta}),
     "Mklaren2":     (Mklaren,      {"delta": delta}),
+    "RFF":          (RFF,          {"delta": delta}),
     # "FITC":        (FITC, {}),
     # "uniform":     (RidgeMKL,     {"method": "uniform"}),
     "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
@@ -144,6 +146,13 @@ for cv, p in it.product(range(cv_iter), p_range):
                         yptr    = model.predict([X_tr for k in Ks])
                         ypva    = model.predict([X_val for k in Ks])
                         ypte    = model.predict([X_te for k in Ks])
+                    elif mname == "RFF":
+                        model = Mclass(rank=rank, lbd=lbd,
+                                       gamma_range=gam_range, **kwargs)
+                        model.fit(X_tr, y_tr)
+                        yptr = model.predict(X_tr)
+                        ypva = model.predict(X_val)
+                        ypte = model.predict(X_te)
                     elif mname == "FITC":
                         model = Mclass(rank=rank, **kwargs)
                         model.fit(Ks, y_tr)
