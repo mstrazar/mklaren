@@ -26,6 +26,8 @@ from datasets.delve import load_comp_activ
 from datasets.delve import load_bank
 from datasets.delve import load_pumadyn
 from datasets.delve import load_kin
+from datasets.delve import load_census_house
+from datasets.orange import load_ionosphere
 
 # Utils
 from numpy import var, mean, logspace, where
@@ -39,12 +41,14 @@ dset = "boston" if len(sys.argv) == 1 else sys.argv[1]
 
 # Load datasets with at most n examples
 datasets = {
-    "boston":    (load_boston,     {"n": n,}),
-    "abalone":   (load_abalone,    {"n": n,}),
-    "comp":      (load_comp_activ, {"n": n,}),
-    "bank":      (load_bank, {"typ": "8fm", "n": n,}),
-    "pumadyn":   (load_pumadyn, {"typ": "8fm", "n": n,}),
-    "kin":       (load_kin, {"typ": "8fm", "n": n,}),
+    "boston":    (load_boston,       {"n": n,}),
+    "ionosphere": (load_ionosphere, {"n": n,}),
+    "abalone":   (load_abalone,      {"n": n,}),
+    "comp":      (load_comp_activ,   {"n": n,}),
+    "bank":      (load_bank,         {"typ": "8fm", "n": n,}),
+    "pumadyn":   (load_pumadyn,      {"typ": "8fm", "n": n,}),
+    "kin":       (load_kin,          {"typ": "8fm", "n": n,}),
+    "census":    (load_census_house, {"n": n,}),
 }
 
 
