@@ -2,16 +2,18 @@ require(ggplot2)
 setwd("/Users/martin/Dev/mklaren/examples/delve/")
 
 # Nice results of different number of kernels for p in 1-4
-in_dir = "2017-6-30"
+# in_dir = "2017-6-30"
 
 # testing kernels in range 3, 5, ..., 100
-# in_dir = "2017-7-01"
+in_dir = "2017-7-1"
 
 in_files = c(file.path("../output/delve_regression/", in_dir, "/results_0.csv"),  # boston
              file.path("../output/delve_regression/", in_dir, "/results_1.csv"),  # abalone
              file.path("../output/delve_regression/", in_dir, "/results_2.csv"),  # bank
              file.path("../output/delve_regression/", in_dir, "/results_3.csv"),  # comp
-             file.path("../output/delve_regression/", in_dir, "/results_4.csv"))  # pumadyn
+             file.path("../output/delve_regression/", in_dir, "/results_4.csv"),  # pumadyn
+             file.path("../output/delve_regression/", in_dir, "/results_5.csv"))  # kin
+        
 
 for (in_file in in_files){
   
@@ -33,20 +35,26 @@ for (in_file in in_files){
   alldata$best = alldata$RMSE_va == agg[inxs, "x"]
   data = alldata[alldata$best,]
   
-  # Plot change in RMSE with rank.
-  fname = sprintf("../output/delve_regression/%s/RMSE_test.pdf", dataset)
-  qplot(main=dataset, xlab="Rank", ylab="RMSE (test)",
-        data=data, x=as.factor(rank), y=RMSE, fill=method, geom="boxplot")
-  ggsave(fname, width = wd, height = he)
-  message(sprintf("Written %s", fname))
+  for(p in c("all", unique(data$p))){
   
-  # Potential for the methods to fit the data
-  fname = sprintf("../output/delve_regression/%s/RMSE_train.pdf", dataset)
-  qplot(main=dataset, xlab="Rank", ylab="RMSE (training)",
-        data=data, 
-        x=as.factor(rank), y=RMSE_tr, fill=method, geom="boxplot")
-  ggsave(fname, width = wd, height = he)
-  message(sprintf("Written %s", fname))
+    if (p == "all") inxs = 1:nrow(data)
+    else inxs = data$p == as.integer(p)
+    
+    # Plot change in RMSE with rank.
+    fname = sprintf("../output/delve_regression/%s/RMSE_test_p-%s.pdf", dataset, p)
+    qplot(main=dataset, xlab="Rank", ylab="RMSE (test)",
+          data=data[inxs,], x=as.factor(rank), y=RMSE, fill=method, geom="boxplot")
+    ggsave(fname, width = wd, height = he)
+    message(sprintf("Written %s", fname))
+    
+    # Potential for the methods to fit the data
+    fname = sprintf("../output/delve_regression/%s/RMSE_train_p-%s.pdf", dataset, p)
+    qplot(main=dataset, xlab="Rank", ylab="RMSE (training)",
+          data=data[inxs,], 
+          x=as.factor(rank), y=RMSE_tr, fill=method, geom="boxplot")
+    ggsave(fname, width = wd, height = he)
+    message(sprintf("Written %s", fname))
+  }
   
   # Plot change in RMSE with rank.
   for (method in unique(alldata$method)){
