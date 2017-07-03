@@ -7,18 +7,17 @@ setwd("/Users/martin/Dev/mklaren/examples/delve/")
 # testing kernels in range 3, 5, ..., 100
 in_dir = "2017-7-1"
 
-in_files = c(file.path("../output/delve_regression/", in_dir, "/results_0.csv"),  # boston
-             file.path("../output/delve_regression/", in_dir, "/results_1.csv"),  # abalone
-             file.path("../output/delve_regression/", in_dir, "/results_2.csv"),  # bank
-             file.path("../output/delve_regression/", in_dir, "/results_3.csv"),  # comp
-             file.path("../output/delve_regression/", in_dir, "/results_4.csv"),  # pumadyn
-             file.path("../output/delve_regression/", in_dir, "/results_5.csv"))  # kin
-        
+# testing kernels in range 1, 3, 5, ..., 100
+in_dir = "2017-7-2"
+in_files = c(sprintf(file.path("../output/delve_regression/", in_dir, "/results_%d.csv"), 0:7))
 
 for (in_file in in_files){
-  
   alldata = read.csv(in_file, 
                      header=TRUE, stringsAsFactors = FALSE)
+  alldata$RMSE_tr[is.na(alldata$RMSE_tr)] = Inf
+  alldata$RMSE_va[is.na(alldata$RMSE_va)] = Inf
+  alldata$RMSE[is.na(alldata$RMSE)] = Inf
+  
   dataset = unique(alldata$dataset)
   dir.create(sprintf("../output/delve_regression/%s/", dataset), recursive = TRUE)
   wd = 8
@@ -82,5 +81,5 @@ for (in_file in in_files){
     dev.off()
     message(sprintf("Written %s", fname))
   }
-
+  
 }
