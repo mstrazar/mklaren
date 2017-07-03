@@ -54,7 +54,7 @@ for(p in p.range){
   write.table(R, fname, row.names = FALSE, sep = "\t")
   message(sprintf("Written %s", fname))
   
-  rnk = apply(R, MARGIN = 1, FUN=rank)
+  rnk = apply(-R, MARGIN = 1, FUN=rank)
   
   fname = sprintf("../output/delve_regression/rank_CD_%d.pdf", p)
   pdf(fname)
