@@ -9,6 +9,10 @@ in_dir = "2017-7-1"
 
 # testing kernels in range 1, 3, 5, ..., 100
 in_dir = "2017-7-2"
+
+# more resolution in rank computation
+in_dir = "2017-7-3"
+
 in_files = c(sprintf(file.path("../output/delve_regression/", in_dir, "/results_%d.csv"), 0:7))
 
 for (in_file in in_files){
@@ -17,6 +21,7 @@ for (in_file in in_files){
   alldata$RMSE_tr[is.na(alldata$RMSE_tr)] = Inf
   alldata$RMSE_va[is.na(alldata$RMSE_va)] = Inf
   alldata$RMSE[is.na(alldata$RMSE)] = Inf
+  alldata = alldata[alldata$method != "FITC", ]   # Outlier
   
   dataset = unique(alldata$dataset)
   dir.create(sprintf("../output/delve_regression/%s/", dataset), recursive = TRUE)
