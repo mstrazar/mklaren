@@ -28,6 +28,7 @@ from datasets.delve import load_pumadyn
 from datasets.delve import load_kin
 from datasets.delve import load_census_house
 from datasets.orange import load_ionosphere
+from datasets.keel import load_keel
 
 # Utils
 from numpy import var, mean, logspace, where
@@ -37,7 +38,8 @@ from random import shuffle, seed
 # Datasets and options
 # Load max. 1000 examples
 n    = 1000
-dset = "boston" if len(sys.argv) == 1 else sys.argv[1]
+dset = dict(enumerate(sys.argv)).get(1, "boston")
+dset_sub = dict(enumerate(sys.argv)).get(2, None)
 
 # Load datasets with at most n examples
 datasets = {
@@ -49,6 +51,7 @@ datasets = {
     "pumadyn":   (load_pumadyn,      {"typ": "8fm", "n": n,}),
     "kin":       (load_kin,          {"typ": "8fm", "n": n,}),
     "census":    (load_census_house, {"n": n,}),
+    "keel":      (load_keel,         {"n": n, "name": dset_sub})
 }
 
 
@@ -97,9 +100,10 @@ fp = open(fname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
 
-
+# Load data
 load, load_args = datasets[dset]
 data = load(**load_args)
+if dset_sub is not None: dset = dset_sub
 
 # Load data and normalize columns
 X = data["data"]
