@@ -1,0 +1,58 @@
+Ailerons dataset
+
+1: Description.
+
+This data set addresses a control problem, namely flying a F16 aircraft. The attributes describe the status of the aeroplane, while the goal is to predict the control action on the ailerons of the aircraft.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		13750
+5: Features.		40
+6: Missing values.	No
+
+7: Header.
+
+@relation ailerons
+@attribute ClimbRate integer[-975,977]
+@attribute Sgz integer[-99,94]
+@attribute P real[-1.53,1.06]
+@attribute Q real[-0.54,0.62]
+@attribute CurPitch real[-0.42,2.58]
+@attribute CurRoll real[-3.1,2.9]
+@attribute AbsRoll integer[-23,-3]
+@attribute DiffClb integer[-62,46]
+@attribute DiffRollRate real[-0.099,0.056]
+@attribute DiffDiffClb real[-8.8,15.5]
+@attribute SeTime1 real[0.012,0.078]
+@attribute SeTime2 real[0.012,0.078]
+@attribute SeTime3 real[0.012,0.078]
+@attribute SeTime4 real[0.012,0.078]
+@attribute SeTime5 real[0.012,0.078]
+@attribute SeTime6 real[0.012,0.078]
+@attribute SeTime7 real[0.012,0.078]
+@attribute SeTime8 real[0.012,0.076]
+@attribute SeTime9 real[0.012,0.076]
+@attribute SeTime10 real[0.012,0.074]
+@attribute SeTime11 real[0.012,0.074]
+@attribute SeTime12 real[0.012,0.074]
+@attribute SeTime13 real[0.012,0.074]
+@attribute SeTime14 real[0.012,0.073]
+@attribute DiffSeTime1 real[-0.0050,0.0040]
+@attribute DiffSeTime2 real[-0.0010,0.0010]
+@attribute DiffSeTime3 real[-0.0060,0.0040]
+@attribute DiffSeTime4 real[-0.0020,0.0020]
+@attribute DiffSeTime5 real[-0.0080,0.0030]
+@attribute DiffSeTime6 real[-0.0040,0.0]
+@attribute DiffSeTime7 real[-0.0050,0.0040]
+@attribute DiffSeTime8 real[-0.0010,0.0010]
+@attribute DiffSeTime9 real[-0.0060,0.0030]
+@attribute DiffSeTime10 real[-0.0060,0.0060]
+@attribute DiffSeTime11 real[-0.0060,0.0050]
+@attribute DiffSeTime12 real[-0.0040,0.0020]
+@attribute DiffSeTime13 real[-0.0060,0.0070]
+@attribute DiffSeTime14 real[-0.0030,0.0010]
+@attribute Alpha real[0.4,2.0]
+@attribute Se real[0.012,0.073]
+@attribute Goal real[-0.0036,0.0]
+@inputs ClimbRate, Sgz, P, Q, CurPitch, CurRoll, AbsRoll, DiffClb, DiffRollRate, DiffDiffClb, SeTime1, SeTime2, SeTime3, SeTime4, SeTime5, SeTime6, SeTime7, SeTime8, SeTime9, SeTime10, SeTime11, SeTime12, SeTime13, SeTime14, DiffSeTime1, DiffSeTime2, DiffSeTime3, DiffSeTime4, DiffSeTime5, DiffSeTime6, DiffSeTime7, DiffSeTime8, DiffSeTime9, DiffSeTime10, DiffSeTime11, DiffSeTime12, DiffSeTime13, DiffSeTime14, Alpha, Se
+@outputs Goal

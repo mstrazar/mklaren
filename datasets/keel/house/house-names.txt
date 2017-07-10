@@ -1,0 +1,36 @@
+House-16H dataset
+
+1: Description.
+
+This database was designed on the basis of data provided by US Census Bureau. The data were collected as part of the 1990 US census. These are mostly counts cumulated  at different survey levels.
+   
+The task is to predicting the median price of the house in the region based on demographic composition and a state of housing market in the region.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		22784
+5: Features.		16
+6: Missing values.	No
+
+7: Header.
+
+@relation house
+@attribute P1 real[2,7322564]
+@attribute P5p1 real[0.125,0.9230769]
+@attribute P6p2 real[0,1]
+@attribute P11p4 real[0,0.9172546]
+@attribute P14p9 real[0,0.5118719]
+@attribute P15p1 real[0.0541562,1]
+@attribute P15p3 real[0,0.9433249]
+@attribute P16p2 real[0.2337023,1]
+@attribute P18p2 real[0,0.125]
+@attribute P27p4 real[0,0.7057357]
+@attribute H2p2 real[0,0.9751773]
+@attribute H8p2 real[0,1]
+@attribute H10p1 real[0.0032573,1]
+@attribute H13p1 real[0,1]
+@attribute H18pA real[0,1]
+@attribute H40p4 real[0,1]
+@attribute Price real[0,500001]
+@inputs P1, P5p1, P6p2, P11p4, P14p9, P15p1, P15p3, P16p2, P18p2, P27p4, H2p2, H8p2, H10p1, H13p1, H18pA, H40p4
+@outputs Price

@@ -1,0 +1,22 @@
+Electrical Length 2 dataset
+
+1: Description.
+
+This problem consists of four input variables and the available data set is comprised of a representative number of well distributed examples. In this case, the learning methods are expected to obtain a considerable number of rules. Therefore, this problem involves a larger search space (high complexity).
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		1056
+5: Features.		4
+6: Missing values.	No
+
+7: Header.
+
+@relation ele-2
+@attribute X1 real [0.5,11.0]
+@attribute X2 real [0.15,8.55]
+@attribute X3 real [1.64,142.5]
+@attribute X4 real [1.0,165.0]
+@attribute Y real [64.470001,8546.030273]
+@inputs X1, X2, X3, X4
+@outputs Y

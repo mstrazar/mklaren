@@ -1,0 +1,21 @@
+Laser dataset
+
+1: Description.
+This data set was originally a univariate time record of a single observed quantity, recorded from a Far-Infrared-Laser in a chaotic state. The original set 1000 points has been adapted for regression by considering every set of four consecutive values as inputs, and the next one as output. Duplicated instances has been removed.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		993
+5: Features.		4
+6: Missing values.	No
+
+7: Header.
+
+@relation laser
+@attribute Input1 real [2.0, 255.0]
+@attribute Input2 real [2.0, 255.0]
+@attribute Input3 real [2.0, 255.0]
+@attribute Input4 real [2.0, 255.0]
+@attribute Output real [0.0, 255.0]
+@inputs Input1, Input2, Input3, Input4
+@outputs Output

@@ -1,0 +1,25 @@
+Delta Elevators
+
+1: Description.
+
+This data set is obtained from the task of controlling the elevators of a F16 aircraft, although the target variable and attributes are different from the elevators domain. The target variable here is a variation instead of an absolute value, and there was some pre-selection of the attributes.
+
+2: Type.			Regression
+3: Origin.			Laboratory
+4: Instances.		9517
+5: Features.		6
+6: Missing values.	No
+
+7: Header.
+
+@relation delta_elv
+@attribute climbRate real [-15.0, 15.1]
+@attribute Altitude integer [-100, 90]
+@attribute RollRate real [-0.0237, 0.0184]
+@attribute curRoll real [-0.051, 0.049]
+@attribute diffClb real [-0.8, 0.7]
+@attribute diffDiffClb real [-0.03, 0.02]
+@attribute Se real [-0.014, 0.013]
+@inputs climbRate, Altitude, RollRate, curRoll, diffClb, diffDiffClb
+@outputs Se
+@data

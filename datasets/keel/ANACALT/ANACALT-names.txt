@@ -1,0 +1,26 @@
+Analizing Categorical Data (Supreme) dataset
+
+1: Description.
+
+This is one of the data sets used in the book "Analyzing Categorical Data" by Jeffrey S. Simonoff, Springer-Verlag, New York, 2003. The data contains information about the decissions taken by a supreme court.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		4052
+5: Features.		7
+6: Missing values.	No
+
+7: Header.
+
+@relation ANALCAT
+@attribute Actions_taken real [0.0, 11.0]
+@attribute Liberal real [0.0, 1.0]
+@attribute Unconstitutional real [0.0, 1.0]
+@attribute Precedent_alteration real [0.0, 1.0]
+@attribute Unanimous real [0.0, 1.0]
+@attribute Year_of_decision real [1953.0, 1988.0]
+@attribute Lower_court_disagreement real [0.0, 1.0]
+@attribute Log_exposure real [0.0, 2.3]
+@inputs Actions_taken, Liberal, Unconstitutional, Precedent_alteration, Unanimous, Year_of_decision, Lower_court_disagreement
+@outputs Log_exposure
+@data

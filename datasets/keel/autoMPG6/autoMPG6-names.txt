@@ -1,0 +1,25 @@
+Auto MPG (6 variables) dataset
+
+1: Description.
+
+The data concerns city-cycle fuel consumption in miles per gallon (Mpg), to be predicted in terms of 1 multivalued discrete and 5 continuous attributes (two multivalued discrete attributes (Cylinders and Origin) from the original dataset (autoMPG6) are removed).
+
+This dataset is a slightly modified version of the dataset provided in the StatLib library. In line with the use by Ross Quinlan (1993) in predicting the attribute Mpg, 8 of the original instances were removed because they had unknown values for the Mpg attribute.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		392
+5: Features.		5
+6: Missing values.	No
+
+7: Header.
+
+@relation autoMPG6
+@attribute Displacement real[68.0,455.0]
+@attribute Horse_power integer[46,230]
+@attribute Weight integer[1613,5140]
+@attribute Acceleration real[8.0,24.8]
+@attribute Model_year integer[70,82]
+@attribute Mpg real[9.0,46.6]
+@inputs Displacement, Horse_power, Weight, Acceleration, Model_year
+@outputs Mpg

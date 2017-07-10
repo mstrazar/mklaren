@@ -1,0 +1,25 @@
+Delta Ailerons
+
+1: Description.
+
+This data set is obtained from the task of controlling the ailerons of a F16 aircraft, although the target variable and attributes are different from the ailerons domain. The target variable here is a variation instead of an absolute value, and there was
+some pre-selection of the attributes.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		7129
+5: Features.		5
+6: Missing values.	No
+
+7: Header.
+
+@relation delta_ail
+@attribute RollRate real [-0.0208, 0.0177]
+@attribute PitchRate real [-0.0077, 0.0108]
+@attribute currPitch real [-0.0060, 0.041]
+@attribute currRoll real [-0.05, 0.051]
+@attribute diffRollRate real [-0.0015, 8.2E-4]
+@attribute Sa real [-0.0021, 0.0022]
+@inputs RollRate, PitchRate, currPitch, currRoll, diffRollRate
+@outputs Sa
+@data

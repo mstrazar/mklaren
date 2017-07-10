@@ -1,0 +1,20 @@
+Diabetes dataset
+
+1: Description.
+
+This data set concerns the study of the factors affecting patterns of insulin-dependent diabetes mellitus in children. The objective is to investigate the dependence of the level of serum C-peptide on the various other factors in order to understand the patterns of residual insulin secretion. The response measurement is the logarithm of C-peptide concentration (pmol/ml) at the diagnosis, and the predictor measurements age and base deficit, a measure of acidity.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		43
+5: Features.		2
+6: Missing values.	No
+
+7: Header.
+
+@relation diabetes
+@attribute Age real[0.9,15.6]
+@attribute Deficit real[-29.0,-0.2]
+@attribute C-peptide real[3.0,6.6]
+@inputs Age, Deficit
+@outputs C-peptide

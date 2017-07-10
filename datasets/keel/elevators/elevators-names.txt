@@ -1,0 +1,37 @@
+Elevators dataset
+
+1: Description.
+
+This data set is also obtained from the task of controlling a F16 aircraft, although the target variable and attributes are different from the ailerons domain. In this case the goal variable is related to an action taken on the elevators of the aircraft.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		16599
+5: Features.		18
+6: Missing values.	No
+
+7: Header.
+
+@relation elevators
+@attribute ClimbRate integer[-993,973]
+@attribute Sgz integer[-99,94]
+@attribute P real[-1.37,1.09]
+@attribute Q real[-0.45,0.69]
+@attribute CurRoll real[-3.0,2.9]
+@attribute AbsRoll integer[-23,-3]
+@attribute DiffClb integer[-56,45]
+@attribute DiffRollRate real[-0.084,0.056]
+@attribute DiffDiffClb real[-8.3,8.5]
+@attribute SaTime1 real[-0.0035,0.0]
+@attribute SaTime2 real[-0.0035,0.0]
+@attribute SaTime3 real[-0.0035,0.0]
+@attribute SaTime4 real[-0.0034,0.0]
+@attribute DiffSaTime1 real[-0.0007,0.0007]
+@attribute DiffSaTime2 real[0.0,0.0002]
+@attribute DiffSaTime3 real[-0.0006,0.0005]
+@attribute DiffSaTime4 real[0.0,0.0002]
+@attribute Sa real[-0.0034,0.0]
+@attribute Goal real[0.012,0.078]
+@inputs ClimbRate, Sgz, P, Q, CurRoll, AbsRoll, DiffClb, DiffRollRate, DiffDiffClb, SaTime1, SaTime2, SaTime3, SaTime4, DiffSaTime1, DiffSaTime2, DiffSaTime3, DiffSaTime4, Sa
+@outputs Goal
+

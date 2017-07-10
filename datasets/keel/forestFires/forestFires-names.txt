@@ -1,0 +1,32 @@
+Forest Fires dataset
+
+1: Description.
+
+This is a difficult regression task, where the aim is to predict the burned area of forest fires, in the northeast region of Portugal, by using meteorological and other data.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		517
+5: Features.		12
+6: Classes.			-	
+7: Missing values.	No
+
+8: Header.
+
+@relation forestFires
+@attribute X integer [1, 9]
+@attribute Y integer [2, 9]
+@attribute Month integer [1, 12]
+@attribute Day integer [1, 7]
+@attribute FFMC real [18.7, 96.2]
+@attribute DMC real [1.1, 291.3]
+@attribute DC real [7.9, 860.6]
+@attribute ISI real [0.0, 56.1]
+@attribute Temp real [2.2, 33.3]
+@attribute RH integer [15, 100]
+@attribute Wind real [0.4, 9.4]
+@attribute Rain real [0.0, 6.4]
+@attribute Area real [0.0, 1090.84]
+@inputs X, Y, Month, Day, FFMC, DMC, DC, ISI, Temp, RH, Wind, Rain
+@outputs Area
+

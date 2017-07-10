@@ -1,0 +1,21 @@
+Quake dataset
+
+1: Description.
+
+A regression data set where the task is to aproximate the strength of a earthquake given its the depth of its focal point, its latitude and its longitude. 
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		2178
+5: Features.		3
+6: Missing values.	No
+
+7: Header.
+
+@relation quake
+@attribute Focal_depth integer [0,656]
+@attribute Latitude real [-66.49,78.15]
+@attribute Longitude real [-179.96,180]
+@attribute Richter real [5.8,6.9]
+@inputs Focal_depth, Latitude, Longitude
+@outputs Richter

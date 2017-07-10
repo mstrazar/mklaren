@@ -1,0 +1,56 @@
+Pumadyn dataset
+
+1: Description.
+
+This dataset has been synthetically generated from a realistic simulation of the dynamics of a Unimation Puma 560 robot arm. The task in this dataset is to
+predict the angular acceleration of one of the robot arm's links. The inputs include angular positions, velocities and torques of the robot arm.
+This dataset is included in a family of datasets, which has been specifically generated for the delve environment and so the individual
+datasets span the corners of a cube whose dimensions represent:
+1) Number of inputs (32).
+2) degree of non-linearity (fairly linear or non-linear)
+3) amount of noise in the output (moderate or high).
+
+2: Type.			Regression
+3: Origin.			Laboratory
+4: Instances.		8192
+5: Features.		32
+6: Missing values.	No
+
+7: Header.
+
+@relation puma32h
+@attribute theta1 real [-2.355515, 2.355593]
+@attribute theta2 real [-2.355949, 2.355649]
+@attribute theta3 real [-2.355686, 2.355813]
+@attribute theta4 real [-2.355426, 2.35509]
+@attribute theta5 real [-2.355844, 2.355229]
+@attribute theta6 real [-2.355827, 2.354251]
+@attribute thetad1 real [-2.355614, 2.355743]
+@attribute thetad2 real [-2.355077, 2.354076]
+@attribute thetad3 real [-2.35565, 2.354737]
+@attribute thetad4 real [-2.355339, 2.355777]
+@attribute thetad5 real [-2.355048, 2.3558]
+@attribute thetad6 real [-2.356133, 2.355862]
+@attribute tau1 real [-74.990634, 74.985591]
+@attribute tau2 real [-74.937538, 74.967958]
+@attribute tau3 real [-74.978278, 74.986797]
+@attribute tau4 real [-74.999533, 74.996991]
+@attribute tau5 real [-74.984873, 74.995852]
+@attribute dm1 real [0.250265, 2.49998]
+@attribute dm2 real [0.250417, 2.499438]
+@attribute dm3 real [0.250222, 2.499933]
+@attribute dm4 real [0.250074, 2.499998]
+@attribute dm5 real [0.250149, 2.499663]
+@attribute da1 real [0.250436, 2.499158]
+@attribute da2 real [0.250579, 2.499668]
+@attribute da3 real [0.250087, 2.499956]
+@attribute da4 real [0.250166, 2.499966]
+@attribute da5 real [0.250616, 2.499789]
+@attribute db1 real [0.250054, 2.499978]
+@attribute db2 real [0.250012, 2.499611]
+@attribute db3 real [0.250241, 2.499811]
+@attribute db4 real [0.250109, 2.499997]
+@attribute db5 real [0.251439, 2.499654]
+@attribute thetadd6 real [-0.086661, 0.089805]
+@inputs theta1, theta2, theta3, theta4, theta5, theta6, thetad1, thetad2, thetad3, thetad4, thetad5, thetad6, tau1, tau2, tau3, tau4, tau5, dm1, dm2, dm3, dm4, dm5, da1, da2, da3, da4, da5, db1, db2, db3, db4, db5
+@outputs thetadd6

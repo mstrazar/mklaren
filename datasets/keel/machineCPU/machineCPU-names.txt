@@ -1,0 +1,24 @@
+Machine CPU Performance dataset
+
+1: Description.
+
+The problem concerns Relative CPU Performance Data. The attributes employed are: machine cycle time in nanoseconds(MYCT), minimum main memory in kilobytes (MMIN), maximum main memory in kilobytes (MMAX), cache memory in kilobytes (CACH), minimum channels in units (CHMIN) and  maximum channels in units (CHMAX). The task is to aproximate the published relative performance (PRP) of the CPU.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		209
+5: Features.		6
+6: Missing values.	No
+
+7: Header.
+
+@relation machineCPU
+@attribute MYCT integer [17, 1500]
+@attribute MMIN integer [64, 32000]
+@attribute MMAX integer [64, 64000]
+@attribute CACH integer [0, 256]
+@attribute CHMIN integer [0, 52]
+@attribute CHMAX integer [0, 176]
+@attribute PRP integer [6, 1150]
+@inputs MYCT, MMIN, MMAX, CACH, CHMIN, CHMAX
+@outputs PRP

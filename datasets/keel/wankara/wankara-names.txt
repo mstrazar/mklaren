@@ -1,0 +1,29 @@
+Weather Ankara dataset
+
+1: Description.
+
+This file contains the wheather information of Ankara from 01/01/1994 to 28/05/1998. From given features, the goal is to predict the mean
+temperature.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		1609
+5: Features.		10
+6: Missing values.	No
+
+7: Header.
+
+@relation wankara
+@attribute Max_temperature real [23.0, 100.0]
+@attribute Min_temperature real [-7.1, 65.5]
+@attribute Dewpoint real [-3.1, 57.6]
+@attribute Precipitation real [0.0, 4.0]
+@attribute Sea_level_pressure real [29.46, 30.6]
+@attribute Standard_pressure real [26.3, 27.18]
+@attribute Visibility real [0.2, 11.5]
+@attribute Wind_speed real [0.0, 18.0]
+@attribute Max_wind_speed real [2.19, 57.4]
+@attribute Mean_temperature real [7.9, 81.8]
+@inputs Max_temperature, Min_temperature, Dewpoint, Precipitation, Sea_level_pressure, Standard_pressure, Visibility, Wind_speed, Max_wind_speed
+@outputs Mean_temperature
+

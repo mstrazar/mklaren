@@ -1,0 +1,28 @@
+California Housing dataset
+
+1: Description.
+
+This data set contains information about all the block groups in California from the 1990 Census. In this sample a block group on average includes 1425.5 individuals living in a geographically compact area. 
+
+The task is to aproximate the median house value of each block from the values of the rest of the variables. 
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		20640
+5: Features.		8
+6: Missing values.	No
+
+7: Header.
+
+@relation california
+@attribute Longitude real[-124.35,-114.31]
+@attribute Latitude real[32.54,41.95]
+@attribute HousingMedianAge real[1,52]
+@attribute TotalRooms real[2,39320]
+@attribute TotalBedrooms real[1,6445]
+@attribute Population real[3,35682]
+@attribute Households real[1,6082]
+@attribute MedianIncome real[0.4999,15.0001]
+@attribute MedianHouseValue real[14999,500001] 
+@inputs Longitude, Latitude, HousingMedianAge, TotalRooms, TotalBedrooms, Population, Households, MedianIncome
+@outputs MedianHouseValue

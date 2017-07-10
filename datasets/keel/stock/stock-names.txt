@@ -1,0 +1,27 @@
+Stock Prices dataset
+
+1: Description.
+
+The data provided are daily stock prices from January 1988 through October 1991, for ten aerospace companies. The task is to aproximate the price of the 10th company given the prices of the rest.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		950
+5: Features.		9
+6: Missing values.	No
+
+7: Header.
+
+@relation stock
+@attribute Company1 real[17.219,61.5]
+@attribute Company2 real[19.25,60.25]
+@attribute Company3 real[12.75,25.125]
+@attribute Company4 real[34.375,60.125]
+@attribute Company5 real[27.75,94.125]
+@attribute Company6 real[14.125,35.25]
+@attribute Company7 real[58,87.25]
+@attribute Company8 real[16.375,29.25]
+@attribute Company9 real[31.5,53]
+@attribute Company10 real[34,62]
+@inputs Company1, Company2, Company3, Company4, Company5, Company6, Company7, Company8, Company9
+@outputs Company10

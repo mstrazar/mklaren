@@ -1,0 +1,47 @@
+Mv dataset
+
+1: Description.
+
+This is an artificial data set with dependencies between the attribute values. The cases are generated using the following method:
+X1 : uniformly distributed over [-5,5]
+X2 : uniformly distributed over [-15,-10]
+X3 : IF (X1 > 0) THEN X3 = 0
+ELSE X3 = red with probability 0.4 and X4=brown with prob. 0.6
+X4 : IF (X3=green) THEN X4=X1+2X2
+ELSE X4=X1/2 with prob. 0.3, and X4=X2/2 with prob. 0.7
+X5 : uniformly distributed over [-1,1]
+X6 : X6=X4×[epsilon], where [epsilon] is uniformly distribute over [0,5]
+X7 : X7=yes with prob. 0.3 and X7=no with prob. 0.7
+X8 : IF (X5 < 0.5) THEN X8 = normal ELSE X8 = large
+X9 : uniformly distributed over [100,500]
+X10 : uniformly distributed integer over the interval [1000,1200]
+
+Obtain the value of the target variable Y using the rules:
+IF (X2 > 2 ) THEN Y = 35 - 0.5 X4
+ELSE IF (-2 <= X4 <= 2) THEN Y = 10 - 2 X1
+ELSE IF (X7 = yes) THEN Y = 3 -X1/X4
+ELSE IF (X8 = normal) THEN Y = X6 + X1
+ELSE Y = X1/2
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		40768
+5: Features.		10
+6: Missing values.	No
+
+7: Header.
+
+@relation mv
+@attribute X1 real [-5.0, 5.0]
+@attribute X2 real [-15.0, -10.0]
+@attribute X3 integer [0, 2]
+@attribute X4 real [-7.5, 2.5]
+@attribute X5 real [-1.0, 1.0]
+@attribute X6 real [-37.5, 12.5]
+@attribute X7 integer [0, 1]
+@attribute X8 integer [0, 1]
+@attribute X9 real [100.0, 500.0]
+@attribute X10 real [1000.0, 1200.0]
+@attribute Y real [-41.8222, 2.49978]
+@inputs X1, X2, X3, X4, X5, X6, X7, X8, X9, X10
+@outputs Y

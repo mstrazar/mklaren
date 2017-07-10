@@ -1,0 +1,21 @@
+Electrical Lenght 1 data set
+
+1: Description.
+
+This problem with only two input variables involves a small search space (small complexity). However, it is still an interesting problem since the system is strongly nonlinear and the available data is limited to a low number of examples presenting noise. All of these drawbacks make the modeling surface complicated indeed and, in this case, produce a strong overfitting of the obtained models.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		495
+5: Features.		2
+6: Missing values.	No
+
+7: Header.
+
+@relation ele-1
+@attribute Inhabitants integer [1, 320]
+@attribute Distance real [60.0, 1673.329956]
+@attribute Length real [80.0, 7675.0]
+@inputs Inhabitants, Distance
+@outputs Length
+

@@ -1,0 +1,44 @@
+Pole Telecommunications dataset
+
+1: Description.
+
+This is a commercial application described in Weiss & Indurkhya (1995) (http://www.cs.su.oz.au/~nitin). The data describes a telecommunication problem. No further information is available.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		14998
+5: Features.		25
+6: Missing values.	No
+
+7: Header.
+
+@relation pole
+@attribute Att0 real[13.0,200.0]
+@attribute Att1 real[77.0,200.0]
+@attribute Att2 real[76.0,200.0]
+@attribute Att3 real[71.0,200.0]
+@attribute Att4 real[94.0,200.0]
+@attribute Att5 real[0.0,134.0]
+@attribute Att6 real[0.0,134.0]
+@attribute Att7 real[0.0,150.0]
+@attribute Att8 real[0.0,133.0]
+@attribute Att9 real[0.0,131.0]
+@attribute Att10 real[0.0,143.0]
+@attribute Att11 real[0.0,117.0]
+@attribute Att12 real[0.0,117.0]
+@attribute Att13 real[0.0,116.0]
+@attribute Att14 real[0.0,131.0]
+@attribute Att15 real[0.0,104.0]
+@attribute Att16 real[0.0,90.0]
+@attribute Att17 real[0.0,72.0]
+@attribute Att18 real[0.0,108.0]
+@attribute Att19 real[0.0,96.0]
+@attribute Att20 real[0.0,74.0]
+@attribute Att21 real[0.0,67.0]
+@attribute Att22 real[0.0,44.0]
+@attribute Att23 real[0.0,69.0]
+@attribute Att24 real[0.0,50.0]
+@attribute Att25 real[0.0,39.0]
+@attribute Output real[0.0,100.0]
+@inputs Att0, Att1, Att2, Att3, Att4, Att5, Att6, Att7, Att8, Att9, Att10, Att11, Att12, Att13, Att14, Att15, Att16, Att17, Att18, Att19, Att20, Att21, Att22, Att23, Att24, Att25
+@outputs Output

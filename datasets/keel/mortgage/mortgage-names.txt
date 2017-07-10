@@ -1,0 +1,33 @@
+Mortgage dataset
+
+1: Description.
+
+This file contains the Economic data information of USA from 01/04/1980 to 02/04/2000 on a weekly basis. From given features, the goal is to predict the 30-Year Conventional Mortgage Rate.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		1049
+5: Features.		16
+6: Missing values.	No
+
+7: Header.
+
+@relation mortgage
+@attribute 1MonthCDRate real [3.02, 20.76]
+@attribute 1Y-CMaturityRate real [77.055, 142.645]
+@attribute 3M-Rate-AuctionAverage real [6.49, 18.63]
+@attribute 3M-Rate-SecondaryMarket real [2.67, 16.75]
+@attribute 3Y-CMaturityRate real [2.69, 16.76]
+@attribute 5Y-CMaturityRate real [4.09, 16.47]
+@attribute BankCredit real [4.17, 16.13]
+@attribute Currency real [1130.9, 4809.2]
+@attribute DemandDeposits real [105.6, 533.0]
+@attribute FederalFunds real [225.8, 412.1]
+@attribute MoneyStock real [2.86, 20.06]
+@attribute CheckableDeposits real [381.1, 1154.1]
+@attribute LoansLeases real [269.9, 803.4]
+@attribute SavingsDeposits real [868.1, 3550.3]
+@attribute TradeCurrencies real [175.6, 1758.1]
+@attribute 30Y-CMortgageRate real [3.02, 17.15]
+@inputs 1MonthCDRate, 1Y-CMaturityRate, 3M-Rate-AuctionAverage, 3M-Rate-SecondaryMarket, 3Y-CMaturityRate, 5Y-CMaturityRate, BankCredit, Currency, DemandDeposits, FederalFunds, MoneyStock, CheckableDeposits, LoansLeases, SavingsDeposits, TradeCurrencies
+@outputs 30Y-CMortgageRate

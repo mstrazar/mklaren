@@ -1,0 +1,24 @@
+Daily electric energy dataset
+
+1: Description.
+
+The dee problem involves predicting the daily average price of TkWhe electricity energy in Spain. The data set contains real values from 2003 about the daily consumption in Spain of energy from hydroelectric, nuclear electric, carbon, fuel, natural gas and other special sources of energy.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		365
+5: Features.		6
+6: Missing values.	No
+
+7: Header.
+
+@relation dee
+@attribute Hydroelectric real[27881.8,206035.0]
+@attribute Nuclear real[114760.0,187105.0]
+@attribute Coal real[33537.0,234833.0]
+@attribute Fuel real[0.0,67986.5]
+@attribute Gas real[0.0,84452.2]
+@attribute Special real[5307.0,16357.0]
+@attribute Consume real[0.765853,5.11875]
+@inputs Hydroelectric, Nuclear, Coal, Fuel, Gas, Special
+@outputs Consume

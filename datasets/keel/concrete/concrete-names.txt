@@ -1,0 +1,26 @@
+Concrete dataset
+
+1: Description.
+
+Concrete is the most important material in civil engineering. The concrete compressive strength is a highly nonlinear function of age and ingredients. These ingredients include cement, blast furnace slag, fly ash, water, superplasticizer, coarse aggregate, and fine aggregate.
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		1030
+5: Features.		8
+6: Missing values.	No
+
+7: Header.
+
+@relation concrete
+@attribute Cement real [102.0, 540.0]
+@attribute BlastFurnaceSlag real [0.0, 359.4]
+@attribute FlyAsh real [0.0, 200.100006]
+@attribute Water real [121.8, 247.0]
+@attribute Superplasticizer real [0.0, 32.200001]
+@attribute CoarseAggregate real [801.0, 1145.0]
+@attribute FineAggregate real [594.0, 992.6]
+@attribute Age integer [1, 365]
+@attribute ConcreteCompressiveStrength real [2.33, 82.6]
+@inputs Cement, BlastFurnaceSlag, FlyAsh, Water, Superplasticizer, CoarseAggregate, FineAggregate, Age
+@outputs ConcreteCompressiveStrength

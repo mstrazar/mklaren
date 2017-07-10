@@ -1,0 +1,29 @@
+Friedman Benchmark Function dataset
+
+1: Description.
+
+This is a synthetic benchmark dataset proposed by Friedman in 1991. The cases are generated using the following method:
+
+Generate the values of 5 attributes, X1, ..., X5 independently each of which uniformly distributed over [0.0, 1.0]. Obtain the value of the target variable Y using the equation: 
+
+y=10(sin(PI)x1x2)+20(x3-0.5)2+10x4+5x5+e 
+
+where e is a Gaussian random noise N(0,1).
+
+2: Type.			Regression
+3: Origin.			Real world
+4: Instances.		1200
+5: Features.		5
+6: Missing values.	No
+
+7: Header.
+
+@relation friedman
+@attribute Input1 real [0.0, 1.0]
+@attribute Input2 real [0.0, 1.0]
+@attribute Input3 real [0.0, 1.0]
+@attribute Input4 real [0.0, 1.0]
+@attribute Input5 real [0.0, 1.0]
+@attribute Output real [0.664014955, 28.5903858]
+@inputs Input1, Input2, Input3, Input4, Input5
+@outputs Output
