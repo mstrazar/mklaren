@@ -93,8 +93,8 @@ rcnt = len(os.listdir(dname))
 fname = os.path.join(dname, "results_%d.csv" % rcnt)
 
 # Output
-header = ["dataset", "method", "rank", "iteration", "lambda",
-          "gmin", "gmax", "p",
+header = ["dataset", "n", "method", "rank", "iteration", "lambda",
+          "gmin", "gmax", "p", "evar_tr", "evar",
           "RMSE_tr", "RMSE_va", "RMSE"]
 fp = open(fname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
@@ -151,34 +151,34 @@ for cv, p in it.product(range(cv_iter), p_range):
                     if mname == "Mklaren":
                         model = Mclass(lbd=lbd, rank=rank, **kwargs)
                         model.fit(Ks, y_tr)
-                        yptr    = model.predict([X_tr for k in Ks])
-                        ypva    = model.predict([X_val for k in Ks])
-                        ypte    = model.predict([X_te for k in Ks])
+                        yptr    = model.predict([X_tr for k in Ks]).ravel()
+                        ypva    = model.predict([X_val for k in Ks]).ravel()
+                        ypte    = model.predict([X_te for k in Ks]).ravel()
                     elif mname == "RFF":
                         model = Mclass(rank=rank, lbd=lbd,
                                        gamma_range=gam_range, **kwargs)
                         model.fit(X_tr, y_tr)
-                        yptr = model.predict(X_tr)
-                        ypva = model.predict(X_val)
-                        ypte = model.predict(X_te)
+                        yptr = model.predict(X_tr).ravel()
+                        ypva = model.predict(X_val).ravel()
+                        ypte = model.predict(X_te).ravel()
                     elif mname == "FITC":
                         model = Mclass(rank=rank, **kwargs)
                         model.fit(Ks, y_tr)
-                        yptr = model.predict([X_tr for k in Ks])
-                        ypva = model.predict([X_val for k in Ks])
-                        ypte = model.predict([X_te for k in Ks])
+                        yptr = model.predict([X_tr for k in Ks]).ravel()
+                        ypva = model.predict([X_val for k in Ks]).ravel()
+                        ypte = model.predict([X_te for k in Ks]).ravel()
                     elif mname in ("uniform", "L2KRR"):
                         model = Mclass(lbd=lbd, **kwargs)
                         model.fit(Ks_full, y, holdout=te+tval)
-                        yptr = model.predict(tr)
-                        ypva = model.predict(tval)
-                        ypte = model.predict(te)
-                    else:   # Other low-rank approximations
+                        yptr = model.predict(tr).ravel()
+                        ypva = model.predict(tval).ravel()
+                        ypte = model.predict(te).ravel()
+                    else:   # Other low-rank approximations; Mklaren2
                         model = Mclass(lbd=lbd, rank=rank, **kwargs)
                         model.fit([Ksum], y_tr)
-                        yptr = model.predict([X_tr])
-                        ypva = model.predict([X_val])
-                        ypte = model.predict([X_te])
+                        yptr = model.predict([X_tr]).ravel()
+                        ypva = model.predict([X_val]).ravel()
+                        ypte = model.predict([X_te]).ravel()
                 except Exception as e:
                     sys.stderr.write("Method: %s rank: %d iter: %d error: %s \n" % (mname, rank, cv, str(e)))
                     continue
@@ -188,9 +188,14 @@ for cv, p in it.product(range(cv_iter), p_range):
                 score_va = var(y_val - ypva) ** 0.5
                 score_te = var(y_te - ypte) ** 0.5
 
+                # Explained variance
+                evar_tr = (var(y_tr) - var(y_tr - yptr)) / var(y_tr)
+                evar_te = (var(y_te) - var(y_te - ypte)) / var(y_te)
+
                 # Write to output
-                row = {"dataset": dset, "method": mname, "rank": rank,
+                row = {"dataset": dset, "method": mname, "rank": rank, "n": n,
                        "iteration": cv, "lambda": lbd,
+                       "evar": evar_te, "evar_tr": evar_tr,
                        "RMSE": score_te, "RMSE_va": score_va, "RMSE_tr": score_tr,
                        "gmin": min(gam_range), "gmax": max(gam_range), "p": len(gam_range)}
                 writer.writerow(row)
