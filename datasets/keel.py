@@ -1,8 +1,10 @@
 import gzip
+from glob import glob
 from numpy import genfromtxt
-from os.path import join, realpath, dirname
+from os.path import join, realpath, dirname, basename
 
 KEEL_PATH = join(dirname(realpath(__file__)), "keel")
+KEEL_DATASETS = map(lambda p: basename(p), glob(join(KEEL_PATH, "*")))
 
 def load_keel(name="abalone", n=None):
     """
