@@ -8,7 +8,34 @@ import numpy as np
 import scipy.spatial as spt
 import scipy.stats as st
 import matplotlib.pyplot as plt
+import itertools as it
 from sklearn.manifold.mds import MDS
+from mklaren.mkl.mklaren import Mklaren
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum
+from mklaren.kernel.kinterface import Kinterface
+
+def estimate_rel_error(X, Z):
+    """
+    Estimate a relative error in norm.
+    :param X: Original feature space.
+    :param Z: Approximated feature space.
+    :return: Mean relative error.
+    """
+    n = X.shape[0]
+    nc = n * (n - 1) / 2
+    errors = np.zeros((nc, ))
+    x_dists = np.zeros((nc, ))
+    z_dists = np.zeros((nc,))
+    c = 0
+    for i, j in it.combinations(range(n), 2):
+        a = np.linalg.norm(X[i, :] - X[j, :])
+        b = np.linalg.norm(Z[i, :] - Z[j, :])
+        errors[c] = abs(a - b) / a
+        x_dists[c] = a
+        z_dists[c] = b
+        c += 1
+    return np.mean(errors), x_dists, z_dists
+
 
 # Datasets
 from datasets.keel import load_keel, KEEL_DATASETS
@@ -37,10 +64,26 @@ for dset_sub in KEEL_DATASETS:
     np.fill_diagonal(Dm, np.inf)
     nn_dists = Dm.min(axis=0).ravel()
 
+    # Fit Mklaren
+    gam_range = np.logspace(-6, 6, 5)
+    Ks = [Kinterface(data=X,
+                     kernel=exponential_kernel,
+                     kernel_args={"gamma": gam}) for gam in gam_range]
+    mklaren = Mklaren(rank=10, delta=10, lbd=0.01)
+    try:
+        mklaren.fit(Ks, y)
+    except Exception as e:
+        print(e)
+        continue
+    inxs = set().union(*[set(mklaren.data[i]["act"])
+                         for i in range(len(gam_range))])
+
+
     # Fit MDS (2D)
     model = MDS(n_components=2)
     try:
         Z = model.fit_transform(X)
+        dp, _, _ = estimate_rel_error(X, Z)
     except ValueError as e:
         print(e)
         continue
@@ -48,25 +91,24 @@ for dset_sub in KEEL_DATASETS:
     fname = os.path.join(outdir, "mds2D_%s.pdf" % dset_sub)
     plt.figure()
     for i in range(X.shape[0]):
-        plt.plot(Z[i, 0], Z[i, 1], "k.", markersize=5 * y[i], alpha=0.1)
-    plt.title("%s (%d-D)" % (dset_sub, X.shape[1]))
+        if i in inxs:
+            plt.plot(Z[i, 0], Z[i, 1], "^", markersize=5 * max(y), alpha=0.8, color="red")
+        else:
+            plt.plot(Z[i, 0], Z[i, 1], "k.", markersize=5 * y[i], alpha=0.1)
+    plt.title("%s (%d-D %.3f %%)" % (dset_sub, X.shape[1], 100*dp))
     plt.xlabel("$Z_1$")
     plt.ylabel("$Z_2$")
     plt.savefig(fname, bbox_inches="tight")
     plt.close()
 
-    # Fit MDS (1D)
-    model = MDS(n_components=1)
-    try:
-        Z = model.fit_transform(X)
-    except ValueError as e:
-        print(e)
-        continue
-
+    # Plot 1D
     fname = os.path.join(outdir, "mds1D_%s.pdf" % dset_sub)
     plt.figure()
     for i in range(X.shape[0]):
-        plt.plot(Z[i], y[i], "k.", alpha=0.1)
+        if i in inxs:
+            plt.plot(Z[i, 0], y[i], "^", alpha=0.8, color="red", markersize=5)
+        else:
+            plt.plot(Z[i, 0], y[i], "k.", alpha=0.1)
     plt.title("%s (%d-D)" % (dset_sub, X.shape[1]))
     plt.xlabel("$Z_1$")
     plt.ylabel("$y$")
@@ -74,7 +116,6 @@ for dset_sub in KEEL_DATASETS:
     plt.close()
 
     for name, dst in zip(("dists", "nn_dists"), (dists, nn_dists)):
-
 
         # Draw histogram
         fname = os.path.join(outdir, "%s_%s.pdf" % (name, dset_sub))
@@ -85,4 +126,4 @@ for dset_sub in KEEL_DATASETS:
         plt.title(dset_sub)
         plt.savefig(fname, bbox_inches="tight")
         plt.close()
-        print "Written %s (%d)" % (fname, X.shape[1])
+        print "Written %s %d %.3f" % (dset_sub, X.shape[1], dp)
