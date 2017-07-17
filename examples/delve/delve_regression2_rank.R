@@ -4,21 +4,29 @@ setwd("/Users/martin/Dev/mklaren/examples/delve/")
 
 # testing kernels in range 1, 3, 5, ..., 100
 # in_dir = "2017-7-2"
+# inxs = seq(0, 7)
 
 # more resolution in rank computation
-in_dir = "2017-7-3"
+# in_dir = "2017-7-3"
+# inxs = seq(0, 7)
+
+# more resolution in rank computation ; keel datasets
+in_dir = "2017-7-10"
+inxs = seq(1, 28) # 0 (ANACALT) is faulty;
 
 # Relevant files
-in_files = c(sprintf(file.path("../output/delve_regression/", in_dir, "/results_%d.csv"), 0:7))
+in_files = Sys.glob(sprintf(file.path("../output/delve_regression/", in_dir, "/results_*.csv")))
 
 # Range of the number of kernels (temporary)
 p.range = c(0, 1, 2, 3, 5, 10)
 rnk.checks = c(5, 10, 30)
 
 # Aggregate results
-meths = c("CSI", "ICD", "Mklaren", "Nystrom",  "RFF", "FITC", "Mklaren2")
-datasets = c("boston", "abalone", "comp", "bank", 
-             "pumadyn", "kin", "ionosphere", "census")
+# meths = c("CSI", "ICD", "Mklaren", "Nystrom",  "RFF", "FITC", "Mklaren2")
+meths = c("CSI", "ICD", "Mklaren", "Nystrom",  "RFF")
+# datasets = c("boston", "abalone", "comp", "bank", 
+#              "pumadyn", "kin", "ionosphere", "census")
+datasets = basename(Sys.glob("/Users/martin/Dev/mklaren/datasets/keel/*"))
 R = matrix(0, nrow=length(datasets), ncol=length(meths))
 row.names(R) = datasets
 colnames(R) = meths
@@ -30,9 +38,10 @@ names(S.vec) = as.character(rnk.checks)
 for(p in p.range){
   R[,] = -1
   for (in_file in in_files){
-    alldata = read.csv(in_file, 
-                       header=TRUE, stringsAsFactors = FALSE)
+    print(in_file)
+    alldata = read.csv(in_file, header=TRUE, stringsAsFactors = FALSE)
     if(p != 0) alldata = alldata[alldata$p == p,]
+    alldata = alldata[alldata$method == "L2KRR" | (alldata$method %in% meths),]
     alldata$RMSE_tr[is.na(alldata$RMSE_tr)] = Inf
     alldata$RMSE_va[is.na(alldata$RMSE_va)] = Inf
     alldata$RMSE[is.na(alldata$RMSE)] = Inf
@@ -92,13 +101,16 @@ for(p in p.range){
     message(sprintf("Written %s", fname))
   }
   
+  # Rank
+  R[is.na(R)] = 85
+  rnk = apply(R, MARGIN = 1, FUN=rank)
+  rm = sort(rowMeans(rnk))
+  print(rm)
+  
   # Store ranks
   fname = sprintf("../output/delve_regression/rank_table_%d.tab", p)
-  write.table(R, fname, row.names = FALSE, sep = "\t")
+  write.table(R, fname, row.names = TRUE, sep = "\t")
   message(sprintf("Written %s", fname))
-  
-  # Double the rows
-  rnk = apply(R, MARGIN = 1, FUN=rank)
   
   # Store CD
   fname = sprintf("../output/delve_regression/rank_CD_%d.pdf", p)
