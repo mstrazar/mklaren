@@ -5,6 +5,7 @@
 # Kernels
 import os
 import numpy as np
+import csv
 import scipy.spatial as spt
 import scipy.stats as st
 import matplotlib.pyplot as plt
@@ -14,11 +15,12 @@ from mklaren.mkl.mklaren import Mklaren
 from mklaren.kernel.kernel import exponential_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 
-def estimate_rel_error(X, Z):
+def estimate_rel_error(X, Z, y):
     """
     Estimate a relative error in norm.
     :param X: Original feature space.
     :param Z: Approximated feature space.
+    :param y: Target values.
     :return: Mean relative error.
     """
     n = X.shape[0]
@@ -26,6 +28,7 @@ def estimate_rel_error(X, Z):
     errors = np.zeros((nc, ))
     x_dists = np.zeros((nc, ))
     z_dists = np.zeros((nc,))
+    y_dists = np.zeros((nc,))
     c = 0
     for i, j in it.combinations(range(n), 2):
         a = np.linalg.norm(X[i, :] - X[j, :])
@@ -33,8 +36,9 @@ def estimate_rel_error(X, Z):
         errors[c] = abs(a - b) / a
         x_dists[c] = a
         z_dists[c] = b
+        y_dists[c] = abs(y[i] - y[j])
         c += 1
-    return np.mean(errors), x_dists, z_dists
+    return np.mean(errors), x_dists, z_dists, y_dists
 
 
 # Datasets
@@ -44,6 +48,13 @@ from datasets.keel import load_keel, KEEL_DATASETS
 # Load max. 1000 examples
 outdir = "../output/delve_regression/distances/"
 n    = 1000
+
+# Write results to csv
+header = ["dataset", "dp", "D", "n", "dist.val.corr"]
+rname = os.path.join(outdir, "results.csv")
+fp = open(rname, "w", buffering=0)
+writer = csv.DictWriter(fp, fieldnames=header)
+writer.writeheader()
 
 for dset_sub in KEEL_DATASETS:
     # Load data
@@ -83,16 +94,19 @@ for dset_sub in KEEL_DATASETS:
     model = MDS(n_components=2)
     try:
         Z = model.fit_transform(X)
-        dp, _, _ = estimate_rel_error(X, Z)
+        dp, xd, zd, yd = estimate_rel_error(X, Z, y)
     except ValueError as e:
         print(e)
         continue
+
+    # Correation between distance and value
+    dv_corr = st.spearmanr(xd, yd)[0]
 
     fname = os.path.join(outdir, "mds2D_%s.pdf" % dset_sub)
     plt.figure()
     for i in range(X.shape[0]):
         if i in inxs:
-            plt.plot(Z[i, 0], Z[i, 1], "^", markersize=5 * max(y), alpha=0.8, color="red")
+            plt.plot(Z[i, 0], Z[i, 1], "^", markersize=5 * y[i], alpha=0.8, color="red")
         else:
             plt.plot(Z[i, 0], Z[i, 1], "k.", markersize=5 * y[i], alpha=0.1)
     plt.title("%s (%d-D %.3f %%)" % (dset_sub, X.shape[1], 100*dp))
@@ -116,7 +130,6 @@ for dset_sub in KEEL_DATASETS:
     plt.close()
 
     for name, dst in zip(("dists", "nn_dists"), (dists, nn_dists)):
-
         # Draw histogram
         fname = os.path.join(outdir, "%s_%s.pdf" % (name, dset_sub))
         plt.figure()
@@ -127,3 +140,12 @@ for dset_sub in KEEL_DATASETS:
         plt.savefig(fname, bbox_inches="tight")
         plt.close()
         print "Written %s %d %.3f" % (dset_sub, X.shape[1], dp)
+
+    row  = {"dataset": dset_sub,
+            "dp": dp, "D": X.shape[1], "n": X.shape[0],
+            "dist.val.corr": dv_corr}
+    writer.writerow(row)
+
+
+# End
+fp.close()
