@@ -1,3 +1,7 @@
+hlp = """
+    Source: http://www.leg.ufpr.br/doku.php/pessoais:paulojus:mbgbook:datasets
+"""
+
 from numpy import genfromtxt
 from os.path import join, realpath, dirname
 import scipy.stats as st
