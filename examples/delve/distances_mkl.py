@@ -22,7 +22,7 @@ from mklaren.regression.ridge import RidgeLowRank
 # Load max. 1000 examples
 outdir = "../output/delve_regression/distances/"
 n    = 300
-gam_range = np.logspace(-3, 3, 7, base=2)
+gam_range = np.logspace(-6, 6, 10, base=2)
 meths = ["Mklaren", "CSI", "RFF", ]
 
 for dset_sub in KEEL_DATASETS:
@@ -63,6 +63,7 @@ for dset_sub in KEEL_DATASETS:
                 continue
             inxs = set().union(*[set(mklaren.data[i]["act"])
                                  for i in range(len(gam_range))])
+            Yt = mklaren.predict([Z for g in gam_range])
             Yp = mklaren.predict([Zp for g in gam_range])
         elif method == "CSI":
             Ksum = Kinterface(data=Z,
@@ -77,14 +78,19 @@ for dset_sub in KEEL_DATASETS:
             except Exception as e:
                 print(e)
                 continue
+            Yt = ridge.predict([Z for g in gam_range])
             Yp = ridge.predict([Zp for g in gam_range])
             inxs = set().union(*map(set, ridge.active_set_))
         elif method == "RFF":
             rff = RFF(rank=10, delta=10, gamma_range=gam_range, lbd=0.01)
             rff.fit(Z, y)
+            Yt = rff.predict(Z)
             Yp = rff.predict(Zp)
             inxs = set()
 
+        # Fit to data
+        pr, prho = st.pearsonr(Yt.ravel(), y)
+        print("Dataset: %s method: %s pr: %.3f (p = %.5f)" % (dset_sub, method, pr, prho))
 
         # Predicted values
         Yz = Yp.reshape((100, 100))
