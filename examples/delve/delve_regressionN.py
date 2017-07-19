@@ -46,7 +46,7 @@ lbd_range  = [0] + list(logspace(-5, 1, 7))  # Regularization parameter
 delta      = 10                              # Number of look-ahead columns (CSI and mklaren)
 p = 7
 # p_range    = (1, 2, 3, 5, 10, 30)
-n_range    = (300, 1000, 10000, )
+n_range    = (30000, 100000)
 
 # Method classes and fixed hyperparameters
 methods = {
