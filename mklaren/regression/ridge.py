@@ -79,7 +79,7 @@ class RidgeMKL:
         self.trained    = False
 
 
-    def fit(self, Ks, y, holdout=None):
+    def fit(self, Ks, y, holdout=()):
         """Learn weights for kernel matrices or Kinterfaces.
 
         :param Ks: (``list``) of (``numpy.ndarray``) or of (``Kinterface``) to be aligned.
