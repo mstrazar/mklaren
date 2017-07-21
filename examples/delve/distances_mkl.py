@@ -22,7 +22,7 @@ from mklaren.regression.ridge import RidgeLowRank
 # Load max. 1000 examples
 outdir = "../output/delve_regression/distances/"
 n    = 300
-gam_range = np.logspace(-6, 6, 1, base=2)
+gam_range = np.logspace(-6, 6, 13, base=2)
 meths = ["Mklaren", "CSI", "RFF", ]
 
 # Kernels
