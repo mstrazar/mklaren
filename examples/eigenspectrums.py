@@ -6,7 +6,7 @@ Investigate various situations that can give rise to overfitting.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel
+from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, periodic_kernel
 from mklaren.kernel.kinterface import Kinterface
 
 
@@ -50,3 +50,49 @@ plt.ylabel("Magnitutde")
 plt.title("Linear kernel (p: dimensionality of space)")
 plt.savefig("examples/output/eigenspectrums/linear.pdf")
 plt.show()
+
+
+# Image of the periodic kernel.
+X = np.linspace(-5, 5, 100).reshape((100, 1))
+plt.figure()
+for l in [1, 3, 10]:
+    k = periodic_kernel(X, np.array([[0]]), l=l, )
+    plt.plot(X.ravel(), k.ravel(), label=str(l), linewidth=np.log10(l)+1)
+plt.legend(title="lengthscale")
+plt.xlabel("x")
+plt.ylabel("k(x, 0)")
+plt.savefig("/Users/martin/Dev/mklaren/examples/output/eigenspectrums/periodic_lengthscale.pdf")
+plt.close()
+
+
+# Image of the periodic kernel.
+X = np.linspace(-5, 5, 100).reshape((100, 1))
+plt.figure()
+for l in [1, 3, 10]:
+    k = periodic_kernel(X, np.array([[0]]), sigma=l, )
+    plt.plot(X.ravel(), k.ravel(), label=str(l), linewidth=np.log10(l)+1)
+plt.legend(title="sigma")
+plt.xlabel("x")
+plt.ylabel("k(x, 0)")
+plt.savefig("/Users/martin/Dev/mklaren/examples/output/eigenspectrums/periodic_sigma.pdf")
+plt.close()
+
+# Covariance structure of periodic kernel
+eigs = []
+X = np.linspace(-5, 5, 100).reshape((100, 1))
+for per in [1, 3, 10]:
+    K = Kinterface(data=X, kernel=periodic_kernel, row_normalize=True, kernel_args={"per": per})
+    eig, _ = np.linalg.eig(K[:, :])
+    eigs.append((per, eig))
+
+# Plot eigenspectrums
+plt.figure()
+for p, eig in eigs:
+    plt.plot(sorted(eig, reverse=True), label=str(p), linewidth=np.log10(p)+1,  alpha=0.5)
+plt.legend(loc=1, title="period")
+plt.xlabel("Component")
+plt.ylabel("Eigenvalue")
+plt.title("Periodic kernel")
+plt.grid("on")
+plt.savefig("/Users/martin/Dev/mklaren/examples/output/eigenspectrums/periodic.pdf")
+plt.close()
