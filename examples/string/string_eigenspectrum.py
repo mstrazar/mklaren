@@ -51,3 +51,30 @@ plt.xlabel("Component")
 plt.ylabel("Log eigenvalue")
 plt.savefig("/Users/martin/Dev/mklaren/examples/output/string/eigenspectrum.pdf")
 plt.close()
+
+
+
+# Eigenspectrum depending on sequence length
+l_range = (10, 100, 1000)
+eigs = []
+for L in l_range:
+    X, y = generate_data(N=100, L=L, p=0.5, motif="TGTG", mean=0, var=3, seed=9)
+    Ksum = Kinterface(data=np.array(X), kernel=kernel_sum,
+                      row_normalize=True,
+                      kernel_args={"kernels": [string_kernel] ,
+                                   "kernels_args": [{"mode": WD, "K": 2}]})
+    eig, _ = np.linalg.eig(Ksum[:, :])
+    eigs.append((L, eig))
+
+
+# Plot eigenspectrums
+plt.figure()
+for p, eig in eigs:
+    plt.plot(sorted(eig, reverse=True), label=str(p), linewidth=np.log10(p),  alpha=0.5)
+plt.legend(loc=1, title="Sequence length")
+plt.xlabel("Component")
+plt.ylabel("Eigenvalue")
+plt.title("Weighted degree kernel")
+plt.grid("on")
+plt.savefig("/Users/martin/Dev/mklaren/examples/output/string/eigenspectrum_length.pdf")
+plt.close()
