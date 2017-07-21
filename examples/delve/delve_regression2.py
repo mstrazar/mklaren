@@ -29,6 +29,7 @@ from datasets.delve import load_kin
 from datasets.delve import load_census_house
 from datasets.orange import load_ionosphere
 from datasets.keel import load_keel
+from datasets.geostats import load_geostats
 
 # Utils
 from numpy import var, mean, logspace, where
@@ -51,7 +52,8 @@ datasets = {
     "pumadyn":   (load_pumadyn,      {"typ": "8fm", "n": n,}),
     "kin":       (load_kin,          {"typ": "8fm", "n": n,}),
     "census":    (load_census_house, {"n": n,}),
-    "keel":      (load_keel,         {"n": n, "name": dset_sub})
+    "keel":      (load_keel,         {"n": n, "name": dset_sub}),
+    "geostats":  (load_geostats,     {"n": n, "name": dset_sub})
 }
 
 
