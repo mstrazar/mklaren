@@ -10,7 +10,7 @@ import itertools as it
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from sklearn.manifold.mds import MDS
-from mklaren.kernel.kernel import exponential_kernel, kernel_sum
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum, periodic_kernel
 from mklaren.kernel.kinterface import Kinterface
 from datasets.keel import load_keel, KEEL_DATASETS
 
@@ -22,8 +22,13 @@ from mklaren.regression.ridge import RidgeLowRank
 # Load max. 1000 examples
 outdir = "../output/delve_regression/distances/"
 n    = 300
-gam_range = np.logspace(-6, 6, 10, base=2)
+gam_range = np.logspace(-6, 6, 1, base=2)
 meths = ["Mklaren", "CSI", "RFF", ]
+
+# Kernels
+kernels = []
+kernels.extend([(exponential_kernel, {"gamma": g}) for g in gam_range])
+# kernels.extend([(periodic_kernel, {"l": g}) for g in gam_range])
 
 for dset_sub in KEEL_DATASETS:
     # Load data
@@ -34,6 +39,7 @@ for dset_sub in KEEL_DATASETS:
     nrm[np.where(nrm == 0)] = 1
     X /= nrm
     y = st.zscore(data["target"])
+    y -= y.min()
 
     # Fit MDS (2D)
     model = MDS(n_components=2)
@@ -53,8 +59,8 @@ for dset_sub in KEEL_DATASETS:
     for method in meths:
         if method == "Mklaren":
             Ks = [Kinterface(data=Z,
-                             kernel=exponential_kernel,
-                             kernel_args={"gamma": gam}) for gam in gam_range]
+                             kernel=kern[0],
+                             kernel_args=kern[1]) for kern in kernels]
             mklaren = Mklaren(rank=10, delta=10, lbd=0.01)
             try:
                 mklaren.fit(Ks, y)
@@ -68,8 +74,8 @@ for dset_sub in KEEL_DATASETS:
         elif method == "CSI":
             Ksum = Kinterface(data=Z,
                               kernel=kernel_sum,
-                              kernel_args={"kernels": [exponential_kernel] * len(gam_range),
-                                           "kernels_args": [{"gamma": gam} for gam in gam_range]})
+                              kernel_args={"kernels": [kern[0] for kern in kernels],
+                                           "kernels_args": [kern[1] for kern in kernels]})
             ridge = RidgeLowRank(rank=10,
                                  method_init_args={"delta": 10},
                                  method="csi", lbd=0.01)
