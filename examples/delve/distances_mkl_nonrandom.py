@@ -25,13 +25,13 @@ from mklaren.regression.fitc import FITC
 # Load max. 1000 examples
 outdir = "../output/delve_regression/distances_nonrandom/"
 n    = 1000
-p_tr = 0.66
-rank = 10
+p_tr = 0.6
+p_va = 0.2
+rank = 20
 delta = 10
-lbd = 0.01
 plot = False
-# gam_range = np.logspace(-8, 8, 17, base=2)
 gam_range = np.logspace(3, 3, 7, base=2)
+lbd_range  = [0] + list(np.logspace(-5, 1, 7))
 meths = ["Mklaren", "CSI", "RFF", "FITC"]
 
 # Fixed output
@@ -45,7 +45,7 @@ fname = os.path.join(dname, "results_%d.csv" % rcnt)
 
 # Output
 header = ["dataset", "n", "method", "rank", "iteration", "lambda",
-          "p", "evar_tr", "evar", "corr", "corr.p", "dcorr", "dcorr.p"]
+          "p", "evar_tr", "evar_va", "evar", "corr", "corr.p", "dcorr", "dcorr.p"]
 fp = open(fname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
@@ -69,6 +69,7 @@ for dset_sub in KEEL_DATASETS:
 
     # Deduce number of training samples
     n_tr = int(p_tr * X.shape[0])
+    n_va = int(p_va * X.shape[0])
 
     # Fit MDS (2D)
     model = MDS(n_components=2, random_state=42)
@@ -83,8 +84,10 @@ for dset_sub in KEEL_DATASETS:
     # Define training and test set
     center = Z.mean(axis=0)
     distance = np.sqrt(np.power(Z - center, 2).sum(axis=1))
-    tr = np.where(st.rankdata(distance) < n_tr)[0]
-    te = np.where(st.rankdata(distance) >= n_tr)[0]
+    rnkd = st.rankdata(distance)
+    tr = np.where(rnkd <= n_tr)[0]
+    va = np.where(np.logical_and(rnkd > n_tr, rnkd <= n_tr + n_va))[0]
+    te = np.where(rnkd > n_va + n_tr)[0]
 
     # Fit methods on Z
     for method in meths:
@@ -96,73 +99,79 @@ for dset_sub in KEEL_DATASETS:
                           kernel_args={"kernels": [kern[0] for kern in kernels],
                                        "kernels_args": [kern[1] for kern in kernels]})
 
-        if method == "Mklaren":
+        for lbd in lbd_range:
+            if method == "Mklaren":
+                mklaren = Mklaren(rank=rank, delta=delta, lbd=lbd)
+                try:
+                    mklaren.fit(Ks, y[tr])
+                except Exception as e:
+                    print(e)
+                    continue
+                inxs = set().union(*[set(mklaren.data[i]["act"])
+                                     for i in range(len(gam_range))])
+                inxs = tr[list(inxs)]
+                Yt = mklaren.predict([Z[tr] for g in gam_range])
+                Yv = mklaren.predict([Z[va] for g in gam_range])
+                Yp = mklaren.predict([Z[te] for g in gam_range])
+                Fp = mklaren.predict([Zp for g in gam_range])
+            elif method == "FITC":
+                model = FITC(rank=rank)
+                model.fit(Ks, y[tr])
+                Yt = model.predict([Z[tr] for k in Ks]).ravel()
+                Yv = model.predict([Z[va] for k in Ks]).ravel()
+                Yp = model.predict([Z[te] for k in Ks]).ravel()
+                Fp = model.predict([Zp for k in Ks]).ravel()
+                inxs = [np.argmin(np.power(Z[tr] - a, 2).sum(axis=1)) for a in model.anchors_]
+                inxs = tr[list(inxs)]
+            elif method == "CSI":
+                ridge = RidgeLowRank(rank=rank,
+                                     method_init_args={"delta": delta},
+                                     method="csi", lbd=lbd)
+                try:
+                    ridge.fit([Ksum], y[tr])
+                except Exception as e:
+                    print(e)
+                    continue
+                Yt = ridge.predict([Z[tr] for g in gam_range])
+                Yv = ridge.predict([Z[va] for g in gam_range])
+                Yp = ridge.predict([Z[te] for g in gam_range])
+                Fp = ridge.predict([Zp for g in gam_range])
+                inxs = set().union(*map(set, ridge.active_set_))
+                inxs = tr[list(inxs)]
+            elif method == "RFF":
+                rff = RFF(rank=10, delta=10, gamma_range=gam_range, lbd=0.01)
+                rff.fit(Z[tr], y[tr])
+                Yt = rff.predict(Z[tr])
+                Yv = rff.predict(Z[va])
+                Yp = rff.predict(Z[te])
+                Fp = rff.predict(Zp)
+                inxs = set()
 
-            mklaren = Mklaren(rank=rank, delta=delta, lbd=lbd)
-            try:
-                mklaren.fit(Ks, y[tr])
-            except Exception as e:
-                print(e)
-                continue
-            inxs = set().union(*[set(mklaren.data[i]["act"])
-                                 for i in range(len(gam_range))])
-            inxs = tr[list(inxs)]
-            Yt = mklaren.predict([Z[tr] for g in gam_range])
-            Yp = mklaren.predict([Z[te] for g in gam_range])
-            Fp = mklaren.predict([Zp for g in gam_range])
-        elif method == "FITC":
-            model = FITC(rank=rank)
-            model.fit(Ks, y[tr])
-            Yt = model.predict([Z[tr] for k in Ks]).ravel()
-            Yp = model.predict([Z[te] for k in Ks]).ravel()
-            Fp = model.predict([Zp for k in Ks]).ravel()
-            inxs = [np.argmin(np.power(Z[tr] - a, 2).sum(axis=1)) for a in model.anchors_]
-            inxs = tr[list(inxs)]
-        elif method == "CSI":
-            ridge = RidgeLowRank(rank=rank,
-                                 method_init_args={"delta": delta},
-                                 method="csi", lbd=lbd)
-            try:
-                ridge.fit([Ksum], y[tr])
-            except Exception as e:
-                print(e)
-                continue
-            Yt = ridge.predict([Z[tr] for g in gam_range])
-            Yp = ridge.predict([Z[te] for g in gam_range])
-            Fp = ridge.predict([Zp for g in gam_range])
-            inxs = set().union(*map(set, ridge.active_set_))
-            inxs = tr[list(inxs)]
-        elif method == "RFF":
-            rff = RFF(rank=10, delta=10, gamma_range=gam_range, lbd=0.01)
-            rff.fit(Z[tr], y[tr])
-            Yt = rff.predict(Z[tr])
-            Yp = rff.predict(Z[te])
-            Fp = rff.predict(Zp)
-            inxs = set()
+            # Explained variance
+            evar_tr = (np.var(y[tr]) - np.var(y[tr] - Yt)) / np.var(y[tr])
+            evar_va = (np.var(y[va]) - np.var(y[va] - Yv)) / np.var(y[va])
+            evar    = (np.var(y[te]) - np.var(y[te] - Yp)) / np.var(y[te])
+            mse_tr  = np.power(y[tr] - Yt, 2)
+            mse     = np.power(y[te] - Yp, 2)
+            dr, drho = st.pearsonr(distance[te], mse)
 
+            # Fit to data
+            pr, prho = st.pearsonr(Yp.ravel(), y[te])
 
-        # Explained variance
-        evar_tr = (np.var(y[tr]) - np.var(y[tr]-Yt)) / np.var(y[tr])
-        evar    = (np.var(y[te]) - np.var(y[te]-Yp)) / np.var(y[te])
-        mse_tr  = np.power(y[tr] - Yt, 2)
-        mse     = np.power(y[te] - Yp, 2)
-        dr, drho = st.pearsonr(distance[te], mse)
+            # Predicted values
+            Fz = Fp.reshape((100, 100))
 
-        # Fit to data
-        pr, prho = st.pearsonr(Yp.ravel(), y[te])
-        print("Dataset: %s method: %s pr: %.3f (p = %.5f)" % (dset_sub, method, pr, prho))
+            # Write results
+            row = {"dataset": dset_sub, "n": Z.shape[0] , "method": method,
+                   "rank": rank, "iteration": 0, "lambda": lbd,
+                   "p": len(Ks), "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar,
+                   "corr": pr, "corr.p": prho,
+                   "dcorr": dr, "dcorr.p": drho}
+            writer.writerow(row)
 
-        # Predicted values
-        Fz = Fp.reshape((100, 100))
-
-        # Write results
-        row = {"dataset": dset_sub, "n": Z.shape[0] , "method": method,
-               "rank": rank, "iteration": 0, "lambda": lbd,
-               "p": len(Ks), "evar_tr": evar_tr, "evar": evar,
-               "corr": pr, "corr.p": prho,
-               "dcorr": dr, "dcorr.p": drho}
-        writer.writerow(row)
-
+            # Break lambda
+            if method == "FITC":
+                break
 
         if plot:
             # Plot a scatter
@@ -194,4 +203,3 @@ for dset_sub in KEEL_DATASETS:
             plt.ylabel("Squared error")
             plt.savefig(fname, bbox_inches="tight")
             plt.close()
-
