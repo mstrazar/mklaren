@@ -6,20 +6,20 @@ Investigate various situations that can give rise to overfitting.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, periodic_kernel
+from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, periodic_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 
 
 # Complete data range
 p = 10
-n = 5
+n = 50
 Xt = np.linspace(-2, 2, 2 * n).reshape((2 * n, 1))
-
+gamma_range = np.logspace(0, 3, 4)
 
 # Eigenvalue of the exponential kernels
 # Shorter length-scales (sigmas) converge to identity
 plt.figure()
-for gi, g in enumerate(np.logspace(-1, 3, 4)):
+for gi, g in enumerate(gamma_range):
     K = Kinterface(data=Xt, kernel=exponential_kernel, kernel_args={"gamma": g})
     vals, vecs = np.linalg.eig(K[:, :])
     plt.plot(vals, label="$\gamma=%0.2f,\  \sigma^2=%0.4f$" % (g, 1.0/g), linewidth=2)
@@ -29,6 +29,24 @@ plt.ylabel("Magnitutde")
 plt.title("Exponentiated quadratic")
 plt.savefig("examples/output/eigenspectrums/exponential.pdf")
 plt.close()
+
+
+# Image of exponential kernels and their sum
+Ksum = Kinterface(data=Xt, kernel=kernel_sum,
+                  row_normalize=True,
+                  kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
+                               "kernels_args": [{"gamma": g} for g in gamma_range]})
+plt.figure()
+plt.plot(Xt.ravel(), Ksum[:, n], label="sum", linewidth=4)
+for gi, g in enumerate(gamma_range):
+    K = Kinterface(data=Xt, kernel=exponential_kernel, kernel_args={"gamma": g})
+    plt.plot(Xt.ravel(), K[:, n], label="%2.3f" % g, linewidth=(gi+1)*0.5)
+plt.legend(title="$\\gamma$")
+plt.xlabel("x")
+plt.ylabel("k(x, 0)")
+plt.savefig("examples/output/eigenspectrums/exponential_image.pdf")
+plt.close()
+
 
 # Random kernels converge to identity (pure-noise) covariance
 # Important: data must be sampled from normal rather than normal distribution
