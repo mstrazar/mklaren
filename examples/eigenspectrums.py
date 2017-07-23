@@ -15,6 +15,7 @@ p = 10
 n = 50
 Xt = np.linspace(-2, 2, 2 * n).reshape((2 * n, 1))
 gamma_range = np.logspace(0, 3, 4)
+degree_range = np.linspace(0, 3, 4)
 
 # Eigenvalue of the exponential kernels
 # Shorter length-scales (sigmas) converge to identity
@@ -68,6 +69,30 @@ plt.legend()
 plt.xlabel("x")
 plt.ylabel("k(x, 0)")
 plt.savefig("examples/output/eigenspectrums/exponential_periodic_image.pdf")
+plt.close()
+
+
+
+
+# Image of exponential kernels+periodic and their sum
+Xt = np.linspace(-10, 10, 2 * n).reshape((2 * n, 1))
+Ksum = Kinterface(data=Xt, kernel=kernel_sum,
+                  row_normalize=False,
+                  kernel_args={"kernels": # [exponential_kernel] * len(gamma_range) +
+                                          [poly_kernel] * len(degree_range) ,
+                               "kernels_args": # [{"gamma": g} for g in gamma_range] +
+                                               [{"degree": d} for d in degree_range]})
+plt.figure()
+plt.plot(Xt.ravel(), Ksum[:, n], label="sum", linewidth=4)
+for gi, (g, d) in enumerate(zip(gamma_range, degree_range)):
+    K = Kinterface(data=Xt, kernel=exponential_kernel, kernel_args={"gamma": g})
+    plt.plot(Xt.ravel(), K[:, n], label="$\\gamma$=%2.3f" % g, linewidth=(gi+1)*0.5)
+    K = Kinterface(data=Xt, kernel=poly_kernel, kernel_args={"degree": d})
+    plt.plot(Xt.ravel(), K[:, n], label="d=%2.3f" % d, linewidth=(gi + 1) * 0.5)
+plt.legend(loc=2)
+plt.xlabel("x")
+plt.ylabel("k(x, 0)")
+plt.savefig("examples/output/eigenspectrums/exponential_poly_image.pdf")
 plt.close()
 
 
