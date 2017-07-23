@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import datetime
 from matplotlib.ticker import MaxNLocator
 from sklearn.manifold.mds import MDS
-from mklaren.kernel.kernel import exponential_kernel, kernel_sum, periodic_kernel
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum, periodic_kernel, poly_kernel
 from mklaren.kernel.kinterface import Kinterface
 from datasets.keel import load_keel, KEEL_DATASETS
 
@@ -30,9 +30,10 @@ p_va = 0.2
 rank = 20
 delta = 10
 plot = False
-gam_range = np.logspace(-8, 8, 17, base=2)
+gam_range = np.logspace(-10, 10, 21, base=2)
+deg_range = range(5)
 lbd_range  = list(np.logspace(-5, 1, 7)) + [0]
-meths = ["Mklaren", "CSI", "RFF", "FITC"]
+meths = ["Mklaren", "CSI", "FITC", "RFF"]
 
 # Fixed output
 # Create output directory
@@ -55,6 +56,7 @@ writer.writeheader()
 kernels = []
 kernels.extend([(exponential_kernel, {"gamma": g}) for g in gam_range])
 # kernels.extend([(periodic_kernel, {"per": g}) for g in gam_range])
+# kernels.extend([(poly_kernel, {"degree": d}) for d in deg_range])
 
 for dset_sub in KEEL_DATASETS:
     # Load data
