@@ -30,8 +30,8 @@ p_va = 0.2
 rank = 20
 delta = 10
 plot = False
-gam_range = np.logspace(3, 3, 7, base=2)
-lbd_range  = [0] + list(np.logspace(-5, 1, 7))
+gam_range = np.logspace(-8, 8, 17, base=2)
+lbd_range  = list(np.logspace(-5, 1, 7)) + [0]
 meths = ["Mklaren", "CSI", "RFF", "FITC"]
 
 # Fixed output
@@ -54,7 +54,7 @@ writer.writeheader()
 # Kernels
 kernels = []
 kernels.extend([(exponential_kernel, {"gamma": g}) for g in gam_range])
-# kernels.extend([(periodic_kernel, {"l": g}) for g in gam_range])
+# kernels.extend([(periodic_kernel, {"per": g}) for g in gam_range])
 
 for dset_sub in KEEL_DATASETS:
     # Load data
@@ -175,7 +175,7 @@ for dset_sub in KEEL_DATASETS:
 
         if plot:
             # Plot a scatter
-            fname = os.path.join(outdir, "mdsZ_%s_%s.pdf" % (dset_sub, method))
+            fname = os.path.join(dname, "mdsZ_%s_%s.pdf" % (dset_sub, method))
             plt.figure()
             levels = MaxNLocator(nbins=100).tick_values(Fz.min(), Fz.max())
             plt.contourf(zx, zy, Fz, cmap=plt.get_cmap('PiYG'), levels=levels)
@@ -195,7 +195,7 @@ for dset_sub in KEEL_DATASETS:
             plt.close()
 
             # Error in relation to distance
-            fname = os.path.join(outdir, "dist_%s_%s.pdf" % (dset_sub, method))
+            fname = os.path.join(dname, "dist_%s_%s.pdf" % (dset_sub, method))
             plt.figure()
             plt.plot(distance[te], mse, "k.")
             plt.title("%s/%s $\\rho=$%.3f, p=%.3f)" % (dset_sub, method, dr, drho))
