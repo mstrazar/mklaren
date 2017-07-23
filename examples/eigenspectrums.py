@@ -48,6 +48,32 @@ plt.savefig("examples/output/eigenspectrums/exponential_image.pdf")
 plt.close()
 
 
+
+# Image of exponential kernels+periodic and their sum
+Xt = np.linspace(-10, 10, 2 * n).reshape((2 * n, 1))
+Ksum = Kinterface(data=Xt, kernel=kernel_sum,
+                  row_normalize=True,
+                  kernel_args={"kernels": [exponential_kernel] * len(gamma_range) +
+                                          [periodic_kernel] * len(gamma_range) ,
+                               "kernels_args": [{"gamma": g} for g in gamma_range] +
+                                               [{"per": g} for g in gamma_range]})
+plt.figure()
+plt.plot(Xt.ravel(), Ksum[:, n], label="sum", linewidth=4)
+for gi, g in enumerate(gamma_range):
+    K = Kinterface(data=Xt, kernel=exponential_kernel, kernel_args={"gamma": g})
+    plt.plot(Xt.ravel(), K[:, n], label="$\\gamma$=%2.3f" % g, linewidth=(gi+1)*0.5)
+    K = Kinterface(data=Xt, kernel=periodic_kernel, kernel_args={"per": g})
+    plt.plot(Xt.ravel(), K[:, n], label="p=%2.3f" % g, linewidth=(gi + 1) * 0.5)
+plt.legend()
+plt.xlabel("x")
+plt.ylabel("k(x, 0)")
+plt.savefig("examples/output/eigenspectrums/exponential_periodic_image.pdf")
+plt.close()
+
+
+
+
+
 # Random kernels converge to identity (pure-noise) covariance
 # Important: data must be sampled from normal rather than normal distribution
 n = 5
