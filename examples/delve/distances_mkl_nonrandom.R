@@ -9,7 +9,8 @@ in_dir = "../output/delve_regression/distances_nonrandom/"
 # in_file = file.path(in_dir, "2017-7-23/results_120.csv") # p: 7, n:1000, rank: 20, CV, exponential
 # in_file = file.path(in_dir, "2017-7-23/results_121.csv") # p: 13, n:1000, rank: 20, CV, exponential
 in_file = file.path(in_dir, "2017-7-23/results_122.csv") # p: 17, n:1000, rank: 20, CV, exponential
-
+in_file = file.path(in_dir, "2017-7-23/results_131.csv") # p: 18, n:1000, rank: 20, CV, exponential+periodic
+in_file = file.path(in_dir, "2017-7-24/results_0.csv") # n:1000, rank: 5, CV, exponential+periodic
 
 data = read.csv(in_file, header=TRUE, stringsAsFactors = FALSE) 
 data = data[data$dataset != "ANACALT" & !is.na(data$evar),]
@@ -34,6 +35,6 @@ metric = "evar"
 R[,] = 0
 for(i in 1:nrow(data)) R[data[i, "dataset"], data[i, "method"]] = data[i, metric]
 fname = file.path(in_dir, sprintf("CD_%s_%d.pdf", metric, p))
-pdf(fname)
+# pdf(fname)
 plotCD(R, alpha=0.05, main=sprintf("num. kernels = %d", p))
-dev.off()
+# dev.off()

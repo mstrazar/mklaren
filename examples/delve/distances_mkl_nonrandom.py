@@ -27,13 +27,14 @@ outdir = "../output/delve_regression/distances_nonrandom/"
 n    = 1000
 p_tr = 0.6
 p_va = 0.2
-rank = 20
+rank = 5
 delta = 10
 plot = False
-gam_range = np.logspace(-10, 10, 21, base=2)
+gam_range = np.logspace(-3, 3, 7, base=2)
 deg_range = range(5)
 lbd_range  = list(np.logspace(-5, 1, 7)) + [0]
-meths = ["Mklaren", "CSI", "FITC", "RFF"]
+# meths = ["Mklaren", "CSI", "FITC", "RFF"]
+meths = ["Mklaren", "CSI"]
 
 # Fixed output
 # Create output directory
@@ -55,11 +56,12 @@ writer.writeheader()
 # Kernels
 kernels = []
 kernels.extend([(exponential_kernel, {"gamma": g}) for g in gam_range])
-# kernels.extend([(periodic_kernel, {"per": g}) for g in gam_range])
+kernels.extend([(periodic_kernel, {"per": g}) for g in gam_range])
 # kernels.extend([(poly_kernel, {"degree": d}) for d in deg_range])
 
 for dset_sub in KEEL_DATASETS:
     # Load data
+    print(dset_sub)
     data = load_keel(name=dset_sub, n=n)
     X = data["data"]
     X = X - X.mean(axis=0)
@@ -67,7 +69,7 @@ for dset_sub in KEEL_DATASETS:
     nrm[np.where(nrm == 0)] = 1
     X /= nrm
     y = st.zscore(data["target"])
-    y -= y.min()
+    # y -= y.min()
 
     # Deduce number of training samples
     n_tr = int(p_tr * X.shape[0])
@@ -94,11 +96,13 @@ for dset_sub in KEEL_DATASETS:
     # Fit methods on Z
     for method in meths:
         Ks = [Kinterface(data=Z[tr],
+                         row_normalize=True,
                          kernel=kern[0],
                          kernel_args=kern[1]) for kern in kernels]
         Ksum = Kinterface(data=Z[tr],
+                          row_normalize=True,
                           kernel=kernel_sum,
-                          kernel_args={"kernels": [kern[0] for kern in kernels],
+                          kernel_args={"kernels":      [kern[0] for kern in kernels],
                                        "kernels_args": [kern[1] for kern in kernels]})
 
         for lbd in lbd_range:
