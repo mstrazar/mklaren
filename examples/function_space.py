@@ -35,9 +35,9 @@ yp = G.dot(w)
 
 # Solvable within a combined feature space
 lbd = 1e-5
-K_app = sum([G.dot(G.T) for G in model.Gs])
+K_app = sum([g.dot(g.T) for g in model.Gs])
 rank = np.linalg.matrix_rank(K_app)
-a_app = sp.linalg.solve(K_app + lbd * np.eye(n, n), yp)
+a_app = sp.linalg.solve(K_app + lbd * np.eye(n, n), yp)     # Modeling
 y_app = K_app.dot(a_app)
 plt.figure()
 plt.ylim(yp.min(), yp.max())
@@ -53,3 +53,9 @@ a1 = np.linalg.norm(a_app, ord=1)
 print("Norm of difference: %f" % d)
 print("Norm1 of alpha: %f" % a1)
 print("Norm2 of alpha: %f" % a)
+
+
+# Retrieving the true w
+w_app = G.T.dot(a_app)
+dw = np.linalg.norm(w - w_app)
+print("Norm of weight difference: %f" % dw)
