@@ -299,5 +299,5 @@ class RidgeLowRank:
 
         :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
-        self.transform(Xs)
+        XT = self.transform(Xs)
         return self.reg_model.predict(X=XT).ravel()
