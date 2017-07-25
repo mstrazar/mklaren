@@ -31,7 +31,10 @@ model.fit(Ks, y)
 G = np.hstack(model.Gs)
 w = np.zeros((G.shape[1], 1))
 w[:2] = 1
-yp = G.dot(w)
+
+# Targets
+noise = 0.001
+yp = G.dot(w)  + noise * np.random.randn(n, 1).reshape((n, 1))
 
 # Solvable within a combined feature space
 lbd = 1e-5
@@ -54,8 +57,19 @@ print("Norm of difference: %f" % d)
 print("Norm1 of alpha: %f" % a1)
 print("Norm2 of alpha: %f" % a)
 
-
 # Retrieving the true w
 w_app = G.T.dot(a_app)
 dw = np.linalg.norm(w - w_app)
 print("Norm of weight difference: %f" % dw)
+
+# Transform test points outside of domain
+Xp = np.linspace(10, 12, 10).reshape((10, 1))
+Xt = model.transform([Xp]*len(gamma_range))
+
+xp  = Xt.dot(w)
+xp_app = Xt.dot(w_app)
+plt.figure()
+plt.plot(Xp.ravel(), xp, label="True")
+plt.plot(Xp.ravel(), xp_app, label="App")
+plt.legend()
+plt.show()
