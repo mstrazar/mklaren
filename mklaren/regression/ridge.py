@@ -275,6 +275,22 @@ class RidgeLowRank:
 
         self.trained = True
 
+    def transform(self, Xs):
+        """Transform inputs to low-rank feature space.
+
+                :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
+
+                :return: (``numpy.ndarray``) Vector of prediction of regression targets.
+                """
+        assert self.trained
+        Gs = []
+        XT = None
+        for K, X, Trn, active in zip(self.Ks, Xs, self.Ts, self.As, ):
+            K_ST = K(K.data[active], X)
+            G = Trn.dot(K_ST).T
+            Gs.append(G.reshape((len(X), self.rank)))
+            XT = hstack(Gs)
+        return XT
 
     def predict(self, Xs):
         """Predict responses for test samples.
@@ -283,13 +299,5 @@ class RidgeLowRank:
 
         :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
-        assert self.trained
-        Gs = []
-        XT = None
-
-        for K, X, Trn, active in zip(self.Ks, Xs, self.Ts, self.As,):
-            K_ST = K(K.data[active], X)
-            G    = Trn.dot(K_ST).T
-            Gs.append(G.reshape((len(X), self.rank)))
-            XT = hstack(Gs)
+        self.transform(Xs)
         return self.reg_model.predict(X=XT).ravel()
