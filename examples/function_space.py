@@ -34,18 +34,20 @@ w[:2] = 1
 
 # Targets
 noise = 0.001
-yp = G.dot(w)  + noise * np.random.randn(n, 1).reshape((n, 1))
+yp = G.dot(w)
+yn = noise * np.random.randn(n, 1).reshape((n, 1))
 
 # Solvable within a combined feature space
-lbd = 1e-5
+lbd = 0
 K_app = sum([g.dot(g.T) for g in model.Gs])
 rank = np.linalg.matrix_rank(K_app)
-a_app = sp.linalg.solve(K_app + lbd * np.eye(n, n), yp)     # Modeling
+a_app = sp.linalg.solve(K_app + lbd * np.eye(n, n), yp+yn)     # Modeling
 y_app = K_app.dot(a_app)
 plt.figure()
 plt.ylim(yp.min(), yp.max())
-plt.plot(yp, label="True")
-plt.plot(y_app, label="App")
+plt.plot(X.ravel(), yp, label="True")
+plt.plot(X.ravel(), yp+yn, label="Observed")
+plt.plot(X.ravel(), y_app, label="App")
 plt.legend(title="Rank=%d" % rank)
 plt.show()
 
@@ -65,7 +67,6 @@ print("Norm of weight difference: %f" % dw)
 # Transform test points outside of domain
 Xp = np.linspace(10, 12, 10).reshape((10, 1))
 Xt = model.transform([Xp]*len(gamma_range))
-
 xp  = Xt.dot(w)
 xp_app = Xt.dot(w_app)
 plt.figure()
@@ -73,3 +74,5 @@ plt.plot(Xp.ravel(), xp, label="True")
 plt.plot(Xp.ravel(), xp_app, label="App")
 plt.legend()
 plt.show()
+
+
