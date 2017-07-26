@@ -14,6 +14,7 @@ from sklearn.manifold.mds import MDS
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.kernel.kernel import exponential_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
+from mklaren.regression.fitc import FITC
 
 def estimate_rel_error(X, Z, y):
     """
@@ -50,7 +51,7 @@ outdir = "/Users/martin/Dev/mklaren/examples/output/keel/distances/"
 n    = 1000
 rank_range = [2, 5, 10, 30, 100]
 delta_range = [2, 5, 10, 30]
-gam_range = np.logspace(-6, 6, 5)
+gamma_range = np.logspace(-6, 6, 5, base=2)
 
 # Write results to csv
 header = ["dataset", "D", "n", "rank", "delta", "dist.val.corr", "evar"]
@@ -60,11 +61,14 @@ writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
 
 for dset_sub in KEEL_DATASETS:
+    if dset_sub == "ANACALT": continue
+
     # Load data
     data = load_keel(name=dset_sub, n=n)
 
     # Compute pairwise distances
     X = data["data"]
+    X = st.zscore(X, axis=0)
     y = st.zscore(data["target"])
     D = spt.distance_matrix(X, X)
 
@@ -72,10 +76,20 @@ for dset_sub in KEEL_DATASETS:
     dists = np.array([d for d in D.ravel() if d != 0])
     dists = dists / dists.max()
 
+    # Store distribution of log2 distances
+    ld = np.log(dists) / np.log(2)
+    fname = os.path.join(outdir, "hists", "log2_distances_%s.pdf" % dset_sub)
+    plt.figure(figsize=(4, 2.5))
+    plt.hist(ld)
+    plt.xlabel("Log2 distance")
+    plt.ylabel("Count")
+    plt.savefig(fname, bbox_inches="tight")
+    plt.close()
+
     # Fit Mklaren
     Ks = [Kinterface(data=X,
                      kernel=exponential_kernel,
-                     kernel_args={"gamma": gam}) for gam in gam_range]
+                     kernel_args={"gamma": gam}) for gam in gamma_range]
 
     for rank, delta in it.product(rank_range, delta_range):
         mklaren = Mklaren(rank=rank, delta=delta, lbd=0.0)
@@ -85,10 +99,23 @@ for dset_sub in KEEL_DATASETS:
             print(e)
             continue
         inxs = set().union(*[set(mklaren.data[i]["act"])
-                             for i in range(len(gam_range))])
+                             for i in range(len(gamma_range))])
+        counts = dict([(np.log2(FITC.gamma2lengthscale(gamma_range[i])),
+                        len(mklaren.data[i]["act"])) for i in range(len(gamma_range))])
+        xs, ys = zip(*sorted(counts.items()))
+        fname = os.path.join(outdir, "sigmas", "log2_sigma_%s_%d_%d.pdf" % (dset_sub, rank, delta))
+        plt.figure(figsize=(4, 2.5))
+        plt.bar(range(len(ys)), ys)
+        plt.gca().set_xticks(xs)
+        plt.xlabel("Log2 Lengthscale")
+        plt.ylabel("Count")
+        plt.grid()
+        plt.savefig(fname, bbox_inches="tight")
+        plt.close()
+
 
         # Explained variance
-        yp = mklaren.predict([X] * len(gam_range))
+        yp = mklaren.predict([X] * len(gamma_range))
         evar = (np.var(y) - np.var(y-yp)) / np.var(y)
 
         # Get distance from distance pairs
