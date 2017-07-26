@@ -46,10 +46,14 @@ yn = noise * np.random.randn(n, 1).reshape((n, 1))
 # number. The coefficients are HUGE and its impossible to retrieve
 # the true solution.
 
+
+### Key differences in solving the problem
+# K_app = sum([G.dot(G.T) for g in Gs])   # exact / concatenation of feature spaces
+# K_app = sum([K[:, :] for K in Ks])      # exact / kernel sum is equivalent
+K_app = Q.dot(Q.T)                        # inexact at approximation!
+
+
 lbd = 0.0
-# K_app = sum([G.dot(G.T) for g in Gs])   # exact
-# K_app = sum([K[:, :] for K in Ks])            # exact
-K_app = Q.dot(Q.T)            # inexact
 rank = np.linalg.matrix_rank(K_app)
 a_app = sp.linalg.solve(K_app + lbd * np.eye(n, n), yp+yn)     # Modeling
 y_app = K_app.dot(a_app)
