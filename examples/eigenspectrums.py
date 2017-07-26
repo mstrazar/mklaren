@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, periodic_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
+from mklaren.regression.fitc import FITC
 
 
 # Complete data range
@@ -39,10 +40,13 @@ Ksum = Kinterface(data=Xt, kernel=kernel_sum,
                                "kernels_args": [{"gamma": g} for g in gamma_range]})
 plt.figure()
 plt.plot(Xt.ravel(), Ksum[:, n], label="sum", linewidth=4)
+lscales = map(FITC.gamma2lengthscale, gamma_range)
 for gi, g in enumerate(gamma_range):
     K = Kinterface(data=Xt, kernel=exponential_kernel, kernel_args={"gamma": g})
-    plt.plot(Xt.ravel(), K[:, n], label="%2.3f" % g, linewidth=(gi+1)*0.5)
-plt.legend(title="$\\gamma$")
+    plt.plot(Xt.ravel(), K[:, n], label="%2.3f" % FITC.gamma2lengthscale(g), linewidth=(gi+1)*0.5)
+    plt.plot([lscales[gi], lscales[gi]], [0, 1], "--", color="gray")
+    plt.plot([-lscales[gi], -lscales[gi]], [0, 1], "--", color="gray")
+plt.legend(title="lengthscale")
 plt.xlabel("x")
 plt.ylabel("k(x, 0)")
 plt.savefig("examples/output/eigenspectrums/exponential_image.pdf")
