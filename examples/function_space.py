@@ -19,34 +19,43 @@ gamma_range = np.logspace(-3, 3, 7)
 inxs = [10, 30, 70]
 rank = len(inxs)
 
-# Kernel matrix
+# Multiple lengthscales kernels
 Ks = [Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": g})
       for g in gamma_range]
 
-# Only to construct low-rank features
-model = RidgeLowRank(rank=2, method="nystrom")
-model.fit(Ks, y)
+# Kernel matrix ad-hoc approximation with fixed index set
+inxs = [10, 20, 50, 90]
+rank = len(inxs)
+Gs = [K[:, inxs].dot(sp.linalg.sqrtm(np.linalg.inv(K[inxs, inxs]))) for K in Ks]
 
-# Create an artifical weight vector only allowing showrt lengthscales
-G = np.hstack(model.Gs)
-w = np.zeros((G.shape[1], 1))
-w[:2] = 1
+# Sum features over all kernels
+Q = sum(Gs)
+
+# Create an artifical weight vector only allowing short lengthscales
+# Centered on the lengthscale for on of the inducing points
+w = np.zeros((Gs[0].shape[1], 1))
+w[:rank] = 1
+yp = Gs[0].dot(w)
 
 # Targets
-noise = 0.001
-yp = G.dot(w)
+noise = 0.00
 yn = noise * np.random.randn(n, 1).reshape((n, 1))
 
 # Solvable within a combined feature space
-lbd = 0
-K_app = sum([g.dot(g.T) for g in model.Gs])
+# This computation should be exact, but the problem has a bad condition
+# number. The coefficients are HUGE and its impossible to retrieve
+# the true solution.
+
+lbd = 0.0
+# K_app = sum([G.dot(G.T) for g in Gs])   # exact
+# K_app = sum([K[:, :] for K in Ks])            # exact
+K_app = Q.dot(Q.T)            # inexact
 rank = np.linalg.matrix_rank(K_app)
 a_app = sp.linalg.solve(K_app + lbd * np.eye(n, n), yp+yn)     # Modeling
 y_app = K_app.dot(a_app)
 plt.figure()
 plt.ylim(yp.min(), yp.max())
 plt.plot(X.ravel(), yp, label="True")
-plt.plot(X.ravel(), yp+yn, label="Observed")
 plt.plot(X.ravel(), y_app, label="App")
 plt.legend(title="Rank=%d" % rank)
 plt.show()
@@ -60,9 +69,9 @@ print("Norm1 of alpha: %f" % a1)
 print("Norm2 of alpha: %f" % a)
 
 # Retrieving the true w
-w_app = G.T.dot(a_app)
-dw = np.linalg.norm(w - w_app)
-print("Norm of weight difference: %f" % dw)
+# w_app = G.T.dot(a_app)
+# dw = np.linalg.norm(w - w_app)
+# print("Norm of weight difference: %f" % dw)
 
 # Transform test points outside of domain
 Xp = np.linspace(10, 12, 10).reshape((10, 1))
