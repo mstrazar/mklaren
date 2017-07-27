@@ -49,13 +49,15 @@ from datasets.keel import load_keel, KEEL_DATASETS
 # Load max. 1000 examples
 outdir = "/Users/martin/Dev/mklaren/examples/output/keel/distances/"
 n    = 1000
-rank_range = [2, 5, 10, 30, 100]
-delta_range = [2, 5, 10, 30]
+# rank_range = [2, 5, 10, 30, 100]
+# delta_range = [2, 5, 10, 30]
+rank_range = [30]
+delta_range = [30]
 gamma_range = np.logspace(-6, 6, 5, base=2)
 
 # Write results to csv
 header = ["dataset", "D", "n", "rank", "delta", "dist.val.corr", "evar"]
-rname = os.path.join(outdir, "results.csv")
+rname = os.path.join(outdir, "results_1csv")
 fp = open(rname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
@@ -80,7 +82,11 @@ for dset_sub in KEEL_DATASETS:
     ld = np.log(dists) / np.log(2)
     fname = os.path.join(outdir, "hists", "log2_distances_%s.pdf" % dset_sub)
     plt.figure(figsize=(4, 2.5))
-    plt.hist(ld)
+    try:
+        plt.hist(ld)
+    except:
+        plt.close()
+        continue
     plt.xlabel("Log2 distance")
     plt.ylabel("Count")
     plt.savefig(fname, bbox_inches="tight")
@@ -105,8 +111,9 @@ for dset_sub in KEEL_DATASETS:
         xs, ys = zip(*sorted(counts.items()))
         fname = os.path.join(outdir, "sigmas", "log2_sigma_%s_%d_%d.pdf" % (dset_sub, rank, delta))
         plt.figure(figsize=(4, 2.5))
-        plt.bar(range(len(ys)), ys)
-        plt.gca().set_xticks(xs)
+        plt.bar(range(len(ys)), ys, align="center")
+        plt.gca().set_xticks(range(len(ys)))
+        plt.gca().set_xticklabels(xs)
         plt.xlabel("Log2 Lengthscale")
         plt.ylabel("Count")
         plt.grid()
