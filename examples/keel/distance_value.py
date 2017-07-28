@@ -60,7 +60,7 @@ gamma_ranges = {
     "lowfreq": np.logspace(-6, 0, 5, base=2),             # low freqs. (long lengthscales)
     "hifreq": np.logspace(0, 6, 5, base=2)                 # high freqs. (short lengthscales)
 }
-knames  = ["exp", "expa"]
+knames  = ["exp", "expa", "sum"]
 
 # Write results to csv
 header = ["dataset", "kernel", "D", "n", "rank", "delta", "gamma", "dist.val.corr", "evar"]
@@ -105,14 +105,15 @@ for dset_sub in KEEL_DATASETS:
         # Fit Mklaren
         gamma_range = gamma_ranges[gr]
 
-        if kn == "exp":
-            Ks = [Kinterface(data=X,
+        Ks = []
+        if kn in {"sum", "exp"}:
+            Ks.extend([Kinterface(data=X,
                              kernel=exponential_kernel,
-                             kernel_args={"gamma": gam}) for gam in gamma_range]
-        if kn == "expa":
-            Ks = [Kinterface(data=X,
+                             kernel_args={"gamma": gam}) for gam in gamma_range])
+        if kn == {"sum", "expa"}:
+            Ks.extend([Kinterface(data=X,
                              kernel=exponential_absolute,
-                             kernel_args={"gamma": gam}) for gam in gamma_range]
+                             kernel_args={"gamma": gam}) for gam in gamma_range])
 
         mklaren = Mklaren(rank=rank, delta=delta, lbd=0.0)
         try:
