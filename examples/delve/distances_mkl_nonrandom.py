@@ -38,7 +38,7 @@ p_va = 0.2
 rank = 10
 delta = 10
 plot = True
-gam_range = np.logspace(-3, 3, 7, base=2)
+gam_range = np.logspace(-6, 3, 10, base=2)
 deg_range = range(5)
 lbd_range  = list(np.logspace(-5, 1, 7)) + [0]
 meths = ["Mklaren", "CSI", "FITC", "RFF"]
@@ -180,37 +180,38 @@ for method in meths:
                "dcorr": dr, "dcorr.p": drho}
         writer.writerow(row)
 
+        if plot and lbd == 0:
+            # Plot a scatter
+            fname = os.path.join(dname, "mdsZ_%s_%s.pdf" % (dset_sub, method))
+            plt.figure()
+            levels = MaxNLocator(nbins=100).tick_values(Fz.min(), Fz.max())
+            plt.contourf(zx, zy, Fz, cmap=plt.get_cmap('PiYG'), levels=levels)
+            for i in range(X.shape[0]):
+                color = "red" if i in inxs else "black"
+                color = "white" if i in te else color
+                alpha = 0.8 if i in inxs else 0.3
+                fmt = "^" if i in inxs else "."
+                plt.plot(Z[i, 0], Z[i, 1], fmt, markersize=5 * y[i],
+                         alpha=alpha, color=color, markeredgecolor="black")
+            plt.title("%s/%s (%d-D)" % (dset_sub, method, X.shape[1]))
+            plt.xlabel("$Z_1$")
+            plt.ylabel("$Z_2$")
+            plt.colorbar()
+            plt.tight_layout()
+            plt.savefig(fname, bbox_inches="tight")
+            plt.close()
+
+            # Error in relation to distance
+            fname = os.path.join(dname, "dist_%s_%s.pdf" % (dset_sub, method))
+            plt.figure()
+            plt.plot(distance[te], mse, "k.")
+            plt.title("%s/%s $\\rho=$%.3f, p=%.3f)" % (dset_sub, method, dr, drho))
+            plt.xlabel("Distance from center of mass")
+            plt.ylabel("Squared error")
+            plt.savefig(fname, bbox_inches="tight")
+            plt.close()
+
+
         # Break lambda
         if method == "FITC":
             break
-
-    if plot and lbd == 0:
-        # Plot a scatter
-        fname = os.path.join(dname, "mdsZ_%s_%s.pdf" % (dset_sub, method))
-        plt.figure()
-        levels = MaxNLocator(nbins=100).tick_values(Fz.min(), Fz.max())
-        plt.contourf(zx, zy, Fz, cmap=plt.get_cmap('PiYG'), levels=levels)
-        for i in range(X.shape[0]):
-            color = "red" if i in inxs else "black"
-            color = "white" if i in te else color
-            alpha = 0.8 if i in inxs else 0.3
-            fmt = "^" if i in inxs else "."
-            plt.plot(Z[i, 0], Z[i, 1], fmt, markersize=5 * y[i],
-                     alpha=alpha, color=color, markeredgecolor="black")
-        plt.title("%s/%s (%d-D)" % (dset_sub, method, X.shape[1]))
-        plt.xlabel("$Z_1$")
-        plt.ylabel("$Z_2$")
-        plt.colorbar()
-        plt.tight_layout()
-        plt.savefig(fname, bbox_inches="tight")
-        plt.close()
-
-        # Error in relation to distance
-        fname = os.path.join(dname, "dist_%s_%s.pdf" % (dset_sub, method))
-        plt.figure()
-        plt.plot(distance[te], mse, "k.")
-        plt.title("%s/%s $\\rho=$%.3f, p=%.3f)" % (dset_sub, method, dr, drho))
-        plt.xlabel("Distance from center of mass")
-        plt.ylabel("Squared error")
-        plt.savefig(fname, bbox_inches="tight")
-        plt.close()
