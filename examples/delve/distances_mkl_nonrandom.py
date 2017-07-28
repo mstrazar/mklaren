@@ -2,6 +2,9 @@
     Evaluation of low-rank kernel approximation methods
     with ridge regression on standard datasets.
 """
+import matplotlib
+matplotlib.use("Agg")
+
 # Kernels
 import sys
 import os
