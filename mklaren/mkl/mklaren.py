@@ -656,6 +656,7 @@ class Mklaren:
         :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
         assert self.trained
+        assert len(Xs) == len(self.data)
         regr = zeros((Xs[0].shape[0], 1)) + self.bias
         for pi, X in zip(sorted(self.data.keys()), Xs):
             if "Tny" in self.data[pi]:
