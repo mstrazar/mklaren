@@ -53,17 +53,24 @@ n    = 1000
 # delta_range = [2, 5, 10, 30]
 rank_range = [30]
 delta_range = [30]
-gamma_range = np.logspace(-6, 6, 5, base=2)
+gamma_ranges = {
+    "standard": np.logspace(-6, 6, 5, base=2),           # standard
+    "more": np.logspace(-6, 6, 10, base=2),              # standard, twice
+    "standardx2": np.logspace(-6, 6, 5, base=2) * 2,     # double
+    "hifreq": np.logspace(-6, 0, 5, base=2),             # low freqs. (long lengthscales)
+    "lowfreq": np.logspace(0, 6, 5, base=2)                 # high freqs. (short lengthscales)
+}
 
 # Write results to csv
-header = ["dataset", "D", "n", "rank", "delta", "dist.val.corr", "evar"]
-rname = os.path.join(outdir, "results_1csv")
+header = ["dataset", "D", "n", "rank", "delta", "gamma", "dist.val.corr", "evar"]
+rname = os.path.join(outdir, "results_1.csv")
 fp = open(rname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
 
 for dset_sub in KEEL_DATASETS:
     if dset_sub == "ANACALT": continue
+    print(dset_sub)
 
     # Load data
     data = load_keel(name=dset_sub, n=n)
@@ -92,12 +99,14 @@ for dset_sub in KEEL_DATASETS:
     plt.savefig(fname, bbox_inches="tight")
     plt.close()
 
-    # Fit Mklaren
-    Ks = [Kinterface(data=X,
-                     kernel=exponential_kernel,
-                     kernel_args={"gamma": gam}) for gam in gamma_range]
+    for gr, rank, delta in it.product(sorted(gamma_ranges.keys()), rank_range, delta_range):
 
-    for rank, delta in it.product(rank_range, delta_range):
+        # Fit Mklaren
+        gamma_range = gamma_ranges[gr]
+        Ks = [Kinterface(data=X,
+                         kernel=exponential_kernel,
+                         kernel_args={"gamma": gam}) for gam in gamma_range]
+
         mklaren = Mklaren(rank=rank, delta=delta, lbd=0.0)
         try:
             mklaren.fit(Ks, y)
@@ -130,7 +139,7 @@ for dset_sub in KEEL_DATASETS:
         dv_corr = st.spearmanr(xd, yd)[0]
 
         # Write results
-        row  = {"dataset": dset_sub, "D": X.shape[1], "n": X.shape[0],
+        row  = {"dataset": dset_sub, "D": X.shape[1], "n": X.shape[0], "gamma": gr,
                 "dist.val.corr": dv_corr, "evar": evar, "rank": rank, "delta": delta}
         writer.writerow(row)
 
