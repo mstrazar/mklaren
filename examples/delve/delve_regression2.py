@@ -7,6 +7,8 @@ import csv
 import datetime
 import sys
 import itertools as it
+import scipy.stats as st
+import time
 
 # Low-rank approximation methods
 from mklaren.regression.ridge import RidgeLowRank
@@ -109,19 +111,12 @@ data = load(**load_args)
 if dset_sub is not None: dset = dset_sub
 
 # Load data and normalize columns
-X = data["data"]
-X = X - X.mean(axis=0)
-nrm = norm(X, axis=0)
-nrm[where(nrm==0)] = 1
-X /=  nrm
-y = data["target"]
-y -= mean(y)
+X = st.zscore(data["data"], axis=0)
+y = st.zscore(data["target"])
 n = len(X)
-
 
 # Perform model cross-validation with internal parameter selection
 for cv, p in it.product(range(cv_iter), p_range):
-    # gam_range = logspace(-6, 6, p, base=2)  # RBF kernel parameter
     gam_range = logspace(-6, 3, p, base=2)
 
     # Split into training, validation, test sets.
@@ -151,7 +146,9 @@ for cv, p in it.product(range(cv_iter), p_range):
         # Fit hyperparameters on the validation set using the current rank
         for rank in rank_range:
             for lbd in lbd_range:
+                times = []
                 try:
+                    t_train = time.time()
                     if mname == "Mklaren":
                         model = Mclass(lbd=lbd, rank=rank, **kwargs)
                         model.fit(Ks, y_tr)
@@ -183,6 +180,8 @@ for cv, p in it.product(range(cv_iter), p_range):
                         yptr = model.predict([X_tr]).ravel()
                         ypva = model.predict([X_val]).ravel()
                         ypte = model.predict([X_te]).ravel()
+                    t_train = t_train - time.time()
+                    times.append(t_train)
                 except Exception as e:
                     sys.stderr.write("Method: %s rank: %d iter: %d error: %s \n" % (mname, rank, cv, str(e)))
                     continue
@@ -198,7 +197,7 @@ for cv, p in it.product(range(cv_iter), p_range):
 
                 # Write to output
                 row = {"dataset": dset, "method": mname, "rank": rank, "n": n,
-                       "iteration": cv, "lambda": lbd,
+                       "iteration": cv, "lambda": lbd, "time": mean(times),
                        "evar": evar_te, "evar_tr": evar_tr,
                        "RMSE": score_te, "RMSE_va": score_va, "RMSE_tr": score_tr,
                        "gmin": min(gam_range), "gmax": max(gam_range), "p": len(gam_range)}
