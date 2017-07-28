@@ -57,8 +57,8 @@ gamma_ranges = {
     "standard": np.logspace(-6, 6, 5, base=2),           # standard
     "more": np.logspace(-6, 6, 10, base=2),              # standard, twice
     "standardx2": np.logspace(-6, 6, 5, base=2) * 2,     # double
-    "hifreq": np.logspace(-6, 0, 5, base=2),             # low freqs. (long lengthscales)
-    "lowfreq": np.logspace(0, 6, 5, base=2)                 # high freqs. (short lengthscales)
+    "lowfreq": np.logspace(-6, 0, 5, base=2),             # low freqs. (long lengthscales)
+    "hifreq": np.logspace(0, 6, 5, base=2)                 # high freqs. (short lengthscales)
 }
 
 # Write results to csv
@@ -118,16 +118,18 @@ for dset_sub in KEEL_DATASETS:
         counts = dict([(np.log2(FITC.gamma2lengthscale(gamma_range[i])),
                         len(mklaren.data[i]["act"])) for i in range(len(gamma_range))])
         xs, ys = zip(*sorted(counts.items()))
-        fname = os.path.join(outdir, "sigmas", "log2_sigma_%s_%d_%d.pdf" % (dset_sub, rank, delta))
-        plt.figure(figsize=(4, 2.5))
-        plt.bar(range(len(ys)), ys, align="center")
-        plt.gca().set_xticks(range(len(ys)))
-        plt.gca().set_xticklabels(xs)
-        plt.xlabel("Log2 Lengthscale")
-        plt.ylabel("Count")
-        plt.grid()
-        plt.savefig(fname, bbox_inches="tight")
-        plt.close()
+
+        if gr == "standard":
+            fname = os.path.join(outdir, "sigmas", "log2_sigma_%s_%d_%d.pdf" % (dset_sub, rank, delta))
+            plt.figure(figsize=(4, 2.5))
+            plt.bar(range(len(ys)), ys, align="center")
+            plt.gca().set_xticks(range(len(ys)))
+            plt.gca().set_xticklabels(xs)
+            plt.xlabel("Log2 Lengthscale")
+            plt.ylabel("Count")
+            plt.grid()
+            plt.savefig(fname, bbox_inches="tight")
+            plt.close()
 
 
         # Explained variance
