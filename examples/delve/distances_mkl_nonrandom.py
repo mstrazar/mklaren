@@ -184,7 +184,7 @@ for method in meths:
         if method == "FITC":
             break
 
-    if plot:
+    if plot and lbd == 0:
         # Plot a scatter
         fname = os.path.join(dname, "mdsZ_%s_%s.pdf" % (dset_sub, method))
         plt.figure()
