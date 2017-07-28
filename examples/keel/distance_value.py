@@ -110,7 +110,7 @@ for dset_sub in KEEL_DATASETS:
             Ks.extend([Kinterface(data=X,
                              kernel=exponential_kernel,
                              kernel_args={"gamma": gam}) for gam in gamma_range])
-        if kn == {"sum", "expa"}:
+        if kn in {"sum", "expa"}:
             Ks.extend([Kinterface(data=X,
                              kernel=exponential_absolute,
                              kernel_args={"gamma": gam}) for gam in gamma_range])
@@ -121,13 +121,13 @@ for dset_sub in KEEL_DATASETS:
         except Exception as e:
             print(e)
             continue
-        inxs = set().union(*[set(mklaren.data[i]["act"])
-                             for i in range(len(gamma_range))])
-        counts = dict([(np.log2(FITC.gamma2lengthscale(gamma_range[i])),
-                        len(mklaren.data[i]["act"])) for i in range(len(gamma_range))])
-        xs, ys = zip(*sorted(counts.items()))
 
-        if gr == "standard":
+        if False:   #gr == "standard":
+            inxs = set().union(*[set(mklaren.data[i]["act"])
+                                 for i in range(len(gamma_range))])
+            counts = dict([(np.log2(FITC.gamma2lengthscale(gamma_range[i])),
+                            len(mklaren.data[i]["act"])) for i in range(len(gamma_range))])
+            xs, ys = zip(*sorted(counts.items()))
             fname = os.path.join(outdir, "sigmas", "log2_sigma_%s_%d_%d.pdf" % (dset_sub, rank, delta))
             plt.figure(figsize=(4, 2.5))
             plt.bar(range(len(ys)), ys, align="center")
@@ -141,7 +141,7 @@ for dset_sub in KEEL_DATASETS:
 
 
         # Explained variance
-        yp = mklaren.predict([X] * len(gamma_range))
+        yp = mklaren.predict([X] * len(Ks))
         evar = (np.var(y) - np.var(y-yp)) / np.var(y)
 
         # Get distance from distance pairs
