@@ -37,8 +37,8 @@ from numpy.linalg import norm
 from random import shuffle, seed
 
 # Datasets and options
-# Load max. 1000 examples
-n    = 1000
+# Load max. 3000 examples
+n    = 3000
 dset = dict(enumerate(sys.argv)).get(1, "boston")
 dset_sub = dict(enumerate(sys.argv)).get(2, None)
 
@@ -62,7 +62,7 @@ rank_range = range(2, 21) + range(20, 85, 5) # Rank range
 lbd_range  = [0] + list(logspace(-5, 1, 7))  # Regularization parameter
 delta      = 10                              # Number of look-ahead columns (CSI and mklaren)
 # p_range    = (1, 2, 3, 5, 10, 30)
-p_range    = (7,)   # Fixed number of kernels
+p_range    = (10,)   # Fixed number of kernels
 
 # Method classes and fixed hyperparameters
 methods = {
@@ -122,7 +122,7 @@ n = len(X)
 # Perform model cross-validation with internal parameter selection
 for cv, p in it.product(range(cv_iter), p_range):
     # gam_range = logspace(-6, 6, p, base=2)  # RBF kernel parameter
-    gam_range = logspace(-3, 3, p, base=2)
+    gam_range = logspace(-6, 3, p, base=2)
 
     # Split into training, validation, test sets.
     seed(cv)
