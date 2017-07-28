@@ -7,13 +7,26 @@ in_dir = "../output/delve_regression/distances_nonrandom/"
 
 # Changing the number of kernels
 # in_file = file.path(in_dir, "2017-7-23/results_120.csv") # p: 7, n:1000, rank: 20, CV, exponential
-# in_file = file.path(in_dir, "2017-7-23/results_121.csv") # p: 13, n:1000, rank: 20, CV, exponential
-in_file = file.path(in_dir, "2017-7-23/results_122.csv") # p: 17, n:1000, rank: 20, CV, exponential
-in_file = file.path(in_dir, "2017-7-23/results_131.csv") # p: 18, n:1000, rank: 20, CV, exponential+periodic
-in_file = file.path(in_dir, "2017-7-24/results_0.csv") # n:1000, rank: 5, CV, exponential+periodic
-
+in_file = file.path(in_dir, "2017-7-23/results_121.csv") # p: 13, n:1000, rank: 20, CV, exponential
+# in_file = file.path(in_dir, "2017-7-23/results_122.csv") # p: 17, n:1000, rank: 20, CV, exponential
+# in_file = file.path(in_dir, "2017-7-23/results_131.csv") # p: 18, n:1000, rank: 20, CV, exponential+periodic
+# in_file = file.path(in_dir, "2017-7-24/results_0.csv") # n:1000, rank: 5, CV, exponential+periodic
 data = read.csv(in_file, header=TRUE, stringsAsFactors = FALSE) 
 data = data[data$dataset != "ANACALT" & !is.na(data$evar),]
+
+
+# Load whole dataset
+in_dir = "../output/delve_regression/distances_nonrandom/2017-7-28/" # 3000 samples
+in_files = Sys.glob(file.path(in_dir, "*.csv"))
+data = data.frame()
+for (f in in_files) {
+  df = read.csv(f, header=TRUE, stringsAsFactors = FALSE)
+  data = rbind(data, df) 
+}
+data = data[(data$dataset != "ANACALT") & !is.na(data$dataset) & !is.na(data$evar_va),]
+
+
+
 
 # Crossvalidation
 agg = aggregate(data$evar_va, by=list(method=data$method, dataset=data$dataset), max)
@@ -32,9 +45,12 @@ colnames(R) <- methods
 # Store CD plot
 p = unique(data$p)
 metric = "evar"
-R[,] = 0
-for(i in 1:nrow(data)) R[data[i, "dataset"], data[i, "method"]] = data[i, metric]
+metric = "corr"
+R[,] = NA
+for(i in 1:nrow(data)) R[data[i, "dataset"], data[i, "method"]] = round(data[i, metric], 2)
+Rd = R[rowMeans(R) > 0.2, ]
 fname = file.path(in_dir, sprintf("CD_%s_%d.pdf", metric, p))
 # pdf(fname)
 plotCD(R, alpha=0.05, main=sprintf("num. kernels = %d", p))
+plotCD(Rd, alpha=0.05, main=sprintf("num. kernels = %d", p))
 # dev.off()
