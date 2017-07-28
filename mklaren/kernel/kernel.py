@@ -139,6 +139,42 @@ def exponential_kernel(x, y, sigma=2.0, gamma=None):
     return np.exp(-gamma  * np.linalg.norm(x - y, ord=2)**2)
 
 
+def exponential_absolute(x, y, sigma=2.0, gamma=None):
+    """
+    The exponential quadratic / radial basis kernel (RBF) kernel.
+
+        .. math::
+            k(\mathbf{x}, \mathbf{y}) = exp\{\dfrac{\|\mathbf{x} - \mathbf{y}\|^2}{\sigma^2} \}
+
+        or
+
+        .. math::
+            k(\mathbf{x}, \mathbf{y}) = exp\{\gamma \|\mathbf{x} - \mathbf{y}\|^2 \}
+
+        :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+        :param y: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+        :param sigma: (``float``) Length scale.
+
+        :param gamma: (``float``) Scale.
+
+        :return: (``numpy.ndarray``) Kernel value/matrix between data points.
+    """
+    if gamma is None:
+        gamma = 1.0 / (2.0 * sigma ** 2)
+    if sp.isspmatrix(x) and sp.isspmatrix(y):
+        x = np.array(x.todense())
+        y = np.array(y.todense())
+    if not hasattr(x, "shape"):
+        return np.exp(-gamma  * np.linalg.norm(x - y, ord=1))
+    if np.asarray(x).ndim == 0:
+        return np.exp(-gamma  * np.absolute(x - y))
+    if len(x.shape) >= 2 or len(y.shape) >= 2:
+        return np.exp(-gamma * cdist(x, y, metric="cityblock"))
+    return np.exp(-gamma  * np.linalg.norm(x - y, ord=1))
+
+
 rbf_kernel = exponential_kernel
 
 

@@ -6,7 +6,8 @@ Investigate various situations that can give rise to overfitting.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mklaren.kernel.kernel import exponential_kernel, linear_kernel, poly_kernel, periodic_kernel, kernel_sum
+from mklaren.kernel.kernel import exponential_kernel, exponential_absolute,\
+    linear_kernel, poly_kernel, periodic_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.regression.fitc import FITC
 
@@ -33,6 +34,23 @@ plt.savefig("examples/output/eigenspectrums/exponential.pdf")
 plt.close()
 
 
+# Eigenvalue of the exponential kernels
+# Shorter length-scales (sigmas) converge to identity
+plt.figure()
+for gi, g in enumerate(gamma_range):
+    K = Kinterface(data=Xt, kernel=exponential_absolute, kernel_args={"gamma": g})
+    vals, vecs = np.linalg.eig(K[:, :])
+    plt.plot(vals, label="$\gamma=%0.2f,\  \sigma^2=%0.4f$" % (g, 1.0/g), linewidth=2)
+plt.legend()
+plt.xlabel("Eigenvalue index")
+plt.ylabel("Magnitude")
+plt.title("Exponentiated absolute")
+plt.savefig("examples/output/eigenspectrums/exponential_absolute.pdf")
+plt.close()
+
+
+
+
 # Image of exponential kernels and their sum
 Ksum = Kinterface(data=Xt, kernel=kernel_sum,
                   row_normalize=True,
@@ -51,6 +69,30 @@ plt.xlabel("x")
 plt.ylabel("k(x, 0)")
 plt.savefig("examples/output/eigenspectrums/exponential_image.pdf")
 plt.close()
+
+
+# Image of exponential kernels and their sum
+Ksum = Kinterface(data=Xt, kernel=kernel_sum,
+                  row_normalize=True,
+                  kernel_args={"kernels": [exponential_absolute] * len(gamma_range),
+                               "kernels_args": [{"gamma": g} for g in gamma_range]})
+plt.figure()
+plt.plot(Xt.ravel(), Ksum[:, n], label="sum", linewidth=4)
+lscales = map(FITC.gamma2lengthscale, gamma_range)
+for gi, g in enumerate(gamma_range):
+    K = Kinterface(data=Xt, kernel=exponential_absolute, kernel_args={"gamma": g})
+    plt.plot(Xt.ravel(), K[:, n], label="%2.3f" % FITC.gamma2lengthscale(g), linewidth=(gi+1)*0.5)
+    plt.plot([lscales[gi], lscales[gi]], [0, 1], "--", color="gray")
+    plt.plot([-lscales[gi], -lscales[gi]], [0, 1], "--", color="gray")
+plt.legend(title="lengthscale")
+plt.xlabel("x")
+plt.ylabel("k(x, 0)")
+plt.savefig("examples/output/eigenspectrums/exponential_absolute_image.pdf")
+plt.close()
+
+
+
+
 
 
 
