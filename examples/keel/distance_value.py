@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import itertools as it
 from sklearn.manifold.mds import MDS
 from mklaren.mkl.mklaren import Mklaren
-from mklaren.kernel.kernel import exponential_kernel, kernel_sum
+from mklaren.kernel.kernel import exponential_kernel, exponential_absolute, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.regression.fitc import FITC
 
@@ -60,10 +60,11 @@ gamma_ranges = {
     "lowfreq": np.logspace(-6, 0, 5, base=2),             # low freqs. (long lengthscales)
     "hifreq": np.logspace(0, 6, 5, base=2)                 # high freqs. (short lengthscales)
 }
+knames  = ["exp", "expa"]
 
 # Write results to csv
-header = ["dataset", "D", "n", "rank", "delta", "gamma", "dist.val.corr", "evar"]
-rname = os.path.join(outdir, "results_1.csv")
+header = ["dataset", "kernel", "D", "n", "rank", "delta", "gamma", "dist.val.corr", "evar"]
+rname = os.path.join(outdir, "results_2.csv")
 fp = open(rname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
@@ -99,13 +100,19 @@ for dset_sub in KEEL_DATASETS:
     plt.savefig(fname, bbox_inches="tight")
     plt.close()
 
-    for gr, rank, delta in it.product(sorted(gamma_ranges.keys()), rank_range, delta_range):
+    for kn, gr, rank, delta in it.product(knames, sorted(gamma_ranges.keys()), rank_range, delta_range):
 
         # Fit Mklaren
         gamma_range = gamma_ranges[gr]
-        Ks = [Kinterface(data=X,
-                         kernel=exponential_kernel,
-                         kernel_args={"gamma": gam}) for gam in gamma_range]
+
+        if kn == "exp":
+            Ks = [Kinterface(data=X,
+                             kernel=exponential_kernel,
+                             kernel_args={"gamma": gam}) for gam in gamma_range]
+        if kn == "expa":
+            Ks = [Kinterface(data=X,
+                             kernel=exponential_absolute,
+                             kernel_args={"gamma": gam}) for gam in gamma_range]
 
         mklaren = Mklaren(rank=rank, delta=delta, lbd=0.0)
         try:
@@ -141,7 +148,7 @@ for dset_sub in KEEL_DATASETS:
         dv_corr = st.spearmanr(xd, yd)[0]
 
         # Write results
-        row  = {"dataset": dset_sub, "D": X.shape[1], "n": X.shape[0], "gamma": gr,
+        row  = {"dataset": dset_sub, "D": X.shape[1], "n": X.shape[0], "gamma": gr, "kernel": kn,
                 "dist.val.corr": dv_corr, "evar": evar, "rank": rank, "delta": delta}
         writer.writerow(row)
 

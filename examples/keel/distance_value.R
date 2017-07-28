@@ -3,6 +3,7 @@ wd =  "/Users/martin/Dev/mklaren/examples/output/keel/distances"
 setwd(wd)
 data = read.csv("results.csv", header = TRUE, stringsAsFactors = FALSE)
 data = read.csv("results_1.csv", header = TRUE, stringsAsFactors = FALSE) # Different gamma ranges
+# data = read.csv("results_2.csv", header = TRUE, stringsAsFactors = FALSE) # Different kernel faimilies
 
 ranks = unique(data$rank)
 datasets = unique(data$dataset)
