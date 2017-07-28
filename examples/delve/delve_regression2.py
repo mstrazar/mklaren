@@ -34,8 +34,7 @@ from datasets.keel import load_keel
 from datasets.geostats import load_geostats
 
 # Utils
-from numpy import var, mean, logspace, where
-from numpy.linalg import norm
+from numpy import var, mean, logspace
 from random import shuffle, seed
 
 # Datasets and options
@@ -99,7 +98,7 @@ fname = os.path.join(dname, "results_%d.csv" % rcnt)
 
 # Output
 header = ["dataset", "n", "method", "rank", "iteration", "lambda",
-          "gmin", "gmax", "p", "evar_tr", "evar",
+          "gmin", "gmax", "p", "evar_tr", "evar", "time",
           "RMSE_tr", "RMSE_va", "RMSE"]
 fp = open(fname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
@@ -180,7 +179,7 @@ for cv, p in it.product(range(cv_iter), p_range):
                         yptr = model.predict([X_tr]).ravel()
                         ypva = model.predict([X_val]).ravel()
                         ypte = model.predict([X_te]).ravel()
-                    t_train = t_train - time.time()
+                    t_train = time.time() - t_train
                     times.append(t_train)
                 except Exception as e:
                     sys.stderr.write("Method: %s rank: %d iter: %d error: %s \n" % (mname, rank, cv, str(e)))
