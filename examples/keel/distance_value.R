@@ -56,3 +56,15 @@ row.names(R) <- datasets
 colnames(R) <- gammas
 for (i in 1:nrow(data)) R[data[i,]$dataset, data[i,]$gamma] = round(data[i, "evar"], 2)
 plotCD(R)
+
+
+
+# See how gamma affects expl. var
+data$tag = sprintf("%s.%d.%s",  data$dataset, data$rank, data$gamma)
+kernels = sort(unique(data$kernel))
+tags = sort(unique(data$tag))
+R = matrix(NA, nrow=length(tags), ncol=length(kernels))
+row.names(R) <- tags
+colnames(R) <- kernels
+for (i in 1:nrow(data)) R[data[i,]$tag, data[i,]$kernel] = round(data[i, "evar"], 2)
+plotCD(R)
