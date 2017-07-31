@@ -20,7 +20,7 @@ data$best = agg[inxs, "x"] == data$evar_va
 data = data[!is.na(data$dataset) & data$best,]
 
 # Aggregate over iterations
-agg2 = aggregate(data$evar_tr, 
+agg2 = aggregate(data$evar, 
                  by=list(method=data$method, dataset=data$dataset, rank=data$rank, D=data$D), 
                  mean)
 agg2$evar = agg2$x
