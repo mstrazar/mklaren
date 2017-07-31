@@ -81,8 +81,8 @@ for seed, num_k in it.product(seed_range, p_range):
 
     # Different index set at each kernel
     Ca = 0
-    for ki in kinxs:
-        Ki =  Ks_full[ki][:, inxs[ki]]
+    for ki, inx in enumerate(kinxs):
+        Ki =  Ks_full[inx][:, inxs[ki]]
         Kii = Ki[inxs[ki], :]
         Ca += Ki.dot(np.linalg.inv(Kii)).dot(Ki.T)
 
