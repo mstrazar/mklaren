@@ -2,18 +2,8 @@ require(scmamp)
 require(ggplot2)
 setwd("~/Dev/mklaren/examples/delve")
 
+# Extrapolating on different datasets
 in_dir = "../output/delve_regression/distances_nonrandom/"
-
-
-# Changing the number of kernels
-# in_file = file.path(in_dir, "2017-7-23/results_120.csv") # p: 7, n:1000, rank: 20, CV, exponential
-in_file = file.path(in_dir, "2017-7-23/results_121.csv") # p: 13, n:1000, rank: 20, CV, exponential
-# in_file = file.path(in_dir, "2017-7-23/results_122.csv") # p: 17, n:1000, rank: 20, CV, exponential
-# in_file = file.path(in_dir, "2017-7-23/results_131.csv") # p: 18, n:1000, rank: 20, CV, exponential+periodic
-# in_file = file.path(in_dir, "2017-7-24/results_0.csv") # n:1000, rank: 5, CV, exponential+periodic
-data = read.csv(in_file, header=TRUE, stringsAsFactors = FALSE) 
-data = data[data$dataset != "ANACALT" & !is.na(data$evar),]
-
 
 # Load whole dataset
 in_dir = "../output/delve_regression/distances_nonrandom/2017-7-28/" # 3000 samples
@@ -44,13 +34,13 @@ colnames(R) <- methods
 
 # Store CD plot
 p = unique(data$p)
-metric = "evar"
-metric = "corr"
-R[,] = NA
-for(i in 1:nrow(data)) R[data[i, "dataset"], data[i, "method"]] = round(data[i, metric], 2)
-Rd = R[rowMeans(R) > 0.2, ]
-fname = file.path(in_dir, sprintf("CD_%s_%d.pdf", metric, p))
-# pdf(fname)
-plotCD(R, alpha=0.05, main=sprintf("num. kernels = %d", p))
-plotCD(Rd, alpha=0.05, main=sprintf("num. kernels = %d", p))
-# dev.off()
+for (metric in c("evar", "corr")){
+  R[,] = NA
+  for(i in 1:nrow(data)) R[data[i, "dataset"], data[i, "method"]] = round(data[i, metric], 2)
+  Rd = R[rowMeans(R) > 0.2, ]
+  fname = file.path(in_dir, sprintf("CD_%s_%d.pdf", metric, p))
+  pdf(fname)
+  plotCD(R, alpha=0.05, main=sprintf("num. kernels = %d", p))
+  dev.off()
+  message(sprintf("Written %s", fname))
+}
