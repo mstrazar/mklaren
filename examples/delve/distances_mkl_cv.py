@@ -25,7 +25,7 @@ dset_sub = dict(enumerate(sys.argv)).get(1, "abalone")
 
 # Datasets and options
 # Load max. 1000 examples
-n    = 1000
+n    = 2000
 p_tr = 0.6
 p_va = 0.2
 delta = 10
