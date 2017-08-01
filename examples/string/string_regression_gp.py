@@ -28,7 +28,7 @@ args = [
 methods = ["Mklaren", "CSI", "Nystrom", "ICD"]
 lbd_range  = [0] + list(np.logspace(-5, 1, 7))  # Regularization parameter
 p_range = [1, 3, 10]
-seed_range = range(10)
+iterations = range(30)
 rank = 10
 delta = 10
 var = 10
@@ -57,8 +57,9 @@ te = range(75, 100)
 
 # Generate random datasets and perform prediction
 count = 0
-for seed, num_k in it.product(seed_range, p_range):
-    print("Seed: %d, num. kernels: %d" % (seed, num_k))
+seed = 0
+for cv, num_k in it.product(iterations, p_range):
+    print("Seed: %d, num. kernels: %d" % (cv, num_k))
     X, _ = generate_data(N=100, L=100, p=0.5, motif="TGTG", mean=0, var=var, seed=seed)
     Xa = np.array(X)
     X_tr = Xa[tr]
@@ -128,7 +129,8 @@ for seed, num_k in it.product(seed_range, p_range):
             evar    = (np.var(y_te) - np.var(yp - y_te)) / np.var(y_te)
 
             row = {"n": len(X), "method": method,
-                   "rank": rank, "iteration": seed, "lambda": lbd,
+                   "rank": rank, "iteration": cv, "lambda": lbd,
                     "p": num_k, "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar}
 
             writer.writerow(row)
+            seed += 1
