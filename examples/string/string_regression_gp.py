@@ -32,6 +32,8 @@ iterations = range(30)
 rank = 10
 delta = 10
 var = 10
+L = 500
+n = 500
 
 # Fixed output
 # Create output directory
@@ -44,23 +46,23 @@ fname = os.path.join(dname, "results_%d.csv" % rcnt)
 print("Writing to %s ..." % fname)
 
 # Output
-header = ["n", "method", "rank", "iteration", "lambda",
+header = ["n", "L", "method", "rank", "iteration", "lambda",
           "p", "evar_tr", "evar_va", "evar"]
 fp = open(fname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
 
 # Training test split
-tr = range(0, 50)
-va = range(50, 75)
-te = range(75, 100)
+tr = range(0, int(n/2))
+va = range(int(n / 2.), int(3./4 * n))
+te = range(int(3./4 * n))
 
 # Generate random datasets and perform prediction
 count = 0
 seed = 0
 for cv, num_k in it.product(iterations, p_range):
     print("Seed: %d, num. kernels: %d" % (cv, num_k))
-    X, _ = generate_data(N=100, L=100, p=0.5, motif="TGTG", mean=0, var=var, seed=seed)
+    X, _ = generate_data(N=n, L=L, p=0.0, motif="TGTG", mean=0, var=var, seed=seed)
     Xa = np.array(X)
     X_tr = Xa[tr]
     X_va = Xa[va]
@@ -128,7 +130,7 @@ for cv, num_k in it.product(iterations, p_range):
             evar_va = (np.var(y_va) - np.var(yv - y_va)) / np.var(y_va)
             evar    = (np.var(y_te) - np.var(yp - y_te)) / np.var(y_te)
 
-            row = {"n": len(X), "method": method,
+            row = {"L": L, "n": len(X), "method": method,
                    "rank": rank, "iteration": cv, "lambda": lbd,
                     "p": num_k, "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar}
 
