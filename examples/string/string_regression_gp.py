@@ -16,12 +16,15 @@ args = [
     {"mode": SPECTRUM, "K": 3},
     {"mode": SPECTRUM, "K": 4},
     {"mode": SPECTRUM, "K": 5},
-    {"mode": WD, "K": 2},
-    {"mode": WD, "K": 4},
+    {"mode": SPECTRUM_MISMATCH, "K": 2},
+    {"mode": SPECTRUM_MISMATCH, "K": 3},
+    {"mode": SPECTRUM_MISMATCH, "K": 4},
+    {"mode": SPECTRUM_MISMATCH, "K": 5},
     {"mode": WD, "K": 5},
     {"mode": WD_PI, "K": 2},
     {"mode": WD_PI, "K": 3},
     {"mode": WD_PI, "K": 4},
+    {"mode": WD_PI, "K": 5},
 ]
 
 # Hyperparameters
@@ -32,8 +35,8 @@ iterations = range(30)
 rank = 10
 delta = 10
 var = 10
-L = 500
-n = 500
+L = 100
+n = 100
 
 # Fixed output
 # Create output directory
