@@ -262,6 +262,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
                      "yp": yp_Klist,
                      "time": t2,
                      "evar": evar,
+                     "model": mkl,
                      "color": meth2color["Mklaren"]}
 
     # Fit CSI
@@ -284,6 +285,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
                 "time": t2,
                 "yp": yp_csi,
                 "evar": evar,
+                "model": csi,
                 "color": meth2color["CSI"]}
 
     # Fit RFF
@@ -304,6 +306,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
             "time": t2,
             "yp": yp_rff,
             "evar": evar,
+            "model": rff,
             "color": meth2color["RFF"]}
 
     # Fit FITC
@@ -328,6 +331,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
             "time": t2,
             "yp": yp_fitc,
             "evar": evar,
+            "model": fitc,
             "color": meth2color["FITC"]}
 
 
@@ -351,6 +355,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
                 "yp": yp_icd,
                 "time": t2,
                 "evar": evar,
+                "model": icd,
                 "color": meth2color["ICD"]}
 
     # Fit Nystrom
@@ -373,6 +378,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
                 "yp": yp_nystrom,
                 "time": t2,
                 "evar": evar,
+                "model": nystrom,
                 "color": meth2color["Nystrom"]}
 
     return results
