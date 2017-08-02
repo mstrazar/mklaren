@@ -55,7 +55,7 @@ writer.writeheader()
 # Training test split
 tr = range(0, int(n/2))
 va = range(int(n / 2.), int(3./4 * n))
-te = range(int(3./4 * n))
+te = range(int(3./4 * n), n)
 
 # Generate random datasets and perform prediction
 count = 0
