@@ -46,7 +46,7 @@ iterations = range(30)
 delta = 10
 n_tr = 1000
 n_val = 1000
-n_te = 1000
+# n_te = 1000
 
 
 # Fixed output
@@ -82,7 +82,7 @@ for cv in iterations:
     np.random.shuffle(inxs)
     tr = inxs[:n_tr]
     va = inxs[n_tr:n_tr + n_val]
-    te = inxs[n_tr + n_val:n_tr + n_val + n_te]
+    te = inxs[n_tr + n_val:]
 
     # Training / test split
     X_tr, y_tr = X[tr], y[tr]
