@@ -12,25 +12,26 @@ from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
 from datasets.rnacontext import load_rna
-
-# List available kernels
-args = [
-    # {"mode": SPECTRUM, "K": 2},
-    # {"mode": SPECTRUM, "K": 3},
-    {"mode": SPECTRUM, "K": 3},
-    {"mode": SPECTRUM, "K": 4},
-    # {"mode": SPECTRUM, "K": 5},
-    # {"mode": SPECTRUM_MISMATCH, "K": 2},
-    {"mode": SPECTRUM_MISMATCH, "K": 3},
-    {"mode": SPECTRUM_MISMATCH, "K": 4},
-    # {"mode": SPECTRUM_MISMATCH, "K": 5},
-    {"mode": WD, "K": 4, "minK": 3},
-    # {"mode": WD_PI, "K": 2},
-    # {"mode": WD_PI, "K": 3},
-    {"mode": WD_PI, "K": 3},
-    {"mode": WD_PI, "K": 4},
-    # {"mode": WD_PI, "K": 5},
-]
+#
+# # List available kernels
+# args = [
+#     # {"mode": SPECTRUM, "K": 2},
+#     # {"mode": SPECTRUM, "K": 3},
+#     {"mode": SPECTRUM, "K": 3},
+#     {"mode": SPECTRUM, "K": 4},
+#     # {"mode": SPECTRUM, "K": 5},
+#     # {"mode": SPECTRUM_MISMATCH, "K": 2},
+#     {"mode": SPECTRUM_MISMATCH, "K": 3},
+#     {"mode": SPECTRUM_MISMATCH, "K": 4},
+#     # {"mode": SPECTRUM_MISMATCH, "K": 5},
+#     {"mode": WD, "K": 4, "minK": 3},
+#     # {"mode": WD_PI, "K": 2},
+#     # {"mode": WD_PI, "K": 3},
+#     {"mode": WD_PI, "K": 3},
+#     {"mode": WD_PI, "K": 4},
+#     # {"mode": WD_PI, "K": 5},
+# ]
+args = [{"mode": SPECTRUM, "K": kl} for kl in range(1, 10)]
 kernels = ",".join(set(map(lambda t: t["mode"], args)))
 
 # Load data
