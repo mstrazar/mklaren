@@ -336,6 +336,22 @@ def kernel_row_normalize(K):
     return K / Kn
 
 
+def kernel_to_distance(K):
+    """
+    Divide inner products of examples by their norm in the feature space,
+    effectively computing angles. Applycable only to symmetric kernels.
+
+    :param K: (``numpy.ndarray``) Kernel matrix or Kinterface of shape ``(n, n)``.
+
+    :return: (``numpy.ndarray``) Distance matrix in the feature space induced by K.
+    """
+    assert K.shape[0] == K.shape[1]
+    n = K.shape[0]
+    d = K.diag() if hasattr(K, "diag") else np.diag(K)
+    D = np.sqrt(-2 * K [:, :] + d.reshape((n, 1)) + d.reshape((1, n)))
+    return D
+
+
 def kernel_sum(x, y, kernels, kernels_args, kernels_weights=None):
     """
     Sum of arbitrary kernel functions.
