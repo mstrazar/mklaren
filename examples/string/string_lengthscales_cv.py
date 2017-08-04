@@ -18,7 +18,6 @@ rank = 3
 delta = 10
 lbd = 0
 L = 30
-N = 50
 trueK = 4
 max_K = 10
 K_range = range(1, max_K+1)
@@ -27,6 +26,7 @@ n_tr = 500
 n_te = 5000
 N = n_tr + n_te
 cv_iter = range(10)
+ntarg = 1000
 
 # Fixed output
 # Create output directory
@@ -97,8 +97,8 @@ for cv in cv_iter:
     # Spearman correlation fo the fit
     sp_mkl = st.spearmanr(y_te, yp_mkl)
     sp_csi = st.spearmanr(y_te, yp_csi)
-    print "\nMklaren fit: %.3f (%.5f)"
-    print "CSI fit: %.3f (%.5f)"
+    print "\nMklaren fit: %.3f (%.5f)" % sp_mkl
+    print "CSI fit: %.3f (%.5f)" % sp_csi
 
     rows = [{"n": N, "L": L, "method": "Mklaren", "rank": rank, "iteration": cv,
            "sp.corr": sp_mkl[0], "sp.pval": sp_mkl[1]},
@@ -106,22 +106,29 @@ for cv in cv_iter:
            "sp.corr": sp_csi[0], "sp.pval": sp_csi[1]}]
     writer.writerows(rows)
 
-    # Plot some sort of correlation between similarity for different K (inverse kernel matrix)
-    # and the distance in the output prediction - limitation of the model
-    # Caution, these kernel matrices are not independent
+    # Random sample of pairs in test set
+    samp1 = np.random.choice(range(n_te), size=ntarg, replace=True)
+    samp2 = np.random.choice(range(n_te), size=ntarg, replace=True)
+
+    # Plot some sort of correlation between distance in the feature and output space
+    # Select random pairs of points from the test set
     corrs_mkl = []
     corrs_csi = []
     corrs_tru = []
     for ki in range(len(Ks)):
-        Da = np.diag(Ks[ki].kernel(X[act], X[act], **Ks[ki].kernel_args)).reshape((rank, 1))
-        Dt = np.array([Ks[ki].kernel(X[i], X[i], **Ks[ki].kernel_args) for i in te]).reshape((n_te, 1))
-        Ki = Ks[ki].kernel(X_te, X[act], **Ks[ki].kernel_args)
-        Di = -2 * Ki + Da.T + Dt
+        # Distances in feature space on
+        kern =  Ks[ki].kernel
+        kargs = Ks[ki].kernel_args
+        Di = np.array([np.sqrt(-2 * kern(X_te[i], X_te[j], **kargs) \
+                                  + kern(X_te[i], X_te[i], **kargs) \
+                                  + kern(X_te[j], X_te[j], **kargs)) for i, j in zip(samp1, samp2)])
 
-        Y = np.absolute(np.hstack([y_te.reshape(n_te, 1)]*rank) - y[act].reshape((1, rank)))
-        Y_mkl = np.absolute(np.hstack([yp_mkl.reshape(n_te, 1)] * rank) - y[act].reshape((1, rank)))
-        Y_csi = np.absolute(np.hstack([yp_csi.reshape(n_te, 1)] * rank) - y[act].reshape((1, rank)))
+        # Distances in output space on sample
+        Y     = np.absolute(np.array([y_te[i]   - y_te[j]   for i, j in zip(samp1, samp2)]))
+        Y_mkl = np.absolute(np.array([yp_mkl[i] - yp_mkl[j] for i, j in zip(samp1, samp2)]))
+        Y_csi = np.absolute(np.array([yp_csi[i] - yp_csi[j] for i, j in zip(samp1, samp2)]))
 
+        # Normalized projections
         sp_mkl = st.pearsonr(Di.ravel(), Y_mkl.ravel())
         sp_csi = st.pearsonr(Di.ravel(), Y_csi.ravel())
         sp_tru = st.pearsonr(Di.ravel(), Y.ravel())
@@ -141,7 +148,7 @@ for cv in cv_iter:
     plt.grid("on")
     plt.plot((trueK, trueK), plt.gca().get_ylim(), "-", color="black", label="True scale")
     plt.legend()
-    plt.savefig()
+    plt.savefig(fname)
     plt.close()
     print "Written %s" % fname
 
