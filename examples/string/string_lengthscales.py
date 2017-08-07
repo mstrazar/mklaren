@@ -4,118 +4,182 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from mklaren.kernel.string_kernel import *
 from mklaren.kernel.string_util import *
-from mklaren.kernel.kernel import kernel_sum, kernel_to_distance
+from mklaren.kernel.kernel import kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
 
-# Experimental parameters
-rank = 3
-delta = 10
-lbd = 0
-L = 30
-N = 50
-trueK = 4
-max_K = 10
-K_range = range(1, max_K+1)
-normalize = False
-
-# Random subset of N sequences of length L
-X, _ = generate_data(N=N, L=L, p=0.0, motif="TGTG", mean=0, var=3)
-X = np.array(X)
-
-# Generate a sparse signal based on 4-mer composion (maximum lengthscale)
-K = Kinterface(data=X, kernel=string_kernel, kernel_args={"mode": SPECTRUM, "K": trueK},
-               row_normalize=normalize)
-y = st.multivariate_normal.rvs(mean=np.zeros((N,)), cov=K[:, :]).reshape((N, 1))
-yr = y.ravel()
-
-# Proposal kernels
-args = [{"mode": SPECTRUM, "K": k} for k in K_range]
-Ksum = Kinterface(data=X, kernel=kernel_sum,
-                      row_normalize=normalize,
-                      kernel_args={"kernels": [string_kernel] * len(args),
-                                   "kernels_args": args})
-Ks = [Kinterface(data=X, kernel=string_kernel, kernel_args=a, row_normalize=normalize) for a in args]
-
-# Mklaren
-mklaren = Mklaren(rank=rank, delta=delta, lbd=lbd)
-mklaren.fit(Ks, y)
-yp_mkl = mklaren.predict([X]*len(args)).ravel()
-mklaren_kernels = [(args[int(ky)]["K"], val) for ky, val in sorted(Counter(mklaren.G_mask).items())]
-for lg, num in sorted(mklaren_kernels, key=lambda t:t[1], reverse=True):
-    print "K: %d (%d)" % (lg, num)
 
 
-# CSI
-csi = RidgeLowRank(rank=rank, method="csi",
-                   method_init_args={"delta": delta}, lbd=lbd)
-csi.fit([Ksum], y)
-yp_csi = csi.predict([X]).ravel()
+def general_function_plot(f_out, Ks, X, models=(),
+                          sample_size=1000, seed=None,
+                          title="", xnames=(), xlabel="", truePar=None):
+    """
+    Plot a general function in any input space. Depending on (typically many) kernel hyperparameters,
+    see how distances in corresponding RKHS, match the distances in the predicted output.
+    This way, a function in arbitrary input space can approximately be assessed in terms
+    of kernel hyperparameters (lengthscales, k-mer lengths etc).
+
+    :param f_out: Output figure file.
+    :param Ks: List of kernel interfaces.
+    :param X: Points in the input space.
+    :param models: Dictionary containing model predictions.
+    :param title: Optional
+    :param seed: Random seed.
+    :param xnames: Names for parameter range.
+    :param xlabel: X label.
+    :param truePar: True INDEX of parameter values.
+    :param sample_size: Number of sample pairs.
+    :return:
+    """
+    if seed:
+        np.random.seed(seed)
+
+    # Range of parameter names
+    par_range = range(len(Ks))
+    assert len(xnames) == 0 or len(xnames) == len(par_range)
+
+    # Random sample of pairs in test set
+    n = len(X)
+    samp1 = np.random.choice(range(n), size=sample_size, replace=True)
+    samp2 = np.random.choice(range(n), size=sample_size, replace=True)
+
+    # Plot some sort of correlation between distance in the feature and output space
+    # Select random pairs of points from the test set
+    corrs = dict()
+
+    for ki in par_range:
+        # Distances in feature space on
+        kern =  Ks[ki].kernel
+        kargs = Ks[ki].kernel_args
+        Di = np.array([np.sqrt(-2 * kern(X[i], X[j], **kargs) \
+                                  + kern(X[i], X[i], **kargs) \
+                                  + kern(X[j], X[j], **kargs)) for i, j in zip(samp1, samp2)])
+
+        # Distances in output space on sample
+        for label, data in models.items():
+            y = data["y"]
+            yd = np.absolute(np.array([y[i] - y[j] for i, j in zip(samp1, samp2)]))
+            pc = st.pearsonr(Di.ravel(), yd.ravel())
+            corrs[label] = corrs.get(label, []) + [pc[0]]
+
+    # Plot a summary figure
+    plt.figure()
+    plt.title(title)
+    for label, pc_vec in corrs.items():
+        kwargs = {"label": label}
+        color = models[label].get("color", None)
+        fmt = models[label].get("fmt", None)
+        if color: kwargs["color"] = color
+        if fmt: kwargs["linestyle"] = fmt
+        plt.plot(par_range, pc_vec, linewidth=2, **kwargs)
+
+    # X
+    plt.ylabel("Pearson correlation $d(i, j)$, $|y_i-y_j|$")
+    ylim = plt.gca().get_ylim()
+    if truePar is not None:
+        plt.plot((truePar, truePar), ylim, "-", color="black", label="True hyperpar.")
+    plt.ylim(ylim)
+
+    # Y
+    plt.xlabel(xlabel)
+    plt.xticks(par_range)
+    if len(xnames): plt.gca().set_xticklabels(map(str, xnames))
+    plt.grid("on")
+    plt.legend(loc="best")
+    plt.savefig(f_out)
+    plt.close()
+    print "Written %s" % f_out
+    return
+
+def process():
+
+    # Experimental parameters
+    rank = 3
+    delta = 10
+    lbd = 0
+    L = 30
+    N = 50
+    trueK = 4
+    max_K = 10
+    K_range = range(1, max_K+1)
+    normalize = False
+
+    # Random subset of N sequences of length L
+    X, _ = generate_data(N=N, L=L, p=0.0, motif="TGTG", mean=0, var=3)
+    X = np.array(X)
+
+    # Generate a sparse signal based on 4-mer composion (maximum lengthscale)
+    K = Kinterface(data=X, kernel=string_kernel, kernel_args={"mode": SPECTRUM, "K": trueK},
+                   row_normalize=normalize)
+    y = st.multivariate_normal.rvs(mean=np.zeros((N,)), cov=K[:, :]).reshape((N, 1))
+    yr = y.ravel()
+
+    # Proposal kernels
+    args = [{"mode": SPECTRUM, "K": k} for k in K_range]
+    Ksum = Kinterface(data=X, kernel=kernel_sum,
+                          row_normalize=normalize,
+                          kernel_args={"kernels": [string_kernel] * len(args),
+                                       "kernels_args": args})
+    Ks = [Kinterface(data=X, kernel=string_kernel, kernel_args=a, row_normalize=normalize) for a in args]
+
+    # Mklaren
+    mklaren = Mklaren(rank=rank, delta=delta, lbd=lbd)
+    mklaren.fit(Ks, y)
+    yp_mkl = mklaren.predict([X]*len(args)).ravel()
+    mklaren_kernels = [(args[int(ky)]["K"], val) for ky, val in sorted(Counter(mklaren.G_mask).items())]
+    for lg, num in sorted(mklaren_kernels, key=lambda t:t[1], reverse=True):
+        print "K: %d (%d)" % (lg, num)
 
 
-# Print data along with predictions
-for xi, yi, ym, yc in sorted(zip(X, y, yp_mkl, yp_csi), key=lambda t: t[1]):
-    print "%s\t%.3f\t%.3f\t%.3f" % (xi, yi, ym, yc)
-
-# Spearman correlation fo the fit
-print "\nMklaren fit: %.3f (%.5f)" % st.spearmanr(y, yp_mkl)
-print "CSI fit: %.3f (%.5f)" % st.spearmanr(y, yp_csi)
-
-# Represent fit on figure
-plt.figure()
-plt.plot(yr, yp_mkl, ".", color="green", label="Mklaren")
-plt.plot(yr, yp_csi, ".", color="blue", label="CSI")
-plt.xlabel("True")
-plt.ylabel("Predicted")
-plt.legend()
+    # CSI
+    csi = RidgeLowRank(rank=rank, method="csi",
+                       method_init_args={"delta": delta}, lbd=lbd)
+    csi.fit([Ksum], y)
+    yp_csi = csi.predict([X]).ravel()
 
 
-# Spearman correlation fo the fit
-print "\nMklaren residual corr.: %.3f (%.5f)" % st.spearmanr(yr, yr-yp_mkl,)
-print "CSI residual corr.: %.3f (%.5f)" % st.spearmanr(yr, yr-yp_csi)
-print
+    # Print data along with predictions
+    for xi, yi, ym, yc in sorted(zip(X, y, yp_mkl, yp_csi), key=lambda t: t[1]):
+        print "%s\t%.3f\t%.3f\t%.3f" % (xi, yi, ym, yc)
 
-# Residual graph
-plt.figure()
-plt.plot(yr, yr-yp_mkl, ".", color="green", label="Mklaren")
-plt.plot(yr, yr-yp_csi, ".", color="blue", label="CSI")
-plt.xlabel("True")
-plt.ylabel("Residual")
-plt.legend()
+    # Spearman correlation fo the fit
+    print "\nMklaren fit: %.3f (%.5f)" % st.spearmanr(y, yp_mkl)
+    print "CSI fit: %.3f (%.5f)" % st.spearmanr(y, yp_csi)
 
-# Plot some sort of correlation between similarity for different K (inverse kernel matrix)
-# and the distance in the output prediction - limitation of the model
-# Caution, these kernel matrices are not independent
-corrs_mkl = []
-corrs_csi = []
-corrs_tru = []
-for ki in range(len(Ks)):
-    Ki = Ks[ki][:, :]
-    ks = np.array([-Ki[i, j] for i, j in combinations(range(N), 2)]).ravel()
-    Di = kernel_to_distance(Ks[ki])
-    ks = np.array([Di[i, j] for i, j in combinations(range(N), 2)]).ravel()
-    ys_mkl = np.array([abs(yp_mkl[i] - yp_mkl[j]) for i, j in combinations(range(N), 2)]).ravel()
-    ys_csi = np.array([abs(yp_csi[i] - yp_csi[j]) for i, j in combinations(range(N), 2)]).ravel()
-    ys_tru = np.array([abs(y[i] - y[j]) for i, j in combinations(range(N), 2)]).ravel()
-    sp_mkl = st.pearsonr(ks, ys_mkl)
-    sp_csi = st.pearsonr(ks, ys_csi)
-    sp_tru = st.pearsonr(ks, ys_tru)
-    corrs_mkl.append(sp_mkl[0])
-    corrs_csi.append(sp_csi[0])
-    corrs_tru.append(sp_tru[0])
+    # Represent fit on figure
+    plt.figure()
+    plt.plot(yr, yp_mkl, ".", color="green", label="Mklaren")
+    plt.plot(yr, yp_csi, ".", color="blue", label="CSI")
+    plt.xlabel("True")
+    plt.ylabel("Predicted")
+    plt.legend()
 
 
-# Plot a summary figure
-plt.figure()
-plt.title("Fitting various lengthscales with kernel sum")
-plt.plot(K_range, corrs_mkl, ".-", color="green", label="Mklaren", linewidth=2)
-plt.plot(K_range, corrs_csi, ".-", color="blue", label="CSI", linewidth=2)
-plt.plot(K_range, corrs_tru, "--", color="black", label="True f(x)", linewidth=2)
-plt.xlabel("K-mer length")
-plt.ylabel("Pearson correlation $K(i, j)$, $|y_i-y_j|$")
-plt.grid("on")
-plt.plot((trueK, trueK), plt.gca().get_ylim(), "-", color="black", label="True scale")
-plt.ylim(0, max(max(corrs_mkl), max(corrs_csi)))
-plt.legend()
-plt.savefig("/Users/martin/Dev/mklaren/examples/output/string/lengthscales_%d_1.pdf" % trueK)
+    # Spearman correlation fo the fit
+    print "\nMklaren residual corr.: %.3f (%.5f)" % st.spearmanr(yr, yr-yp_mkl,)
+    print "CSI residual corr.: %.3f (%.5f)" % st.spearmanr(yr, yr-yp_csi)
+    print
+
+    # Residual graph
+    plt.figure()
+    plt.plot(yr, yr-yp_mkl, ".", color="green", label="Mklaren")
+    plt.plot(yr, yr-yp_csi, ".", color="blue", label="CSI")
+    plt.xlabel("True")
+    plt.ylabel("Residual")
+    plt.legend()
+
+
+    # fname = "/Users/martin/Dev/mklaren/examples/output/string/lengthscales_%d_1.pdf" % trueK
+    fname = "/Users/martin/Dev/mklaren/examples/output/string/test.pdf"
+    general_function_plot(f_out=fname, Ks=Ks, X=X,
+                          models={"True": {"y": yr, "color": "black", "fmt": "--",},
+                                  "Mklaren": {"y": yp_mkl, "color": "green", "fmt": "-",},
+                                  "CSI": {"y": yp_csi, "color": "red", "fmt": "-"}},
+                          xlabel="K-mer length",
+                          xnames=K_range,
+                          truePar=K_range.index(trueK))
+
+
+if __name__ == "__main__":
+    process()
