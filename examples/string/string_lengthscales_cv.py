@@ -1,17 +1,17 @@
 import os
 import csv
 import scipy.stats as st
-import matplotlib.pyplot as plt
 import datetime
 
 from scipy.linalg import sqrtm
 from collections import Counter
 from mklaren.kernel.string_kernel import *
 from mklaren.kernel.string_util import *
-from mklaren.kernel.kernel import kernel_sum, kernel_to_distance
+from mklaren.kernel.kernel import kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
+from examples.string.string_lengthscales import generic_function_plot
 
 # Experimental parameters
 rank = 3
@@ -25,7 +25,7 @@ normalize = False
 n_tr = 500
 n_te = 5000
 N = n_tr + n_te
-cv_iter = range(10)
+cv_iter = range(30)
 ntarg = 1000
 
 # Fixed output
@@ -39,7 +39,7 @@ fname = os.path.join(dname, "results_%d.csv" % rcnt)
 print("Writing to %s ..." % fname)
 
 # Output
-header = ["n", "L", "method", "rank", "iteration", "sp.corr", "sp.pval"]
+header = ["n", "L", "method", "rank", "iteration", "sp.corr", "sp.pval", "evar"]
 fp = open(fname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
@@ -100,57 +100,23 @@ for cv in cv_iter:
     print "\nMklaren fit: %.3f (%.5f)" % sp_mkl
     print "CSI fit: %.3f (%.5f)" % sp_csi
 
+    # Explained variance of the model fit
+    evar_mkl =  (np.var(y_te) - np.var(y_te - yp_mkl)) / np.var(y_te)
+    evar_csi = (np.var(y_te) - np.var(y_te - yp_csi)) / np.var(y_te)
+
     rows = [{"n": N, "L": L, "method": "Mklaren", "rank": rank, "iteration": cv,
-           "sp.corr": sp_mkl[0], "sp.pval": sp_mkl[1]},
+           "sp.corr": sp_mkl[0], "sp.pval": sp_mkl[1], "evar": evar_mkl},
            {"n": N, "L": L, "method": "CSI", "rank": rank, "iteration": cv,
-           "sp.corr": sp_csi[0], "sp.pval": sp_csi[1]}]
+           "sp.corr": sp_csi[0], "sp.pval": sp_csi[1], "evar": evar_csi}]
     writer.writerows(rows)
 
-    # Random sample of pairs in test set
-    samp1 = np.random.choice(range(n_te), size=ntarg, replace=True)
-    samp2 = np.random.choice(range(n_te), size=ntarg, replace=True)
 
-    # Plot some sort of correlation between distance in the feature and output space
-    # Select random pairs of points from the test set
-    corrs_mkl = []
-    corrs_csi = []
-    corrs_tru = []
-    for ki in range(len(Ks)):
-        # Distances in feature space on
-        kern =  Ks[ki].kernel
-        kargs = Ks[ki].kernel_args
-        Di = np.array([np.sqrt(-2 * kern(X_te[i], X_te[j], **kargs) \
-                                  + kern(X_te[i], X_te[i], **kargs) \
-                                  + kern(X_te[j], X_te[j], **kargs)) for i, j in zip(samp1, samp2)])
-
-        # Distances in output space on sample
-        Y     = np.absolute(np.array([y_te[i]   - y_te[j]   for i, j in zip(samp1, samp2)]))
-        Y_mkl = np.absolute(np.array([yp_mkl[i] - yp_mkl[j] for i, j in zip(samp1, samp2)]))
-        Y_csi = np.absolute(np.array([yp_csi[i] - yp_csi[j] for i, j in zip(samp1, samp2)]))
-
-        # Normalized projections
-        sp_mkl = st.pearsonr(Di.ravel(), Y_mkl.ravel())
-        sp_csi = st.pearsonr(Di.ravel(), Y_csi.ravel())
-        sp_tru = st.pearsonr(Di.ravel(), Y.ravel())
-        corrs_mkl.append(sp_mkl[0])
-        corrs_csi.append(sp_csi[0])
-        corrs_tru.append(sp_tru[0])
-
-    # Plot a summary figure
+    # Plot a generic function plot
     fname = os.path.join(dname, "cv_K-%d_cv-%d.pdf" % (trueK, cv))
-    plt.figure()
-    plt.title("Fitting various lengthscales with kernel sum")
-    plt.plot(K_range, corrs_mkl, ".-", color="green", label="Mklaren", linewidth=2)
-    plt.plot(K_range, corrs_csi, ".-", color="blue", label="CSI", linewidth=2)
-    plt.plot(K_range, corrs_tru, "--", color="black", label="True f(x)", linewidth=2)
-    plt.xlabel("K-mer length")
-    plt.ylabel("Pearson correlation $K(i, j)$, $|y_i-y_j|$")
-    plt.grid("on")
-    ylim = plt.gca().get_ylim()
-    plt.plot((trueK, trueK), ylim, "-", color="black", label="True scale")
-    plt.ylim(ylim)
-    plt.legend()
-    plt.savefig(fname)
-    plt.close()
-    print "Written %s" % fname
-
+    generic_function_plot(f_out=fname, Ks=Ks, X=X_te,
+                          models={"True": {"y": y_te, "color": "black", "fmt": "--", },
+                                  "Mklaren": {"y": yp_mkl, "color": "green", "fmt": "-", },
+                                  "CSI": {"y": yp_csi, "color": "red", "fmt": "-"}},
+                          xlabel="K-mer length",
+                          xnames=K_range,
+                          truePar=K_range.index(trueK))
