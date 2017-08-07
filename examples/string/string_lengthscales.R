@@ -16,3 +16,6 @@ message(sprintf("Mklaren wins: %d/%d", sum(R[,"Mklaren"] > R[,"CSI"]), nrow(R)))
 message("Average expl. var")
 print(colMeans(R))
 print(apply(R, 2, sd))
+
+# Wilcod rank test
+wilcox.test(R[,1], R[,2], paired = TRUE, alternative = "greater")
