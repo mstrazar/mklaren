@@ -1,5 +1,6 @@
 import scipy.stats as st
 import matplotlib.pyplot as plt
+import pickle
 
 from collections import Counter
 from mklaren.kernel.string_kernel import *
@@ -11,7 +12,7 @@ from mklaren.regression.ridge import RidgeLowRank
 
 
 
-def general_function_plot(f_out, Ks, X, models=(),
+def generic_function_plot(f_out, Ks, X, models=(),
                           sample_size=1000, seed=None,
                           title="", xnames=(), xlabel="", truePar=None):
     """
@@ -89,8 +90,15 @@ def general_function_plot(f_out, Ks, X, models=(),
     plt.legend(loc="best")
     plt.savefig(f_out)
     plt.close()
+
+    obj = {"f_out": f_out,
+           "Ks": Ks, "X": X, "models": models,
+           "sample_size": sample_size, "seed": seed,
+           "title": title, "xnames": xnames, "xlabel": xlabel, "truePar": truePar}
+    pickle.dump(obj, open(f_out + ".pkl", "w"), protocol=pickle.HIGHEST_PROTOCOL)
     print "Written %s" % f_out
     return
+
 
 def process():
 
@@ -172,7 +180,7 @@ def process():
 
     # fname = "/Users/martin/Dev/mklaren/examples/output/string/lengthscales_%d_1.pdf" % trueK
     fname = "/Users/martin/Dev/mklaren/examples/output/string/test.pdf"
-    general_function_plot(f_out=fname, Ks=Ks, X=X,
+    generic_function_plot(f_out=fname, Ks=Ks, X=X,
                           models={"True": {"y": yr, "color": "black", "fmt": "--",},
                                   "Mklaren": {"y": yp_mkl, "color": "green", "fmt": "-",},
                                   "CSI": {"y": yp_csi, "color": "red", "fmt": "-"}},
