@@ -4,12 +4,13 @@ setwd("~/Dev/mklaren/examples/string")
 
 
 # Read data
-in_file = "../output/string/2017-8-1/results_0.csv"  # Different inducing set at each kernel ; 30 iters ;
+# in_file = "../output/string/2017-8-1/results_0.csv"  # Different inducing set at each kernel ; 30 iters ;
 # in_file = "../output/string/2017-8-1/results_1.csv"  # Different inducing set at each kernel N=500; L=500 ; 30 iters ;
+in_file = "../output/string/2017-8-2/results_0.csv"  # Different inducing set at each kernel N=100; L=100 ; K in (2, 5) (N=100, L=100) 30 iters ;
 data = read.csv(in_file, stringsAsFactors = FALSE, header = TRUE)
 
 # Cross-validation
-data$id = paste(data$method, data$iteration, data$p, sep=".")
+data$id = paste(data$method, data$iteration, data$rank, data$p, sep=".")
 agg = aggregate(data$evar_va, by=list(id=data$id), max)
 row.names(agg) <- agg$id
 data$best = agg[data$id, "x"] == data$evar_va
