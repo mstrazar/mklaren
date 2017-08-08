@@ -137,7 +137,7 @@ for cv in cv_iter:
                 print("Best lambda for %s: %.3E, expl. var.: %.3f" % (method, lbd, float(evar_va)))
 
             # Store row for each methods
-            row = {"n": N, "L": L, "method": "Mklaren", "rank": rank, "iteration": cv,
+            row = {"n": N, "L": L, "method": method, "rank": rank, "iteration": cv,
                      "sp.corr": spc[0], "sp.pval": spc[1], "lambda": lbd,
                    "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar}
             writer.writerow(row)
