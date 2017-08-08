@@ -6,6 +6,19 @@ from os.path import join, realpath, dirname, basename
 RNA_PATH = join(dirname(realpath(__file__)), "rnacontext", "full")
 RNA_DATASETS = map(lambda p: basename(p), glob(join(RNA_PATH, "*")))
 
+# Optimal K as listed in RNAcontext article
+RNA_OPTIMAL_K = {
+    'VTS1_data_full_AB.txt.gz': 7,
+    'SLM2_data_full_AB.txt.gz': 8,
+    'RBM4_data_full_AB.txt.gz': 7,
+    'SF2_data_full_AB.txt.gz': 5,
+    'Fusip_data_full_AB.txt.gz': 10,
+    'HuR_data_full_AB.txt.gz': 9,
+    'PTB_data_full_AB.txt.gz': 5,
+    'U1A_data_full_AB.txt.gz': None,
+    'YB1_data_full_AB.txt.gz': None,
+}
+
 def load_rna(name, n=None):
     """
     Load an keel dataset.
