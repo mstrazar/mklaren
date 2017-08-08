@@ -1,17 +1,22 @@
+import matplotlib
+matplotlib.use("Agg")
+
 import sys
 import os
 import csv
 import scipy.stats as st
 import datetime
 import time
-import itertools as it
 from mklaren.kernel.string_kernel import *
 from mklaren.kernel.string_util import *
 from mklaren.kernel.kernel import kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
-from datasets.rnacontext import load_rna
+from datasets.rnacontext import load_rna, RNA_OPTIMAL_K
+from examples.string.string_lengthscales import generic_function_plot
+from examples.snr.snr import meth2color
+
 #
 # # List available kernels
 # args = [
@@ -31,17 +36,18 @@ from datasets.rnacontext import load_rna
 #     {"mode": WD_PI, "K": 4},
 #     # {"mode": WD_PI, "K": 5},
 # ]
-args = [{"mode": SPECTRUM, "K": kl} for kl in range(1, 10)]
+K_range = range(1, 10)
+args = [{"mode": SPECTRUM, "K": kl} for kl in K_range]
 kernels = ",".join(set(map(lambda t: t["mode"], args)))
 
 # Load data
 dset = dict(enumerate(sys.argv)).get(1, "U1A_data_full_AB.txt.gz")
-
+trueK = RNA_OPTIMAL_K.get(dset, None)
 
 # Hyperparameters
 methods = ["Mklaren", "CSI", "Nystrom", "ICD"]
 lbd_range  = [0] + list(np.logspace(-5, 1, 7))  # Regularization parameter
-rank_range = (5, )
+rank = 5
 iterations = range(30)
 delta = 10
 n_tr = 1000
@@ -96,8 +102,13 @@ for cv in iterations:
                                    "kernels_args": args})
 
     # Modeling
+    best_models = {"True": {"y": y_te, "color": "black", "fmt": "--", }}
     for method in methods:
-        for lbd, rank in it.product(lbd_range, rank_range):
+        best_models[method] = {"color": meth2color[method], "fmt": "-"}
+        best_evar = -np.inf
+        best_yp = None
+
+        for lbd in lbd_range:
             yt, yv, yp = None, None, None
             t1 = time.time()
             if method == "Mklaren":
@@ -131,9 +142,24 @@ for cv in iterations:
             evar_va = (np.var(y_va) - np.var(yv - y_va)) / np.var(y_va)
             evar    = (np.var(y_te) - np.var(yp - y_te)) / np.var(y_te)
 
+            # Select best lambda to plot
+            if evar_va > best_evar:
+                best_evar = evar_va
+                best_yp = yp
+                best_models[method]["y"] = best_yp
+
+            # Write to output
             row = {"L": L, "n": len(X), "method": method, "dataset": dset,
                    "kernels": kernels, "rank": rank, "iteration": cv, "lambda": lbd,
                    "time": t2, "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar}
 
             writer.writerow(row)
             seed += 1
+
+        # Plot a funciton fit after selecting best lambda
+        fname = os.path.join(dname, "generic_plot_cv-%d.pdf" % cv)
+        generic_function_plot(f_out=fname, Ks=Ks, X=X_te,
+                              models=best_models,
+                              xlabel="K-mer length",
+                              xnames=K_range,
+                              truePar=K_range.index(trueK) if trueK else None)
