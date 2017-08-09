@@ -206,7 +206,7 @@ def plot_signal_subplots(X, Xp, y, f, models=None, f_out=None):
     """
     x = X.ravel()
     xp = Xp.ravel()
-    xmin, xmax = xp.min(), xp.max()
+    xmin, xmax = min(0, xp.min()), xp.max()
     ymin, ymax = y.min(), y.max()
     nmods = len(models)
 
