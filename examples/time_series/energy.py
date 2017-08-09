@@ -44,7 +44,8 @@ if ename == "exponential":
 
 elif ename == "matern":
     kernel_function = matern32_gpy
-    pars = {"lengthscale": np.logspace(-4, 4, 5)}
+    # pars = {"lengthscale": np.logspace(-4, 4, 5)}
+    pars = {"lengthscale": 2.0/np.logspace(-4, 4, 5)}
     methods = ("Mklaren", "ICD", "CSI", "Nystrom", "FITC")
 
 elif ename == "periodic":
