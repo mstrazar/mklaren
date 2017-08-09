@@ -133,12 +133,11 @@ for rank, lbd, tsi in it.product(rank_range, lambda_range, inxs):
         continue
     del models["True"]
 
-    # Store file
-    fname = os.path.join(subdname, "plot_sig-%s_tsi-%d_lbd-%.3f_rank-%d.pdf" % (sig, tsi, lbd, rank))
-    plot_signal(X=xp, Xp=xp, y=yp, f=yp, models=models, f_out=fname,
-                typ="plot_models")
-
+    # Store file as pdf + eps
     fname = os.path.join(subdname, "plot_multi-%s_tsi-%d_lbd-%.3f_rank-%d.pdf" % (sig, tsi, lbd, rank))
+    plot_signal_subplots(X=xp, Xp=xp, y=yp, f=None, models=models, f_out=fname)
+
+    fname = os.path.join(subdname, "plot_multi-%s_tsi-%d_lbd-%.3f_rank-%d.eps" % (sig, tsi, lbd, rank))
     plot_signal_subplots(X=xp, Xp=xp, y=yp, f=None, models=models, f_out=fname)
 
     for ky in models.keys():
