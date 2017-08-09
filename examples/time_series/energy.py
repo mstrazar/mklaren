@@ -22,7 +22,7 @@ from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern32_gpy, 
 from mklaren.kernel.kinterface import Kinterface
 from sklearn.metrics import mean_squared_error as mse
 from datasets.energy import load_energy
-from examples.snr.snr import plot_signal, test
+from examples.snr.snr import plot_signal, plot_signal_subplots, test
 
 
 # Dataset description
@@ -137,6 +137,9 @@ for rank, lbd, tsi in it.product(rank_range, lambda_range, inxs):
     fname = os.path.join(subdname, "plot_sig-%s_tsi-%d_lbd-%.3f_rank-%d.pdf" % (sig, tsi, lbd, rank))
     plot_signal(X=xp, Xp=xp, y=yp, f=yp, models=models, f_out=fname,
                 typ="plot_models")
+
+    fname = os.path.join(subdname, "plot_multi-%s_tsi-%d_lbd-%.3f_rank-%d.pdf" % (sig, tsi, lbd, rank))
+    plot_signal_subplots(X=xp, Xp=xp, y=yp, f=yp, models=models, f_out=fname)
 
     for ky in models.keys():
         mse_yv = mse(models_val[ky]["yp"].ravel(), yv.ravel())
