@@ -92,14 +92,9 @@ Y = X - X_out
 N, n = Y.shape
 
 # Training, validation, test
-if ename == "periodic":
-    x = np.atleast_2d(np.arange(0, n/2)).T
-    xv = np.atleast_2d(np.arange(n/2, n, 2)).T
-    xp = np.atleast_2d(np.arange(n/2+1, n, 2)).T
-else:
-    x  = np.atleast_2d(np.arange(0, n, 3)).T
-    xv = np.atleast_2d(np.arange(1, n, 3)).T
-    xp = np.atleast_2d(np.arange(2, n, 3)).T
+x  = np.atleast_2d(np.arange(0, n, 3)).T
+xv = np.atleast_2d(np.arange(1, n, 3)).T
+xp = np.atleast_2d(np.arange(2, n, 3)).T
 
 Nt, Nv, Np = x.shape[0], xv.shape[0], xp.shape[0]
 f = Y[1:19, x].mean(axis=0).ravel()
@@ -129,7 +124,8 @@ for rank, lbd, tsi in it.product(rank_range, lambda_range, inxs):
                       inxs=range(rank),
                       X=x, Xp=xp, y=y, f=f, delta=delta, lbd=lbd,
                       methods=methods)
-    except:
+    except Exception as e:
+        print("Exception: %s %s" % (e, e.message))
         continue
     del models["True"]
 
