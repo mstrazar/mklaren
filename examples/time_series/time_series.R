@@ -5,8 +5,8 @@ setwd("/Users/martin/Dev/mklaren/examples/time_series/")
 
 # Exponetial kernel
 alldata = read.csv("../output/energy/2017-6-23/results_0.csv", header = TRUE, stringsAsFactors = FALSE) # optimize FITC
-# methods = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC")
-# methods2 = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC") # for bolding best score only
+methods = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC")
+methods2 = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC") # for bolding best score only
 
 # Matern kernel
 alldata = read.csv("../output/energy/2017-6-26/results.csv", header = TRUE, stringsAsFactors = FALSE) # optimize FITC
