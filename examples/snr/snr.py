@@ -36,6 +36,9 @@ import matplotlib.pyplot as plt
 import pickle, gzip
 
 
+# Method order if required
+meth_order = ["Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC", "True"]
+
 # Color mappings
 meth2color = {"Mklaren": "green",
               "CSI": "red",
@@ -182,6 +185,65 @@ def plot_signal(X, Xp, y, f, models=None, tit="", typ="plot_models", f_out = Non
         plt.savefig(f_out)
         plt.close()
         print("Written %s" % f_out)
+
+
+def plot_signal_subplots(X, Xp, y, f, models=None, f_out=None):
+    """
+    Plot fitted signal on multiple plots to avoid clutter.
+    Models dictionary does not assume the 'True' model
+
+    :param X: Sampling coordinates.
+    :param Xp:  Plotting (whole signal) coordinates.
+    :param y:   True observed values.
+    :param f:   True signal.
+    :param models: Onr dictionary per model;
+        "yp"    Predicted signal at yp.
+        "anchors" Anchor (inducing points coordinates), one set per lengthscale.
+        "color": Color.
+        "label": Name.
+    :param f_out: Output file. If not provided, show plot on screen.
+    :return:
+    """
+    x = X.ravel()
+    xp = Xp.ravel()
+    xmin, xmax = xp.min(), xp.max()
+    ymin, ymax = y.min(), y.max()
+    nmods = len(models)
+
+    fig, ax = plt.subplots(sharex=True, ncols=1, nrows=nmods, figsize=(4.72, nmods * 1.0))
+    for mi, (label, data) in enumerate(sorted(models.items(), key=lambda t: meth_order.index(t[0]))):
+        yp = data.get("yp", np.zeros((len(X),)))
+        color = meth2color[label]
+
+        # Plot to axis
+        ax[mi].set_xlim(xmin, xmax)
+        ax[mi].set_ylim(ymin, ymax)
+        ax[mi].plot(x, y, ".", color="gray")
+        if f is not None: ax[mi].plot(x, f, "r--")
+        ax[mi].plot(xp, yp, "-", color=color, label="%s" % label)
+
+        # Plot anchors if provided
+        anchors = data.get("anchors", [[]])
+        ancs = np.array(anchors).ravel()
+        ax[mi].plot(ancs, [ymin + (ymax - ymin) * 0.05] * len(ancs),
+                    "^", color=color, markersize=8, alpha=0.6)
+        ax[mi].set_ylabel(label)
+
+    ax[-1].set_xlabel("Input space (x)")
+    fig.tight_layout()
+
+    if f_out is None:
+        plt.show()
+    else:
+        plt.savefig(f_out)
+        plt.close()
+        print("Written %s" % f_out)
+
+        f_out_gz = f_out + ".pkl.gz"
+        obj = (X, Xp, y, f, models)
+        pickle.dump(obj, gzip.open(f_out_gz, "w"), protocol=pickle.HIGHEST_PROTOCOL)
+        print("Written %s" % f_out_gz)
+
 
 
 def plot_signal_2d(X, Xp, y, f, models=None, tit=""):
