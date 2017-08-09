@@ -220,7 +220,7 @@ def plot_signal_subplots(X, Xp, y, f, models=None, f_out=None):
         ax[mi].set_ylim(ymin, ymax)
         ax[mi].plot(x, y, ".", color="gray")
         if f is not None: ax[mi].plot(x, f, "r--")
-        ax[mi].plot(xp, yp, "-", color=color, label="%s" % label)
+        ax[mi].plot(xp, yp, "-", color=color, label="%s" % label, linewidth=1.5)
 
         # Plot anchors if provided
         anchors = data.get("anchors", [[]])
