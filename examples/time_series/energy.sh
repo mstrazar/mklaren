@@ -1,4 +1,5 @@
 #!/bin/bash
+export PYTHONPATH=../..
 export MKL_NUM_THREADS=2
 export NUMEXPR_NUM_THREADS=2
 export OMP_NUM_THREADS=2
