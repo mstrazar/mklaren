@@ -85,6 +85,7 @@ def generic_function_plot(f_out, Ks, X, models=(),
     # Y
     plt.xlabel(xlabel)
     plt.xticks(par_range)
+    plt.xlim(par_range[0]-0.5, par_range[-1]+0.5)
     if len(xnames): plt.gca().set_xticklabels(map(str, xnames))
     plt.grid("on")
     plt.legend(loc="best")
