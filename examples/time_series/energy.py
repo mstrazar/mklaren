@@ -57,7 +57,7 @@ elif ename == "periodic":
 # Hyperparameters
 delta = 10
 rank_range = (7, 14, 21)
-lambda_range = [0] + list(np.logspace(-1, 1, 5))
+lambda_range = [0] # + list(np.logspace(-1, 1, 5))
 
 # Data parameters
 signals = ["T%d" % i for i in range(1, 10)]
@@ -139,7 +139,7 @@ for rank, lbd, tsi in it.product(rank_range, lambda_range, inxs):
                 typ="plot_models")
 
     fname = os.path.join(subdname, "plot_multi-%s_tsi-%d_lbd-%.3f_rank-%d.pdf" % (sig, tsi, lbd, rank))
-    plot_signal_subplots(X=xp, Xp=xp, y=yp, f=yp, models=models, f_out=fname)
+    plot_signal_subplots(X=xp, Xp=xp, y=yp, f=None, models=models, f_out=fname)
 
     for ky in models.keys():
         mse_yv = mse(models_val[ky]["yp"].ravel(), yv.ravel())
