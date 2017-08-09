@@ -3,8 +3,8 @@ export MKL_NUM_THREADS=2
 export NUMEXPR_NUM_THREADS=2
 export OMP_NUM_THREADS=2
 for i in $(seq 1 9) ; do
-    echo python.py energy matern T$i
-    python energy.py matern T$i 1>T$i.out.txt 2>T$i.err.txt &
+    echo python.py energy periodic T$i
+    python energy.py periodic T$i 1>T$i.out.txt 2>T$i.err.txt &
     sleep 1
 done
 
