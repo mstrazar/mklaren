@@ -156,10 +156,11 @@ for cv in iterations:
             writer.writerow(row)
             seed += 1
 
-        # Plot a funciton fit after selecting best lambda
-        fname = os.path.join(dname, "%s.generic_plot_cv-%d.pdf" % (dset, cv))
-        generic_function_plot(f_out=fname, Ks=Ks, X=X_te,
-                              models=best_models,
-                              xlabel="K-mer length",
-                              xnames=K_range,
-                              truePar=K_range.index(trueK) if trueK else None)
+
+    # Plot a funciton fit after selecting best lambda
+    fname = os.path.join(dname, "%s.generic_plot_cv-%d.pdf" % (dset, cv))
+    generic_function_plot(f_out=fname, Ks=Ks, X=X_te,
+                          models=best_models,
+                          xlabel="K-mer length",
+                          xnames=K_range,
+                          truePar=K_range.index(trueK) if trueK else None)
