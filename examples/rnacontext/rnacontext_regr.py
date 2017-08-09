@@ -36,7 +36,7 @@ from examples.snr.snr import meth2color
 #     {"mode": WD_PI, "K": 4},
 #     # {"mode": WD_PI, "K": 5},
 # ]
-K_range = range(1, 10)
+K_range = range(1, 11)
 args = [{"mode": SPECTRUM, "K": kl} for kl in K_range]
 kernels = ",".join(set(map(lambda t: t["mode"], args)))
 
