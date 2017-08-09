@@ -57,7 +57,7 @@ elif ename == "periodic":
 # Hyperparameters
 delta = 10
 rank_range = (7, 14, 21)
-lambda_range = [0] # + list(np.logspace(-1, 1, 5))
+lambda_range = [0] + list(np.logspace(-1, 1, 5))
 
 # Data parameters
 signals = ["T%d" % i for i in range(1, 10)]
