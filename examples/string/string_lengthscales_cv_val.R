@@ -24,3 +24,5 @@ plotCD(R)
 rowMeans(apply(-R, 1, rank))      # Mean rank
 rowSums(apply(-R, 1, rank) == 1)  # Percentage of wins
 rowMeans(apply(-R, 1, rank) == 1) # Number of wins
+
+wilcox.test(R[,"Mklaren"], R[,"CSI"], paired = TRUE, alternative = "greater")
