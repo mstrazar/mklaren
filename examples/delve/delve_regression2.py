@@ -36,6 +36,7 @@ from datasets.geostats import load_geostats
 # Utils
 from numpy import var, mean, logspace
 from random import shuffle, seed
+from math import ceil
 
 # Datasets and options
 # Load max. 3000 examples
@@ -59,23 +60,32 @@ datasets = {
 
 
 # Hyperparameters
-rank_range = range(2, 21) + range(20, 85, 5) # Rank range
+# rank_range = range(2, 21) + range(20, 85, 5) # Rank range
+
+# Comparable parameters with effective methods
+p = 10
+p_range    = (p,)               # Fixed number of kernels
+rank_range = range(10, 90, p)
+
+# Other hyperparameters
 lbd_range  = [0] + list(logspace(-5, 1, 7))  # Regularization parameter
 delta      = 10                              # Number of look-ahead columns (CSI and mklaren)
-# p_range    = (1, 2, 3, 5, 10, 30)
-p_range    = (10,)   # Fixed number of kernels
+
 
 # Method classes and fixed hyperparameters
 methods = {
     "CSI" :        (RidgeLowRank, {"method": "csi",
-                                   "method_init_args": {"delta": delta}}),
+                                    "method_init_args": {"delta": delta}}),
     "ICD" :        (RidgeLowRank, {"method": "icd"}),
     "Nystrom":     (RidgeLowRank, {"method": "nystrom"}),
+    "CSI2" :       (RidgeLowRank, {"method": "csi",
+                                   "method_init_args": {"delta": delta}}),
+    "ICD2" :       (RidgeLowRank, {"method": "icd"}),
+    "Nystrom2":    (RidgeLowRank, {"method": "nystrom"}),
     "Mklaren":     (Mklaren,      {"delta": delta}),
-    "Mklaren2":    (Mklaren,      {"delta": delta}),
     "RFF":         (RFF,          {"delta": delta}),
     "FITC":        (FITC, {}),
-    # "uniform":     (RidgeMKL,     {"method": "uniform"}),
+    "uniform":     (RidgeMKL,     {"method": "uniform"}),
     "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
 }
 
@@ -97,7 +107,7 @@ rcnt = len(os.listdir(dname))
 fname = os.path.join(dname, "results_%d.csv" % rcnt)
 
 # Output
-header = ["dataset", "n", "method", "rank", "iteration", "lambda",
+header = ["dataset", "n", "method", "rank", "erank", "iteration", "lambda",
           "gmin", "gmax", "p", "evar_tr", "evar", "time",
           "RMSE_tr", "RMSE_va", "RMSE"]
 fp = open(fname, "w", buffering=0)
@@ -149,12 +159,14 @@ for cv, p in it.product(range(cv_iter), p_range):
                 try:
                     t_train = time.time()
                     if mname == "Mklaren":
+                        effective_rank = rank
                         model = Mclass(lbd=lbd, rank=rank, **kwargs)
                         model.fit(Ks, y_tr)
                         yptr    = model.predict([X_tr for k in Ks]).ravel()
                         ypva    = model.predict([X_val for k in Ks]).ravel()
                         ypte    = model.predict([X_te for k in Ks]).ravel()
                     elif mname == "RFF":
+                        effective_rank = rank
                         model = Mclass(rank=rank, lbd=lbd,
                                        gamma_range=gam_range, **kwargs)
                         model.fit(X_tr, y_tr)
@@ -162,18 +174,28 @@ for cv, p in it.product(range(cv_iter), p_range):
                         ypva = model.predict(X_val).ravel()
                         ypte = model.predict(X_te).ravel()
                     elif mname == "FITC":
+                        effective_rank = rank
                         model = Mclass(rank=rank, **kwargs)
                         model.fit(Ks, y_tr)
                         yptr = model.predict([X_tr for k in Ks]).ravel()
                         ypva = model.predict([X_val for k in Ks]).ravel()
                         ypte = model.predict([X_te for k in Ks]).ravel()
                     elif mname in ("uniform", "L2KRR"):
+                        effective_rank = rank
                         model = Mclass(lbd=lbd, **kwargs)
                         model.fit(Ks_full, y, holdout=te+tval)
                         yptr = model.predict(tr).ravel()
                         ypva = model.predict(tval).ravel()
                         ypte = model.predict(te).ravel()
+                    elif mname in ("CSI2", "ICD2", "Nystrom2"):   # Separate approximations
+                        effective_rank = int(max(1, ceil(1.0 * rank / p)))
+                        model = Mclass(lbd=lbd, rank=effective_rank, **kwargs)
+                        model.fit(Ks, y_tr)
+                        yptr = model.predict([X_tr]*len(Ks)).ravel()
+                        ypva = model.predict([X_val]*len(Ks)).ravel()
+                        ypte = model.predict([X_te]*len(Ks)).ravel()
                     else:   # Other low-rank approximations; Mklaren2
+                        effective_rank = rank
                         model = Mclass(lbd=lbd, rank=rank, **kwargs)
                         model.fit([Ksum], y_tr)
                         yptr = model.predict([X_tr]).ravel()
@@ -197,7 +219,7 @@ for cv, p in it.product(range(cv_iter), p_range):
                 # Write to output
                 row = {"dataset": dset, "method": mname, "rank": rank, "n": n,
                        "iteration": cv, "lambda": lbd, "time": mean(times),
-                       "evar": evar_te, "evar_tr": evar_tr,
+                       "evar": evar_te, "evar_tr": evar_tr, "erank": effective_rank,
                        "RMSE": score_te, "RMSE_va": score_va, "RMSE_tr": score_tr,
                        "gmin": min(gam_range), "gmax": max(gam_range), "p": len(gam_range)}
                 writer.writerow(row)
