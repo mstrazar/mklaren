@@ -1,3 +1,11 @@
+hlp = """
+    Experiments with string regression on synthetic data.
+"""
+
+if __name__ == "__main__":
+    import matplotlib
+    matplotlib.use("Agg")
+
 import os
 import csv
 import scipy.stats as st
@@ -42,7 +50,8 @@ fname = os.path.join(dname, "results_%d.csv" % rcnt)
 print("Writing to %s ..." % fname)
 
 # Output
-header = ["n", "L", "iteration", "method", "lambda", "rank", "sp.corr", "sp.pval", "evar_tr", "evar_va", "evar"]
+header = ["n", "L", "iteration", "method", "lambda", "rank", "sp.corr", "sp.pval",
+          "evar_tr", "evar_va", "evar", "mse"]
 fp = open(fname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
@@ -129,6 +138,7 @@ for cv in cv_iter:
             evar_tr = (np.var(y_tr) - np.var(yt - y_tr)) / np.var(y_tr)
             evar_va = (np.var(y_va) - np.var(yv - y_va)) / np.var(y_va)
             evar = (np.var(y_te) - np.var(yp - y_te)) / np.var(y_te)
+            mse = np.var(yp - y_te)
             if evar_va > best_evar:
                 best_evar = evar_va
                 best_yp = yp
@@ -139,7 +149,7 @@ for cv in cv_iter:
             # Store row for each methods
             row = {"n": N, "L": L, "method": method, "rank": rank, "iteration": cv,
                      "sp.corr": spc[0], "sp.pval": spc[1], "lambda": lbd,
-                   "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar}
+                   "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar, "mse": mse}
             writer.writerow(row)
 
 
