@@ -67,7 +67,7 @@ print("Writing to %s ..." % fname)
 
 # Output
 header = ["dataset", "n", "L", "kernels", "method", "rank", "iteration", "lambda",
-          "time", "evar_tr", "evar_va", "evar"]
+          "time", "evar_tr", "evar_va", "evar", "mse"]
 fp = open(fname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
@@ -141,6 +141,7 @@ for cv in iterations:
             evar_tr = (np.var(y_tr) - np.var(yt - y_tr)) / np.var(y_tr)
             evar_va = (np.var(y_va) - np.var(yv - y_va)) / np.var(y_va)
             evar    = (np.var(y_te) - np.var(yp - y_te)) / np.var(y_te)
+            mse     = np.var(yp - y_te)
 
             # Select best lambda to plot
             if evar_va > best_evar:
@@ -151,7 +152,8 @@ for cv in iterations:
             # Write to output
             row = {"L": L, "n": len(X), "method": method, "dataset": dset,
                    "kernels": kernels, "rank": rank, "iteration": cv, "lambda": lbd,
-                   "time": t2, "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar}
+                   "time": t2, "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar,
+                   "mse": mse}
 
             writer.writerow(row)
             seed += 1
