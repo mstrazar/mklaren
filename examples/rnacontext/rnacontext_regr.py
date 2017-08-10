@@ -88,7 +88,8 @@ for cv in iterations:
     np.random.shuffle(inxs)
     tr = inxs[:n_tr]
     va = inxs[n_tr:n_tr + n_val]
-    te = inxs[n_tr + n_val:n_tr + n_val + n_te]
+    # te = inxs[n_tr + n_val:n_tr + n_val + n_te]
+    te = inxs[n_tr + n_val:]
 
     # Training / test split
     X_tr, y_tr = X[tr], y[tr]
@@ -159,10 +160,10 @@ for cv in iterations:
             seed += 1
 
 
-    # Plot a funciton fit after selecting best lambda
-    fname = os.path.join(dname, "%s.generic_plot_cv-%d.pdf" % (dset, cv))
-    generic_function_plot(f_out=fname, Ks=Ks, X=X_te,
-                          models=best_models,
-                          xlabel="K-mer length",
-                          xnames=K_range,
-                          truePar=K_range.index(trueK) if trueK else None)
+    # # Plot a funciton fit after selecting best lambda
+    # fname = os.path.join(dname, "%s.generic_plot_cv-%d.pdf" % (dset, cv))
+    # generic_function_plot(f_out=fname, Ks=Ks, X=X_te,
+    #                       models=best_models,
+    #                       xlabel="K-mer length",
+    #                       xnames=K_range,
+    #                       truePar=K_range.index(trueK) if trueK else None)
