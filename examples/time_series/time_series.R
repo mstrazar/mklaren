@@ -3,15 +3,21 @@ require(scmamp)
 require(xtable)
 setwd("/Users/martin/Dev/mklaren/examples/time_series/")
 
-# Exponetial kernel
-alldata = read.csv("../output/energy/2017-6-23/results_0.csv", header = TRUE, stringsAsFactors = FALSE) # optimize FITC
+# Selection of methods
 methods = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC")
 methods2 = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC") # for bolding best score only
 
+# Exponetial kernel
+alldata = read.csv("../output/energy/data_exponential/results_0.csv", 
+                   header = TRUE, stringsAsFactors = FALSE) # optimize FITC
+
 # Matern kernel
-alldata = read.csv("../output/energy/2017-6-26/results.csv", header = TRUE, stringsAsFactors = FALSE) # optimize FITC
-# methods = c("Mklaren", "CSI", "ICD", "Nystrom", "FITC")
-# methods2 = c("Mklaren", "CSI", "ICD", "Nystrom", "FITC") # for bolding best score only
+alldata = read.csv("../output/energy/data_matern/results.csv", 
+                   header = TRUE, stringsAsFactors = FALSE) # optimize FITC
+
+# Periodic kernel
+alldata = read.csv("../output/energy/data_periodic/results.csv", 
+                   header = TRUE, stringsAsFactors = FALSE) # optimize FITC
 
 
 # Select scores via cross-validation
@@ -74,8 +80,8 @@ for (r in unique(data$rank)){
   fname = sprintf("../output/energy/tex/table_kernel-%s_rank-%02d.tex", k, r)
   tab = xtable(R)
   sink(fname)
-  print(xtable(t(R)), 
-        sanitize.colnames.function=identity, 
+  print(xtable(t(R)),
+        sanitize.colnames.function=identity,
         sanitize.text.function=identity)
   sink()
   message(sprintf("Written %s", fname))
