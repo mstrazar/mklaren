@@ -31,7 +31,7 @@ from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
 from mklaren.regression.fitc import FITC
 from mklaren.projection.rff import RFF
-from sklearn.metrics import mean_squared_error as mse
+from mklaren.regression.ridge import RidgeMKL
 import matplotlib.pyplot as plt
 import pickle, gzip
 
@@ -422,8 +422,10 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
 
     # Fit Nystrom
     if "Nystrom" in methods:
-        nystrom = RidgeLowRank(rank=rank, lbd=lbd,
-                           method="nystrom", method_init_args={"lbd": lbd, "verbose": False})
+        nystrom = RidgeLowRank(rank=rank,
+                               lbd=lbd,
+                               method="nystrom",
+                               method_init_args={"lbd": lbd, "verbose": False})
         t1 = time.time()
         nystrom.fit([Ksum], y)
         t2 = time.time() - t1
@@ -442,6 +444,14 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
                 "evar": evar,
                 "model": nystrom,
                 "color": meth2color["Nystrom"]}
+
+    # Fit MKL methods (just for time comparison)
+    for method in set(RidgeMKL.mkls.keys()) & set(methods):
+        model = RidgeMKL(lbd=lbd, method=method)
+        t1 = time.time()
+        model.fit(Klist, y)
+        t2 = time.time() - t1
+        results[method] = {"time": t2}
 
     return results
 
