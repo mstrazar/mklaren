@@ -23,6 +23,7 @@ import datetime
 import os
 import itertools as it
 import time
+import scipy
 import numpy as np
 from scipy.stats import multivariate_normal as mvn, pearsonr, entropy
 from mklaren.kernel.kernel import exponential_kernel, kernel_sum
@@ -51,7 +52,7 @@ meth2color = {"Mklaren": "green",
 
 def generate_data(n, rank,
                   inducing_mode="uniform", noise=1, gamma_range=(0.1,), seed=None,
-                  input_dim=1):
+                  input_dim=1, signal_sampling="GP"):
     """
     Generate an artificial dataset with imput dimension.
     :param n: Number od data points.
@@ -61,6 +62,7 @@ def generate_data(n, rank,
     :param gamma_range: Number of kernels and hyperparameters.
     :param seed: Random seed.
     :param input_dim: Input space dimension.
+    :param signal_sampling: 'GP' or 'weights'. Weights is more efficient.
     :return:
     """
     if seed is not None:
@@ -96,9 +98,17 @@ def generate_data(n, rank,
         raise ValueError(inducing_mode)
 
     inxs = np.random.choice(a, p=p, size=rank, replace=False)
-    Kny = Ksum[:, inxs].dot(np.linalg.inv(Ksum[inxs, inxs])).dot(Ksum[inxs, :])
-    f = mvn.rvs(mean=np.zeros((N,)), cov=Kny)
-    y = mvn.rvs(mean=f, cov=noise * np.eye(N, N))
+    if signal_sampling == "GP":
+        Kny = Ksum[:, inxs].dot(np.linalg.inv(Ksum[inxs, inxs])).dot(Ksum[inxs, :])
+        f = mvn.rvs(mean=np.zeros((N,)), cov=Kny)
+        y = mvn.rvs(mean=f, cov=noise * np.eye(N, N))
+    elif signal_sampling == "weights":
+        L = Ksum[:, inxs].dot(scipy.linalg.sqrtm(np.linalg.inv(Ksum[inxs, inxs])))
+        w = mvn.rvs(mean=np.zeros(rank,), cov=np.eye(rank, rank)).ravel()
+        f = L.dot(w)
+        y = f + np.random.rand(n, 1).ravel() * noise
+    else:
+        raise ValueError(signal_sampling)
 
     return Ksum, Klist, inxs, X, Xp, y, f
 
