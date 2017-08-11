@@ -35,7 +35,7 @@ def process():
 
     # Safe guard dict to kill off the methods that go over the limit
     # Set a prior limit to full-rank methods to 1e5
-    off_limits = dict([(m, int(1e5)) for m in RidgeMKL.mkls.keys()])
+    off_limits = dict([(m, int(2e5)) for m in RidgeMKL.mkls.keys()])
 
     # Fixed output
     # Create output directory
@@ -74,7 +74,7 @@ def process():
         return_dict = manager.dict()
         jobs = dict()
         for method in METHODS:
-            if off_limits.get(method, 0) >= n:
+            if off_limits.get(method, 0) <= n:
                 print("%s is off limit for n=%d rank=%d p=%d" % (method, n, rank, P))
                 return_dict[method] = float("inf")
                 continue
