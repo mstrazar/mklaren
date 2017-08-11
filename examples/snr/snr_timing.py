@@ -74,7 +74,7 @@ def process():
         return_dict = manager.dict()
         jobs = dict()
         for method in METHODS:
-            if off_limits.get(method, 0) <= n:
+            if off_limits.get(method, np.inf) <= n:
                 print("%s is off limit for n=%d rank=%d p=%d" % (method, n, rank, P))
                 return_dict[method] = float("inf")
                 continue
