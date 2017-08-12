@@ -65,7 +65,8 @@ def process():
                                                        noise=1.0,
                                                        gamma_range=gamma_range,
                                                        input_dim=input_dim,
-                                                       signal_sampling="weights")
+                                                       signal_sampling="weights",
+                                                       data="random")
         # Print after dataset generation
         dat = datetime.datetime.now()
         print("%s\tn=%d rank=%d p=%d" % (dat, n, rank, P))
