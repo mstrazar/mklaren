@@ -47,7 +47,12 @@ meth2color = {"Mklaren": "green",
               "Nystrom": "pink",
               "FITC": "orange",
               "RFF": "magenta",
-              "True": "black"}
+              "True": "black",
+              "l2krr": "green",
+              "align": "pink",
+              "uniform": "blue",
+              "alignf": "red",
+              "alignfc": "orange"}
 
 
 def generate_data(n, rank,
