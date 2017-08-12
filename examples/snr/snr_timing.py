@@ -31,6 +31,7 @@ def process():
     n_range = np.logspace(2, 6, 9).astype(int)
     rank_range = [5, 10, 30]
     p_range = [1, 3, 10]
+    d_range = [1, 3, 10, 30, 100]
     limit = 3600 # 60 minutes
 
     # Safe guard dict to kill off the methods that go over the limit
@@ -48,13 +49,13 @@ def process():
     print("Writing to %s ..." % fname)
 
     # Output
-    header = ["n", "p", "method", "lambda", "rank", "limit", "time"]
+    header = ["kernel", "d", "n", "p", "method", "lambda", "rank", "limit", "time"]
     fp = open(fname, "w", buffering=0)
     writer = csv.DictWriter(fp, fieldnames=header)
     writer.writeheader()
 
     # Main loop
-    for P, rank, n in it.product(p_range, rank_range, n_range):
+    for input_dim, P, rank, n in it.product(d_range, p_range, rank_range, n_range):
 
         # Generate a dataset of give rank
         gamma_range = np.logspace(-3, 6, P)
@@ -63,11 +64,11 @@ def process():
                                                        inducing_mode="uniform",
                                                        noise=1.0,
                                                        gamma_range=gamma_range,
-                                                       input_dim=1,
+                                                       input_dim=input_dim,
                                                        signal_sampling="weights")
         # Print after dataset generation
-        d = datetime.datetime.now()
-        print("%s\tn=%d rank=%d p=%d" % (d, n, rank, P))
+        dat = datetime.datetime.now()
+        print("%s\tn=%d rank=%d p=%d" % (dat, n, rank, P))
 
         # Evaluate methods
         manager = Manager()
@@ -104,7 +105,8 @@ def process():
 
         # Write to output
         for method, value in return_dict.items():
-            row = {"n": n, "p": P, "method": method, "limit": limit,
+            row = {"kernel": Klist[0].kernel.__name__,
+                    "d": input_dim, "n": n, "p": P, "method": method, "limit": limit,
                    "lambda": 0.1, "rank": rank, "time": value}
             writer.writerow(row)
 
