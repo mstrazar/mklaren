@@ -76,7 +76,7 @@ def process():
         jobs = dict()
         for method in METHODS:
             if off_limits.get(method, np.inf) <= n:
-                print("%s is off limit for n=%d rank=%d p=%d" % (method, n, rank, P))
+                print("%s is off limit for d=%d n=%d rank=%d p=%d" % (input_dim, method, n, rank, P))
                 return_dict[method] = float("inf")
                 continue
             p = Process(target=wrapsf, name="test",
@@ -98,7 +98,7 @@ def process():
                     if p.is_alive():
                         # Terminate process and store method to off limits for this n
                         # Note that this is the minimal point in (n, p, rank) for which if doesn't work
-                        print("%s REGISTERED for n=%d rank=%d p=%d" % (method, n, rank, P))
+                        print("%s REGISTERED for d=%d n=%d rank=%d p=%d" % (input_dim, method, n, rank, P))
                         return_dict[method] = float("inf")
                         off_limits[method] = min(off_limits.get(method, np.inf), n)
                         p.terminate()
