@@ -52,7 +52,7 @@ meth2color = {"Mklaren": "green",
 
 def generate_data(n, rank,
                   inducing_mode="uniform", noise=1, gamma_range=(0.1,), seed=None,
-                  input_dim=1, signal_sampling="GP"):
+                  input_dim=1, signal_sampling="GP", data="mesh"):
     """
     Generate an artificial dataset with imput dimension.
     :param n: Number od data points.
@@ -63,20 +63,28 @@ def generate_data(n, rank,
     :param seed: Random seed.
     :param input_dim: Input space dimension.
     :param signal_sampling: 'GP' or 'weights'. Weights is more efficient.
+    :param data: mesh or input_dim.
     :return:
     """
     if seed is not None:
         np.random.seed(seed)
 
     # Generate data for arbitray input_dim
-    x = np.linspace(-10, 10, n).reshape((n, 1))
-    M = np.meshgrid(*(input_dim * [x]))
-    X = np.array(zip(*[m.ravel() for m in M]))
-    N = X.shape[0]
+    if data == "mesh":
+        x = np.linspace(-10, 10, n).reshape((n, 1))
+        M = np.meshgrid(*(input_dim * [x]))
+        X = np.array(zip(*[m.ravel() for m in M]))
+        N = X.shape[0]
 
-    xp = np.linspace(-10, 10, 100).reshape((100, 1))
-    Mp = np.meshgrid(*(input_dim * [xp]))
-    Xp = np.array(zip(*[m.ravel() for m in Mp]))
+        xp = np.linspace(-10, 10, 100).reshape((100, 1))
+        Mp = np.meshgrid(*(input_dim * [xp]))
+        Xp = np.array(zip(*[m.ravel() for m in Mp]))
+    elif data == "random":
+        X = np.random.rand(n, input_dim)
+        N = X.shape[0]
+        Xp = np.random.rand(100, input_dim)
+    else:
+        raise ValueError("Unknown data mode: %s" % data)
 
     # Kernel sum
     Ksum = Kinterface(data=X, kernel=kernel_sum,
