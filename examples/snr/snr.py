@@ -85,7 +85,10 @@ def generate_data(n, rank,
         Mp = np.meshgrid(*(input_dim * [xp]))
         Xp = np.array(zip(*[m.ravel() for m in Mp]))
     elif data == "random":
-        X = np.random.rand(n, input_dim)
+        # Ensure data is separated at proper lengthscales
+        ls = FITC.gamma2lengthscale(min(gamma_range)) / np.sqrt(input_dim)
+        a, b = -n * ls / 2.0,  n * ls / 2.0
+        X = a + 2 * b * np.random.rand(n, input_dim)
         N = X.shape[0]
         Xp = np.random.rand(100, input_dim)
     else:
