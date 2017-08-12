@@ -9,7 +9,8 @@ import time
 import datetime
 import numpy as np
 import itertools as it
-from examples.snr.snr import generate_data, test
+import matplotlib.pyplot as plt
+from examples.snr.snr import generate_data, test, meth2color
 from multiprocessing import Manager, Process
 from mklaren.regression.ridge import RidgeMKL
 
@@ -110,6 +111,57 @@ def process():
                     "d": input_dim, "n": n, "p": P, "method": method, "limit": limit,
                    "lambda": 0.1, "rank": rank, "time": value}
             writer.writerow(row)
+
+
+def plot_timings(fname):
+    """
+    Summary plot of timings.
+    :param fname: Results.csv file
+    :return:
+    """
+    # Output
+    out_dir = "/Users/martin/Dev/mklaren/examples/output/snr/timings/"
+
+    # Read header and data
+    cols = list(np.genfromtxt(fname, delimiter=",", dtype="str", max_rows=1))
+    data = np.genfromtxt(fname, delimiter=",", dtype="str", skip_header=1)
+
+    # Read columns
+    n = np.array(data[:,cols.index("n")]).astype(int)
+    rank = np.array(data[:, cols.index("rank")]).astype(int)
+    num_k = np.array(data[:, cols.index("p")]).astype(int)
+    method = np.array(data[:, cols.index("method")]).astype(str)
+
+    # Time (minutes)
+    tm = np.array(data[:, cols.index("time")]).astype(float)
+    mins = tm / 60.0
+
+    # Set figure
+    ps = sorted(set(num_k))
+    ranks = sorted(set(rank))
+    fig, axes = plt.subplots(figsize=(3*3.5, 2*3.5),
+                           ncols=len(ranks), nrows=len(ps),
+                           sharex=True, sharey=True)
+    for p, r in it.product(ps, ranks):
+        i, j = ps.index(p), ranks.index(r)
+        ax = axes[i][j]
+        for meth in sorted(set(method), key=lambda m: m not in RidgeMKL.mkls.keys()):
+            fmt = "s--" if meth in RidgeMKL.mkls.keys() else "s-"
+            inxs = ((rank == r) * (p == num_k) * (method == meth)).astype(bool)
+            ax.plot(np.log10(n[inxs]), np.log10(mins[inxs]), fmt, label=meth,
+                     linewidth=2, color=meth2color[meth])
+        ax.grid("on")
+        if j == 0: ax.set_ylabel("log10 time (mins)")
+        if i == len(ps) - 1: ax.set_xlabel("log10 n")
+        ax.set_title("Rank: %d, num. kernels: %d" % (r, p))
+    axes[0][0].legend(ncol=len(set(method))/2, loc=(0, 1.3))
+    pdfile = os.path.join(out_dir, "timings.pdf")
+    epsfile = os.path.join(out_dir, "timings.eps")
+    plt.savefig(pdfile, bbox_inches="tight")
+    plt.savefig(epsfile, bbox_inches="tight")
+    print("Written %s" % pdfile)
+    print("Written %s" % epsfile)
+    plt.close()
 
 
 if __name__ == "__main__":
