@@ -70,7 +70,7 @@ def process():
                                                        data="random")
         # Print after dataset generation
         dat = datetime.datetime.now()
-        print("%s\tn=%d rank=%d p=%d" % (dat, n, rank, P))
+        print("%s\td=%d n=%d rank=%d p=%d" % (dat, input_dim, n, rank, P))
 
         # Evaluate methods
         manager = Manager()
