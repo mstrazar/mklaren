@@ -4,9 +4,10 @@ matplotlib.use("Agg")
 import sys
 import os
 import csv
-import scipy.stats as st
-import datetime
 import time
+import datetime
+import scipy.stats as st
+import itertools as it
 from mklaren.kernel.string_kernel import *
 from mklaren.kernel.string_util import *
 from mklaren.kernel.kernel import kernel_sum
@@ -14,7 +15,6 @@ from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
 from datasets.rnacontext import load_rna, RNA_OPTIMAL_K
-from examples.string.string_lengthscales import generic_function_plot
 from examples.snr.snr import meth2color
 
 #
@@ -47,7 +47,7 @@ trueK = RNA_OPTIMAL_K.get(dset, None)
 # Hyperparameters
 methods = ["Mklaren", "CSI", "Nystrom", "ICD"]
 lbd_range  = [0] + list(np.logspace(-5, 1, 7))  # Regularization parameter
-rank = 5
+rank_range = (2, 10)
 iterations = range(30)
 delta = 10
 n_tr = 1000
@@ -81,7 +81,7 @@ n, L = len(X), len(X[0])
 # Generate random datasets and perform prediction
 count = 0
 seed = 0
-for cv in iterations:
+for rank, cv in it.product(rank_range, iterations):
 
     # Select random test/train indices
     inxs = np.arange(n, dtype=int)
