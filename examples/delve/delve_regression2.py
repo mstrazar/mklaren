@@ -61,11 +61,12 @@ datasets = {
 
 # Hyperparameters
 # rank_range = range(2, 21) + range(20, 85, 5) # Rank range
+rank_range = range(2, 100)
 
 # Comparable parameters with effective methods
 p = 10
 p_range    = (p,)               # Fixed number of kernels
-rank_range = range(10, 90, p)
+# rank_range = range(10, 90, p)
 
 # Other hyperparameters
 lbd_range  = [0] + list(logspace(-5, 1, 7))  # Regularization parameter
@@ -78,10 +79,10 @@ methods = {
                                     "method_init_args": {"delta": delta}}),
     "ICD" :        (RidgeLowRank, {"method": "icd"}),
     "Nystrom":     (RidgeLowRank, {"method": "nystrom"}),
-    "CSI2" :       (RidgeLowRank, {"method": "csi",
+    "CSI*" :       (RidgeLowRank, {"method": "csi",
                                    "method_init_args": {"delta": delta}}),
-    "ICD2" :       (RidgeLowRank, {"method": "icd"}),
-    "Nystrom2":    (RidgeLowRank, {"method": "nystrom"}),
+    "ICD*" :       (RidgeLowRank, {"method": "icd"}),
+    "Nystrom*":    (RidgeLowRank, {"method": "nystrom"}),
     "Mklaren":     (Mklaren,      {"delta": delta}),
     "RFF":         (RFF,          {"delta": delta}),
     "FITC":        (FITC, {}),
@@ -187,7 +188,7 @@ for cv, p in it.product(range(cv_iter), p_range):
                         yptr = model.predict(tr).ravel()
                         ypva = model.predict(tval).ravel()
                         ypte = model.predict(te).ravel()
-                    elif mname in ("CSI2", "ICD2", "Nystrom2"):   # Separate approximations
+                    elif mname in ("CSI*", "ICD*", "Nystrom*"):   # Separate approximations
                         effective_rank = int(max(1, ceil(1.0 * rank / p)))
                         model = Mclass(lbd=lbd, rank=effective_rank, **kwargs)
                         model.fit(Ks, y_tr)
