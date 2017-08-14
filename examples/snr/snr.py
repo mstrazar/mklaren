@@ -18,6 +18,7 @@ if __name__ == "__main__":
     import matplotlib
     matplotlib.use("Agg")
 
+import sys
 import csv
 import datetime
 import os
@@ -405,12 +406,16 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
         t2 = time.time() - t1
         y_fitc = fitc.predict([X]).ravel()
         yp_fitc = fitc.predict([Xp]).ravel()
-        rho_fitc, _ = pearsonr(y_fitc, f)
+        try:
+            rho_fitc, _ = pearsonr(np.round(y_fitc, 4), f)
+        except Exception as e:
+            sys.stderr.write("FITC exception: %s\n" % e)
+            rho_fitc = 0
         evar = (np.var(y) - np.var(y - y_fitc)) / np.var(y)
 
         # Approximate closest active index to each inducing point
         anchors = fitc.anchors_
-        actives = [[np.argmin((a - X.ravel())**2) for a in anchors]]
+        actives = [[np.argmin(np.sum((a - X)**2, axis=1)) for a in anchors]]
 
         results["FITC"] = {
             "rho": rho_fitc,
