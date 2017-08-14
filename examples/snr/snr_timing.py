@@ -78,7 +78,7 @@ def process():
         jobs = dict()
         for method in METHODS:
             if off_limits.get(method, np.inf) <= n:
-                print("%s is off limit for d=%d n=%d rank=%d p=%d" % (input_dim, method, n, rank, P))
+                print("%s is off limit for d=%d n=%d rank=%d p=%d" % (method, input_dim, n, rank, P))
                 return_dict[method] = float("inf")
                 continue
             p = Process(target=wrapsf, name="test",
