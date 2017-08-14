@@ -7,10 +7,12 @@ export NUMEXPR_NUM_THREADS=3
 export OMP_NUM_THREADS=3
 
 for ddir in ../../datasets/rnacontext/full/* ; do
-    dset=`basename $ddir`
-    echo python rnacontext_regr.py $dset
-    python rnacontext_regr.py $dset 2>$dset.2.err.txt 1>$dset.2.out.txt &
-    sleep 1
+    for rank in 2 10 ; do
+        dset=`basename $ddir`
+        echo python rnacontext_regr.py $dset $rank
+        python rnacontext_regr.py $dset $rank 2>$dset.2.err.txt 1>$dset.2.out.txt &
+        sleep 1
+    done
 done
 
 echo "Waiting..."

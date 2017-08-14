@@ -41,13 +41,15 @@ args = [{"mode": SPECTRUM, "K": kl} for kl in K_range]
 kernels = ",".join(set(map(lambda t: t["mode"], args)))
 
 # Load data
-dset = dict(enumerate(sys.argv)).get(1, "U1A_data_full_AB.txt.gz")
+args = dict(enumerate(sys.argv))
+dset = args.get(1, "U1A_data_full_AB.txt.gz")   # Dataset
+rank = int(args.get(2, 5))                      # Rank
 trueK = RNA_OPTIMAL_K.get(dset, None)
 
 # Hyperparameters
 methods = ["Mklaren", "CSI", "Nystrom", "ICD"]
 lbd_range  = [0] + list(np.logspace(-5, 1, 7))  # Regularization parameter
-rank_range = (2, 10)
+rank_range = (rank,)
 iterations = range(30)
 delta = 10
 n_tr = 1000
