@@ -73,6 +73,15 @@ rm = sort(rowMeans(rnk))
 message("Mean ranks:")
 print(rm)
 
+
+# Friedman test on ranks
+message("Friedman test on ranks:")
+friedman.test(R)
+
+# Compare Mklaren and CSI
+message("Wilcoxon test between Mklaren and CSI:")
+print(wilcox.test(R[,c("Mklaren")], R[,c("CSI")], paired=TRUE, alternative="less"))
+
 # Store CD
 fname = sprintf("../output/delve_regression/rank_CD_%s.pdf", name)
 pdf(fname)
