@@ -1,3 +1,8 @@
+hlp = """
+    Datasets available at
+    http://sci2s.ugr.es/keel/category.php?cat=reg
+"""
+
 import gzip
 from glob import glob
 from numpy import genfromtxt
