@@ -32,7 +32,7 @@ def process():
     n_range = np.logspace(2, 6, 9).astype(int)
     rank_range = [5, 10, 30]
     p_range = [1, 3, 10]
-    d_range = [1, 3, 10, 30, 100]
+    d_range = [1, 3, 10, 30, 100][::-1]
     limit = 3600 # 60 minutes
 
     # Safe guard dict to kill off the methods that go over the limit
