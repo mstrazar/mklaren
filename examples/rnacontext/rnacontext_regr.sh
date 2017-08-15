@@ -6,7 +6,7 @@ export MKL_NUM_THREADS=3
 export NUMEXPR_NUM_THREADS=3
 export OMP_NUM_THREADS=3
 
-for rank in 10 20 ; do
+for rank in 10 ; do
     for ddir in ../../datasets/rnacontext/full/* ; do
         dset=`basename $ddir`
         echo python rnacontext_regr.py $dset $rank
