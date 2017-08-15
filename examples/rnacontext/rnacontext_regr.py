@@ -40,6 +40,7 @@ K_range = range(1, 11)
 args = [{"mode": SPECTRUM, "K": kl} for kl in K_range]
 kernels = ",".join(set(map(lambda t: t["mode"], args)))
 
+
 # Load data
 comm = dict(enumerate(sys.argv))
 dset = comm.get(1, "U1A_data_full_AB.txt.gz")   # Dataset
@@ -48,7 +49,7 @@ trueK = RNA_OPTIMAL_K.get(dset, None)
 
 # Hyperparameters
 methods = ["Mklaren", "CSI", "Nystrom", "ICD"]
-lbd_range  = [0] + list(np.logspace(-5, 1, 7))  # Regularization parameter
+lbd_range  = [0] + list(np.logspace(-5, 1, 14))  # Regularization parameter
 rank_range = (rank,)
 iterations = range(30)
 delta = 10
@@ -69,7 +70,7 @@ print("Writing to %s ..." % fname)
 
 # Output
 header = ["dataset", "n", "L", "kernels", "method", "rank", "iteration", "lambda",
-          "time", "evar_tr", "evar_va", "evar", "mse"]
+          "pivots", "time", "evar_tr", "evar_va", "evar", "mse"]
 fp = open(fname, "w", buffering=0)
 writer = csv.DictWriter(fp, fieldnames=header)
 writer.writeheader()
@@ -121,10 +122,12 @@ for rank, cv in it.product(rank_range, iterations):
                     yt = mkl.predict([X_tr] * len(Ks))
                     yv = mkl.predict([X_va] * len(Ks))
                     yp = mkl.predict([X_te] * len(Ks))
+                    pivots = ",".join(map(lambda pi: str(K_range[pi]), mkl.G_mask.astype(int)))
                 except Exception as e:
                     print(e)
                     continue
             else:
+                pivots = ""
                 if method == "CSI":
                     model = RidgeLowRank(rank=rank, method="csi",
                                          method_init_args={"delta": delta}, lbd=lbd)
@@ -145,6 +148,7 @@ for rank, cv in it.product(rank_range, iterations):
             evar_va = (np.var(y_va) - np.var(yv - y_va)) / np.var(y_va)
             evar    = (np.var(y_te) - np.var(yp - y_te)) / np.var(y_te)
             mse     = np.var(yp - y_te)
+            print("%.3f\t%s\t%.3f\t%.3f" % (np.log10(lbd), pivots, evar_va, evar))
 
             # Select best lambda to plot
             if evar_va > best_evar:
@@ -156,7 +160,7 @@ for rank, cv in it.product(rank_range, iterations):
             row = {"L": L, "n": len(X), "method": method, "dataset": dset,
                    "kernels": kernels, "rank": rank, "iteration": cv, "lambda": lbd,
                    "time": t2, "evar_tr": evar_tr, "evar_va": evar_va, "evar": evar,
-                   "mse": mse}
+                   "mse": mse, "pivots": pivots}
 
             writer.writerow(row)
             seed += 1
