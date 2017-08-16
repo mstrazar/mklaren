@@ -49,11 +49,11 @@ trueK = RNA_OPTIMAL_K.get(dset, None)
 
 # Hyperparameters
 methods = ["Mklaren", "CSI", "Nystrom", "ICD"]
-lbd_range  = [0] + list(np.logspace(-5, 1, 14))  # Regularization parameter
+lbd_range  = [0] + list(np.logspace(-5, 1, 7))  # Regularization parameter
 rank_range = (rank,)
 iterations = range(30)
 delta = 10
-n_tr = 1000
+n_tr = 2000
 n_val = 1000
 n_te = 1000
 
