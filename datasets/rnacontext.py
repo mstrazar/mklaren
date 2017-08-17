@@ -3,7 +3,8 @@ from glob import glob
 from numpy import genfromtxt
 from os.path import join, realpath, dirname, basename
 
-RNA_PATH = join(dirname(realpath(__file__)), "rnacontext", "full")
+# RNA_PATH = join(dirname(realpath(__file__)), "rnacontext", "full")
+RNA_PATH = join(dirname(realpath(__file__)), "rnacontext", "weak")
 RNA_DATASETS = map(lambda p: basename(p), glob(join(RNA_PATH, "*")))
 
 # Optimal K as listed in RNAcontext article
