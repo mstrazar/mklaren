@@ -645,7 +645,7 @@ class Mklaren:
                     dot(Kxs).dot(Kssi)
 
 
-    def predict(self, Xs):
+    def predict(self, Xs, Ks=None):
         """Predict responses for test samples.
 
         Each of the kernel low rank approximation has got its corresponding
@@ -653,12 +653,18 @@ class Mklaren:
 
         :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
 
+        :param Ks: (``list``) of (``numpy.ndarray``) Values of the kernel against K[test set, training set]. Optional.
+
         :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
         assert self.trained
-        assert len(Xs) == len(self.data)
-        regr = zeros((Xs[0].shape[0], 1)) + self.bias
-        for pi, X in zip(sorted(self.data.keys()), Xs):
+        assert (Xs is not None and len(Xs) == len(self.data)) or \
+               (Ks is not None and len(Ks) == len(self.data))
+
+        nt = Ks[0].shape[0] if Ks is not None else Xs[0].shape[0]
+        regr = zeros((nt, 1)) + self.bias
+
+        for pi in sorted(self.data.keys()):
             if "Tny" in self.data[pi]:
                 K    = self.data[pi]["K"]
                 Tny  = self.data[pi]["Tny"]
@@ -666,7 +672,10 @@ class Mklaren:
                 beta = self.data[pi]["beta"]
                 gbar = self.data[pi]["gbar"]
                 gnorm = self.data[pi]["gnorm"]
-                Kts  = K(X, K.data[inxs])
+                if Ks is None:
+                    Kts = K(Xs[pi], K.data[inxs])
+                else:
+                    Kts = Ks[pi][:, inxs]
                 if len(Kts.shape) == 1:
                     Kts = Kts.reshape((Kts.shape[0], 1))
                 if len(Tny.shape) == 1:
