@@ -12,7 +12,7 @@ gamma_range = np.logspace(-3, 3, 7)
 count = 0
 for seed in range(30):
     Ksum, Klist, inxs, X, Xp, y, f = generate_data(n=n, rank=5, inducing_mode="uniform",
-                                                   noise=1, gamma_range=gamma_range, seed=seed, input_dim=1)
+                                                   noise=1, par_range=gamma_range, seed=seed, input_dim=1)
     r = test(Ksum, Klist, inxs, X, Xp, y, f, lbd=0, methods=["CSI", "Mklaren"])
 
 

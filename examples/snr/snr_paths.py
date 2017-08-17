@@ -20,7 +20,7 @@ for seed in xrange(42, 42+30):
                                                    rank=rank,
                                                    inducing_mode=inducing_model,
                                                    noise=noise,
-                                                   gamma_range=[1.0],
+                                                   par_range=[1.0],
                                                    seed=seed,
                                                    input_dim=1)
 
