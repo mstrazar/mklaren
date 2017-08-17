@@ -16,26 +16,9 @@ from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
 from datasets.rnacontext import load_rna, RNA_OPTIMAL_K
 from examples.snr.snr import meth2color
+from examples.string.string_lengthscales import generic_function_plot
 
-#
-# # List available kernels
-# args = [
-#     # {"mode": SPECTRUM, "K": 2},
-#     # {"mode": SPECTRUM, "K": 3},
-#     {"mode": SPECTRUM, "K": 3},
-#     {"mode": SPECTRUM, "K": 4},
-#     # {"mode": SPECTRUM, "K": 5},
-#     # {"mode": SPECTRUM_MISMATCH, "K": 2},
-#     {"mode": SPECTRUM_MISMATCH, "K": 3},
-#     {"mode": SPECTRUM_MISMATCH, "K": 4},
-#     # {"mode": SPECTRUM_MISMATCH, "K": 5},
-#     {"mode": WD, "K": 4, "minK": 3},
-#     # {"mode": WD_PI, "K": 2},
-#     # {"mode": WD_PI, "K": 3},
-#     {"mode": WD_PI, "K": 3},
-#     {"mode": WD_PI, "K": 4},
-#     # {"mode": WD_PI, "K": 5},
-# ]
+# List available kernels
 K_range = range(1, 11)
 args = [{"mode": SPECTRUM, "K": kl} for kl in K_range]
 kernels = ",".join(set(map(lambda t: t["mode"], args)))
@@ -53,7 +36,7 @@ lbd_range  = [0] + list(np.logspace(-5, 1, 7))  # Regularization parameter
 rank_range = (rank,)
 iterations = range(30)
 delta = 10
-n_tr = 2000
+n_tr = 1000
 n_val = 1000
 n_te = 1000
 
@@ -148,7 +131,7 @@ for rank, cv in it.product(rank_range, iterations):
             evar_va = (np.var(y_va) - np.var(yv - y_va)) / np.var(y_va)
             evar    = (np.var(y_te) - np.var(yp - y_te)) / np.var(y_te)
             mse     = np.var(yp - y_te)
-            print("%.3f\t%s\t%.3f\t%.3f" % (np.log10(lbd), pivots, evar_va, evar))
+            print("%.3f\t%s\t%.3f\t%.3f" % (np.log10(lbd), pivots, float(evar_va), float(evar)))
 
             # Select best lambda to plot
             if evar_va > best_evar:
@@ -167,9 +150,9 @@ for rank, cv in it.product(rank_range, iterations):
 
 
     # # Plot a funciton fit after selecting best lambda
-    # fname = os.path.join(dname, "%s.generic_plot_cv-%d.pdf" % (dset, cv))
-    # generic_function_plot(f_out=fname, Ks=Ks, X=X_te,
-    #                       models=best_models,
-    #                       xlabel="K-mer length",
-    #                       xnames=K_range,
-    #                       truePar=K_range.index(trueK) if trueK else None)
+    fname = os.path.join(dname, "%s.generic_plot_cv-%d.pdf" % (dset, cv))
+    generic_function_plot(f_out=fname, Ks=Ks, X=X_te,
+                          models=best_models,
+                          xlabel="K-mer length",
+                          xnames=K_range,
+                          truePar=K_range.index(trueK) if trueK else None)
