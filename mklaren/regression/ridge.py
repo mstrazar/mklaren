@@ -205,7 +205,6 @@ class RidgeLowRank:
         self.mu         = None
         self.lr_models  = list()
         self.reg_model  = Ridge(alpha=lbd, normalize=normalize)
-        self.Kinterfaces = None
         self.beta = None
 
 
@@ -213,7 +212,7 @@ class RidgeLowRank:
         """
         Fit multiple kernel functions.
 
-        :param Ks: (``list``) of (``Kinterface``): List of kernel interfaces.
+        :param Ks: (``list``) of (``Kinterface``): List of kernel interfaces or kernel matrics.
 
         :param y: (``numpy.ndarray``) Class labels :math:`y_i \in {-1, 1}` or regression targets.
 
@@ -222,7 +221,6 @@ class RidgeLowRank:
 
         # Store kernels / sum if specified
         self.Ks = Ks
-        self.Kinterfaces = Ks
 
         # Set y as another argument
         if self.method in self.supervised:
@@ -276,31 +274,42 @@ class RidgeLowRank:
 
         self.trained = True
 
-    def transform(self, Xs):
+    def transform(self, Xs, Ks=None):
         """Transform inputs to low-rank feature space.
 
-                :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
+        :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
 
-                :return: (``numpy.ndarray``) Vector of prediction of regression targets.
-                """
+        :param Ks: (``list``) of (``numpy.ndarray``) Values of the kernel against K[test set, training set]. Optional.
+
+        :return: (``numpy.ndarray``) Vector of prediction of regression targets.
+        """
         assert self.trained
         Gs = []
         XT = None
-        for K, X, Trn, active in zip(self.Ks, Xs, self.Ts, self.As, ):
-            K_ST = K(K.data[active], X)
-            G = Trn.dot(K_ST).T
-            Gs.append(G.reshape((len(X), self.rank)))
+        if Ks is None:
+            for K, X, Trn, active in zip(self.Ks, Xs, self.Ts, self.As, ):
+                K_ST = K(K.data[active], X)
+                G = Trn.dot(K_ST).T
+                Gs.append(G.reshape((len(X), self.rank)))
+            XT = hstack(Gs)
+        else:
+            for Kt, Trn, active in zip(Ks, self.Ts, self.As):
+                G = Kt[:, active].dot(Trn.T)
+                Gs.append(G.reshape(Kt.shape[0], self.rank))
             XT = hstack(Gs)
         return XT
 
-    def predict(self, Xs):
+
+    def predict(self, Xs, Ks=None):
         """Predict responses for test samples.
 
         :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
 
+        :param Ks: (``list``) of (``numpy.ndarray``) Values of the kernel against K[test set, training set]. Optional.
+
         :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
-        XT = self.transform(Xs)
+        XT = self.transform(Xs, Ks)
         return self.reg_model.predict(X=XT).ravel()
 
 

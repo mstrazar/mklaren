@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from mklaren.kernel.kernel import exponential_kernel
 from mklaren.kernel.kinterface import Kinterface
-from mklaren.regression.ridge import RidgeMKL
+from mklaren.regression.ridge import RidgeMKL, RidgeLowRank
 
 
 class TestRidge(unittest.TestCase):
@@ -62,3 +62,32 @@ class TestRidgeLowRank(unittest.TestCase):
                 expl_var = (np.var(y[te]) - np.var(y[te] - yp)) / np.var(y[te])
                 method, expl_var, model.mu.ravel()
                 self.assertGreater(expl_var, 0.1)
+
+    def testPredictionKernPrecomp(self):
+        for t in range(self.trials):
+            X = np.random.rand(self.n, self.m)
+            Ks =  [Kinterface(kernel=exponential_kernel, data=X, kernel_args={"gamma": 0.1}),
+                   Kinterface(kernel=exponential_kernel, data=X, kernel_args={"gamma": 0.2}),]
+            Ls = [K[:, :] for K in Ks]
+            y = X[:, :3].sum(axis=1)
+            y = y - y.mean()
+
+            X_te = np.random.rand(10, self.m)
+            Ls_te = [K(X_te, X) for K in Ks]
+            for method in ["icd", "csi", "nystrom"]:
+                print method
+
+                # Kinterface model
+                model0 = RidgeLowRank(method=method, lbd=0.01)
+                model0.fit(Ks, y)
+                y0 = model0.predict([X, X])
+                yp0 = model0.predict([X_te, X_te])
+
+                # Kernel matrix model
+                model1 = RidgeLowRank(method=method, lbd=0.01)
+                model1.fit(Ls, y)
+                y1 = model0.predict(Xs=None, Ks=Ls)
+                yp1 = model0.predict(Xs=None, Ks=Ls_te)
+
+                self.assertAlmostEqual(np.linalg.norm(y0-y1), 0, places=3)
+                self.assertAlmostEqual(np.linalg.norm(yp0-yp1), 0, places=3)
