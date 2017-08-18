@@ -2,7 +2,6 @@ hlp = """
     Timing experiments spawning multiple processes to limit the execution time.
     CSI does not work due to unknown subprocessing (oct2py) issues.
 """
-
 import os
 import csv
 import time
@@ -10,13 +9,23 @@ import datetime
 import numpy as np
 import itertools as it
 import matplotlib.pyplot as plt
+import pickle
+import shutil
+import subprocess
 from examples.snr.snr import generate_data, test, meth2color
 from multiprocessing import Manager, Process
 from mklaren.regression.ridge import RidgeMKL
 
 
 # Global method list
-METHODS = list(RidgeMKL.mkls.keys()) + ["Mklaren", "ICD", "Nystrom", "RFF", "FITC"]
+# METHODS = list(RidgeMKL.mkls.keys()) + ["Mklaren", "ICD", "Nystrom", "RFF", "FITC"]
+# PYTHON = "/Users/martin/Dev/py2/bin/python"
+
+# Run CSI only
+METHODS = ["CSI"]
+TMP_DIR = "temp"
+PYTHON = "python"
+SCRIPT = "snr_timing_child.py"
 
 def wrapsf(Ksum, Klist, inxs, X, Xp, y, f, method, return_dict):
     """ Worker thread ; compute method running time;
@@ -25,9 +34,27 @@ def wrapsf(Ksum, Klist, inxs, X, Xp, y, f, method, return_dict):
     return_dict[method] = r[method]["time"]
     return
 
-def process():
-    """ Run main loop. """
+def wrapCSI(Ksum, Klist, inxs, X, Xp, y, f, method, return_dict):
+    """ Wrap CSI in an outside process"""
+    obj = (Ksum, Klist, inxs, X, Xp, y, f)
+    fname = os.path.join(TMP_DIR, "%s.in.pkl" % hash(str(obj)))
+    fout = os.path.join(TMP_DIR, "%s.out.pkl" % hash(str(obj)))
+    pickle.dump(obj, open(fname, "w"))
+    subprocess.call([PYTHON, SCRIPT, fname, fout])
+    r = pickle.load(open(fout))
+    t = r[method]["time"]
+    return_dict[method] = t
+    return
 
+def cleanup():
+    """ Cleanup after CSI subprocess if killed. """
+    if os.path.exists(TMP_DIR):
+        shutil.rmtree(TMP_DIR)
+    os.makedirs(TMP_DIR)
+    return
+
+
+def process():
     # Fixed hyperparameters
     n_range = np.logspace(2, 6, 9).astype(int)
     rank_range = [5, 10, 30]
@@ -58,6 +85,9 @@ def process():
     # Main loop
     for input_dim, P, rank, n in it.product(d_range, p_range, rank_range, n_range):
 
+        # Cleanup
+        cleanup()
+
         # Generate a dataset of give rank
         gamma_range = np.logspace(-3, 6, P)
         Ksum, Klist, inxs, X, Xp, y, f = generate_data(n=n,
@@ -81,9 +111,14 @@ def process():
                 print("%s is off limit for d=%d n=%d rank=%d p=%d" % (method, input_dim, n, rank, P))
                 return_dict[method] = float("inf")
                 continue
-            p = Process(target=wrapsf, name="test",
-                        args=(Ksum, Klist, inxs, X, Xp,
-                              y, f, method, return_dict))
+            if method == "CSI":
+                p = Process(target=wrapCSI, name="test_%s" % method,
+                            args=(Ksum, Klist, inxs, X, Xp,
+                                  y, f, method, return_dict))
+            else:
+                p = Process(target=wrapsf, name="test_%s" % method,
+                            args=(Ksum, Klist, inxs, X, Xp,
+                                  y, f, method, return_dict))
             p.start()
             jobs[method] = p
 
