@@ -12,4 +12,4 @@ f_out = sys.argv[2]
 obj = pickle.load(open(f_in))
 Ksum, Klist, inxs, X, Xp, y, f = obj
 r = test(Ksum, Klist, inxs, X, Xp, y, f, methods=("CSI",), lbd=0.1)
-pickle.dump(r, open(f_out, "w"))
+pickle.dump(r, open(f_out, "w"), protocol=pickle.HIGHEST_PROTOCOL)

@@ -39,7 +39,7 @@ def wrapCSI(Ksum, Klist, inxs, X, Xp, y, f, method, return_dict):
     obj = (Ksum, Klist, inxs, X, Xp, y, f)
     fname = os.path.join(TMP_DIR, "%s.in.pkl" % hash(str(obj)))
     fout = os.path.join(TMP_DIR, "%s.out.pkl" % hash(str(obj)))
-    pickle.dump(obj, open(fname, "w"))
+    pickle.dump(obj, open(fname, "w"), protocol=pickle.HIGHEST_PROTOCOL)
     subprocess.call([PYTHON, SCRIPT, fname, fout])
     r = pickle.load(open(fout))
     t = r[method]["time"]
