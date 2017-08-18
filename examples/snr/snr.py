@@ -365,7 +365,10 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
         yp_csi = csi.predict([Xp])
         active_csi = csi.active_set_
         anchors_csi = [X[ix] for ix in active_csi]
-        rho_csi, _ = pearsonr(y_csi, f)
+        try:
+            rho_csi, _ = pearsonr(y_csi, f)
+        except Exception as e:
+            rho_csi = 0
         evar = (np.var(y) - np.var(y - y_csi)) / np.var(y)
         results["CSI"] = {
                 "rho": rho_csi,
