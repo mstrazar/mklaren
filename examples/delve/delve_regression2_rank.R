@@ -2,7 +2,6 @@ require(scmamp)
 require(xtable)
 setwd("/Users/martin/Dev/mklaren/examples/delve/")
 
-# Relevant files - DELVE
 # Target methods
 target = "L2KRR" 
 
@@ -41,8 +40,8 @@ alldata$best = alldata$RMSE_va == agg[inxs, "x"]
 data = alldata[alldata$best,]
 
 # Aggregate mean and sd per rank
-agg.m = aggregate(data[, "RMSE"], by=list(dataset=data[,"dataset"], method=data[, "method"], rank=data[, "rank"]), mean)
-agg.s = aggregate(data[, "RMSE"], by=list(dataset=data[,"dataset"], method=data[, "method"], rank=data[, "rank"]), sd)
+agg.m = aggregate(data[, "RMSE"], by=list(dataset=data[,"dataset"], method=data[, "method"], eff.rank=data[, "eff.rank"]), mean)
+agg.s = aggregate(data[, "RMSE"], by=list(dataset=data[,"dataset"], method=data[, "method"], eff.rank=data[, "eff.rank"]), sd)
 
 # Aggregate mean and sd per rank
 inxs = agg.m$method == target
@@ -52,7 +51,8 @@ names(t) <- agg.m[inxs, "dataset"]
 # Select valid entries
 filt = agg.m$x < t[agg.m$dataset] & agg.m$method %in% meths
 agg.valid = agg.m[filt,]
-agg.min = aggregate(agg.valid$rank, by=list(dataset=agg.valid$dataset, method=agg.valid$method), min) 
+# agg.min = aggregate(agg.valid$rank, by=list(dataset=agg.valid$dataset, method=agg.valid$method), min) 
+agg.min = aggregate(agg.valid$eff.rank, by=list(dataset=agg.valid$dataset, method=agg.valid$method), min) 
 
 # Extract minimal rank and corresponding time
 for (i in 1:nrow(agg.min)){
@@ -65,6 +65,10 @@ for (i in 1:nrow(agg.min)){
 }
 
 # Rank ; eliminate rows with all inifinite rank
+excluded = rowSums(is.na(R[,matrices])) >= length(matrices)
+message("Excluded datasets:")
+print(row.names(R)[excluded])
+
 zout = rowSums(is.na(R[,matrices])) < length(matrices)
 R[is.na(R)] = Inf
 R = R[zout,]
