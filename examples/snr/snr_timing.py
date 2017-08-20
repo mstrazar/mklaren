@@ -148,10 +148,12 @@ def process():
             writer.writerow(row)
 
 
-def plot_timings(fname):
+def plot_timings(fname, num_kernels=10, dims=(1, 10, 100)):
     """
     Summary plot of timings.
     :param fname: Results.csv file
+    :param num_kernels: Number of kernels.
+    :param dims: Selected dimensions.
     :return:
     """
     # Output
@@ -161,37 +163,38 @@ def plot_timings(fname):
     cols = list(np.genfromtxt(fname, delimiter=",", dtype="str", max_rows=1))
     data = np.genfromtxt(fname, delimiter=",", dtype="str", skip_header=1)
 
-    # Read columns
-    n = np.array(data[:,cols.index("n")]).astype(int)
-    rank = np.array(data[:, cols.index("rank")]).astype(int)
+    # Filter by number of kernels.
     num_k = np.array(data[:, cols.index("p")]).astype(int)
-    method = np.array(data[:, cols.index("method")]).astype(str)
+    inxs = num_k == num_kernels
 
-    # Time (minutes)
-    tm = np.array(data[:, cols.index("time")]).astype(float)
+    # Read columns
+    method = np.array(data[inxs, cols.index("method")]).astype(str)
+    n = np.array(data[inxs, cols.index("n")]).astype(int)
+    dim = np.array(data[inxs, cols.index("d")]).astype(int)
+    rank = np.array(data[inxs, cols.index("rank")]).astype(int)
+    tm = np.array(data[inxs, cols.index("time")]).astype(float)
     mins = tm / 60.0
 
     # Set figure
-    ps = sorted(set(num_k))
     ranks = sorted(set(rank))
     fig, axes = plt.subplots(figsize=(3*3.5, 2*3.5),
-                           ncols=len(ranks), nrows=len(ps),
+                           ncols=len(ranks), nrows=len(dims),
                            sharex=True, sharey=True)
-    for p, r in it.product(ps, ranks):
-        i, j = ps.index(p), ranks.index(r)
+    for d, r in it.product(dims, ranks):
+        i, j = dims.index(d), ranks.index(r)
         ax = axes[i][j]
         for meth in sorted(set(method), key=lambda m: m not in RidgeMKL.mkls.keys()):
             fmt = "s--" if meth in RidgeMKL.mkls.keys() else "s-"
-            inxs = ((rank == r) * (p == num_k) * (method == meth)).astype(bool)
+            inxs = ((rank == r) * (dim == d) * (method == meth)).astype(bool)
             ax.plot(np.log10(n[inxs]), np.log10(mins[inxs]), fmt, label=meth,
                      linewidth=2, color=meth2color[meth])
         ax.grid("on")
         if j == 0: ax.set_ylabel("log10 time (mins)")
-        if i == len(ps) - 1: ax.set_xlabel("log10 n")
-        ax.set_title("Rank: %d, num. kernels: %d" % (r, p))
+        if i == len(dims) - 1: ax.set_xlabel("log10 n")
+        ax.set_title("Rank: %d, input dim: %d" % (r, d))
     axes[0][0].legend(ncol=len(set(method))/2, loc=(0, 1.3))
-    pdfile = os.path.join(out_dir, "timings.pdf")
-    epsfile = os.path.join(out_dir, "timings.eps")
+    pdfile = os.path.join(out_dir, "timings_p-%d.pdf" % num_kernels)
+    epsfile = os.path.join(out_dir, "timings_p-%d.eps" % num_kernels)
     plt.savefig(pdfile, bbox_inches="tight")
     plt.savefig(epsfile, bbox_inches="tight")
     print("Written %s" % pdfile)
