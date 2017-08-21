@@ -18,11 +18,11 @@ from mklaren.regression.ridge import RidgeMKL
 
 
 # Global method list
-# METHODS = list(RidgeMKL.mkls.keys()) + ["Mklaren", "ICD", "Nystrom", "RFF", "FITC"]
+METHODS = list(RidgeMKL.mkls.keys()) + ["Mklaren", "ICD", "Nystrom", "RFF", "FITC", "CSI"]
+# METHODS = ["CSI"]
 # PYTHON = "/Users/martin/Dev/py2/bin/python"
 
 # Run CSI only
-METHODS = ["CSI"]
 TMP_DIR = "temp"
 PYTHON = "python"
 SCRIPT = "snr_timing_child.py"
@@ -59,12 +59,12 @@ def process():
     n_range = np.logspace(2, 6, 9).astype(int)
     rank_range = [5, 10, 30]
     p_range = [1, 3, 10]
-    d_range = [1, 3, 10, 30, 100]
+    d_range = [1, 10, 100]
     limit = 3600 # 60 minutes
 
     # Safe guard dict to kill off the methods that go over the limit
-    # Set a prior limit to full-rank methods to 1e5
-    off_limits = dict([(m, int(2e5)) for m in RidgeMKL.mkls.keys()])
+    # Set a prior limit to full-rank methods to 4e5
+    off_limits = dict([(m, int(4e5)) for m in RidgeMKL.mkls.keys()])
 
     # Fixed output
     # Create output directory
