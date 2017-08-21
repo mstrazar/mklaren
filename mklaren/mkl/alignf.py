@@ -42,14 +42,16 @@ options['show_progress'] = False
 
 class Alignf:
 
-    def __init__(self, typ="linear"):
+    def __init__(self, typ="linear", lbd2=1e-5):
         """
         :param typ: (``str``) "linear" or "convex" combination of kernels.
+        :param lbd2: (``float``) Noise (regularization) to guarantee inversion of the kernel-target projection matrix.
         """
         assert typ in ["linear", "convex"]
         self.typ = typ
         self.trained = False
         self.low_rank = False
+        self.lbd2 = lbd2
 
 
     def fit(self, Ks, y, holdout=None):
@@ -100,21 +102,21 @@ class Alignf:
             for (i, K), (j, L) in combinations(list(en), 2):
                 M[i, j] = M[j, i] = fro_prod(center_kernel(K), center_kernel(L))
                 if a[i] == 0:
-                    M[i, i] = fro_prod(center_kernel(K), center_kernel(K))
+                    M[i, i] = self.lbd2 + fro_prod(center_kernel(K), center_kernel(K))
                     a[i] = fro_prod(center_kernel(K), Ky)
                 if a[j] == 0:
-                    M[j, j] = fro_prod(center_kernel(L), center_kernel(L))
+                    M[j, j] = self.lbd2 + fro_prod(center_kernel(L), center_kernel(L))
                     a[j] = fro_prod(center_kernel(L), Ky)
         else:
             for (i, K), (j, L) in combinations(list(en), 2):
                 M[i, j] = M[j, i] = fro_prod_low_rank(center_kernel_low_rank(K),
                                                       center_kernel_low_rank(L))
                 if a[i] == 0:
-                    M[i, i] = fro_prod_low_rank(center_kernel_low_rank(K),
+                    M[i, i] = self.lbd2 + fro_prod_low_rank(center_kernel_low_rank(K),
                                                 center_kernel_low_rank(K))
                     a[i] = fro_prod_low_rank(center_kernel_low_rank(K), y)
                 if a[j] == 0:
-                    M[j, j] = fro_prod_low_rank(center_kernel_low_rank(L),
+                    M[j, j] = self.lbd2 + fro_prod_low_rank(center_kernel_low_rank(L),
                                                 center_kernel_low_rank(L))
                     a[j] = fro_prod_low_rank(center_kernel_low_rank(L), y)
 
