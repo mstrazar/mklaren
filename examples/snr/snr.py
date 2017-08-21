@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Motivation: If one is allowed to sample columns with regularization,
 this leads to lower errors at high noise levels.
@@ -17,6 +18,10 @@ Add more kernels?
 if __name__ == "__main__":
     import matplotlib
     matplotlib.use("Agg")
+
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 import sys
 import csv
@@ -576,35 +581,51 @@ def cumulative_histogram(in_file, out_dir):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
+    # Organize by hyperparameters
     hists = dict()
     for row in data:
-        ky = (row["noise.model"], row["sampling.model"],
-              row["n"], row["rank"], row.get("lbd", 0), row["gamma"])
-
+        ky0 = (row["n"], row["rank"], row.get("lbd", 0), row["gamma"])
+        ky1 = (row["noise.model"], row["sampling.model"])
+        method = row["method"]
         actives = np.array(row["avg.actives"], dtype=int)
-        if ky not in hists: hists[ky] = dict()
-        hists[ky][row["method"]] = actives
+        if ky0 not in hists: hists[ky0] = dict()
+        if ky1 not in hists[ky0]: hists[ky0][ky1] = dict()
+        hists[ky0][ky1][method] = actives
 
-    for ky in hists.keys():
-        noise, sampling, n, rank, lbd, gamma = ky
-        plt.figure(figsize=(5, 4))
-        for meth, samp in hists[ky].iteritems():
-            counts, bins = np.histogram(samp, normed=False)
-            probs = 1.0 * counts / counts.sum()
-            centers = bin_centers(bins)
-            cums = np.cumsum(probs)
-            fmt = "--" if meth == "True" else ".-"
-            plt.plot(centers, cums, fmt, color=meth2color[meth], label=meth)
-        plt.legend(loc=2)
-        plt.ylabel("Cumulative probability")
-        plt.xlabel("Inducing point (pivot) location")
-        plt.title("Noise:%s sampling:%s K=%d, $\gamma=%.1f$" % (noise, sampling, rank, gamma))
+    # Composite figure
+    cols = ["fixed", "increasing"]
+    rows = ["uniform", "biased"]
+    for ky0, dd in hists.items():
+        n, rank, lbd, gamma = ky0
+        fig, axes = plt.subplots(figsize=(4.72, 4.72), ncols=2, nrows=2, sharex=True, sharey=True)
+        for (noise, sampling), samples in dd.iteritems():
+            i, j = rows.index(sampling), cols.index(noise)
+            ax = axes[i][j]
+            for meth, samp in samples.iteritems():
+                counts, bins = np.histogram(samp, normed=False)
+                probs = 1.0 * counts / counts.sum()
+                centers = bin_centers(bins)
+                cums = np.cumsum(probs)
+                fmt = "--" if meth == "True" else "s-"
+                label = meth.replace("Nystrom", "Nyström")
+                if i + j == 0: ax.plot(centers, cums, fmt, color=meth2color[meth], linewidth=2, label=label)
+                else:          ax.plot(centers, cums, fmt, color=meth2color[meth], linewidth=2)
+                if j == 0: ax.set_ylabel("Cumulative probability")
+                if i == 1: ax.set_xlabel("Inducing point (pivot) location")
+                ax.set_title("Noise: %s \n sampling: %s" % (noise, sampling))
+                ax.grid("on")
 
-        fname = "cumhist_noise-%s_sampling-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.pdf" % \
-                (noise, sampling, n, rank, lbd, gamma)
-        plt.savefig(os.path.join(out_dir, fname), bbox_inches="tight")
+        # Layout + legend
+        axes[0][0].legend(ncol=3, loc=(0, 1.3))
+        fig.tight_layout()
+
+        # Store to files
+        for ext in ("pdf", "eps"):
+            fname = "cumhist_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.%s" % (n, rank, lbd, gamma, ext)
+            plt.savefig(os.path.join(out_dir, fname), bbox_inches="tight")
+            print("Written %s" % fname)
         plt.close()
-        print("Written %s" % fname)
+
 
 
 def example_models(out_dir):

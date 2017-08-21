@@ -1,14 +1,16 @@
 require(ggplot2)
 require(xtable)
 
-# Output directory
+# Set paths
 setwd("/Users/martin/Dev/mklaren/examples")
 tabdir = "output/snr/tables/"
+in_file = "output/snr/sampling.csv"
+samp_dir = "output/snr/samples/"
 
 # Load data
 # Initial results for rank 3 and rank 5 and different combinations of gamma;
 # all lbd & n; wider range of noise and lambda; iterate over rank.
-data = read.csv("output/snr/2017-5-30/results_14.csv", header=TRUE, stringsAsFactors = FALSE) 
+data = read.csv(in_file, header=TRUE, stringsAsFactors = FALSE) 
 data$setting = sprintf("%s/%s",  data$sampling.model, data$noise.model)
 settings = c("uniform/fixed", "uniform/increasing", "biased/fixed", "biased/increasing")
 
@@ -17,10 +19,10 @@ for (i in 1:nrow(data)){
   row = data[i,]
   fname = sprintf("actives_method-%s_noise-%s_sampling-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.txt",
                    row$method, row$noise.model, row$sampling.model, row$n, row$rank, row$lbd, row$gamma)
-  samp = read.table(file.path("output/snr/2017-5-30/details_14/samples/", fname))$V1
+  samp = read.table(file.path(samp_dir, fname))$V1
   fname = sprintf("actives_method-%s_noise-%s_sampling-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.txt",
                   "True", row$noise.model, row$sampling.model, row$n, row$rank, row$lbd, row$gamma)
-  tru = read.table(file.path("output/snr/2017-5-30/details_14/samples/", fname))$V1
+  tru = read.table(file.path(samp_dir, fname))$V1
   test = ks.test(samp, tru, exact = FALSE)
   data[i, "KS.stat"] = test$statistic
   data[i, "KS.pvalue"] = test$p.value
@@ -43,13 +45,14 @@ row.names(M) <- settings
 n = 100
 lbd = 0
 
-# Construct tables dependent on sampling metr
+# Construct tables dependent on sampling metric; round at 3 decimals
 grid = expand.grid(metrics, ranks, gammas, stringsAsFactors = FALSE)
 colnames(grid) <- c("metric", "rank", "gamma")
 for (gi in 1:nrow(grid)){
   M[,] = ""
   gr = grid[gi,]
   df = data[data$n == n & data$lbd == lbd & data$rank == gr$rank & data$gamma == gr$gamma,]
+  df[,gr$metric] = round(df[,gr$metric], 3)
   
   for (i in 1:nrow(df)){
     row = df[i,]
@@ -58,11 +61,8 @@ for (gi in 1:nrow(grid)){
     score = row[,gr$metric]
     best = row[,gr$metric] == min(df[df$setting == ri, gr$metric])
     
-    # Add prefix
-    sfx = ""
-    # if(gr$metric == "KS.stat") sfx = sprintf("(%.1e)", row$KS.pvalue)
-    
     # Bold best scores
+    sfx = ""
     if(best){
       M[ri, ci] = sprintf("\\textbf{%.3f %s}", score, sfx)  
     } else {
