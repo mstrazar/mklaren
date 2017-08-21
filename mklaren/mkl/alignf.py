@@ -29,10 +29,9 @@ or contraining sum of weights to a convex combination (``typ=convex``):
     \sum \mu_q = 1,  \mu_q > 0, q = 1...p
 """
 
-
 from ..util.la import fro_prod, fro_prod_low_rank
 from ..kernel.kernel import center_kernel, center_kernel_low_rank
-from numpy import zeros, eye, array, ndarray
+from numpy import zeros, eye, array, ndarray, ones
 from numpy.linalg import inv, norm
 from itertools import combinations
 from cvxopt.solvers import qp as QP, options
@@ -93,33 +92,33 @@ class Alignf:
                 Ksa    = Ks
                 en     = enumerate(Ksa)
 
-
-
-        a = zeros((p, 1))
-        M = zeros((p, p))
-
-        if not self.low_rank:
-            for (i, K), (j, L) in combinations(list(en), 2):
-                M[i, j] = M[j, i] = fro_prod(center_kernel(K), center_kernel(L))
-                if a[i] == 0:
-                    M[i, i] = self.lbd2 + fro_prod(center_kernel(K), center_kernel(K))
-                    a[i] = fro_prod(center_kernel(K), Ky)
-                if a[j] == 0:
-                    M[j, j] = self.lbd2 + fro_prod(center_kernel(L), center_kernel(L))
-                    a[j] = fro_prod(center_kernel(L), Ky)
+        if p == 1:
+            a = ones((p, 1))
+            M = ones((p, p))
         else:
-            for (i, K), (j, L) in combinations(list(en), 2):
-                M[i, j] = M[j, i] = fro_prod_low_rank(center_kernel_low_rank(K),
-                                                      center_kernel_low_rank(L))
-                if a[i] == 0:
-                    M[i, i] = self.lbd2 + fro_prod_low_rank(center_kernel_low_rank(K),
-                                                center_kernel_low_rank(K))
-                    a[i] = fro_prod_low_rank(center_kernel_low_rank(K), y)
-                if a[j] == 0:
-                    M[j, j] = self.lbd2 + fro_prod_low_rank(center_kernel_low_rank(L),
-                                                center_kernel_low_rank(L))
-                    a[j] = fro_prod_low_rank(center_kernel_low_rank(L), y)
-
+            a = zeros((p, 1))
+            M = zeros((p, p))
+            if not self.low_rank:
+                for (i, K), (j, L) in combinations(list(en), 2):
+                    M[i, j] = M[j, i] = fro_prod(center_kernel(K), center_kernel(L))
+                    if a[i] == 0:
+                        M[i, i] = self.lbd2 + fro_prod(center_kernel(K), center_kernel(K))
+                        a[i] = fro_prod(center_kernel(K), Ky)
+                    if a[j] == 0:
+                        M[j, j] = self.lbd2 + fro_prod(center_kernel(L), center_kernel(L))
+                        a[j] = fro_prod(center_kernel(L), Ky)
+            else:
+                for (i, K), (j, L) in combinations(list(en), 2):
+                    M[i, j] = M[j, i] = fro_prod_low_rank(center_kernel_low_rank(K),
+                                                          center_kernel_low_rank(L))
+                    if a[i] == 0:
+                        M[i, i] = self.lbd2 + fro_prod_low_rank(center_kernel_low_rank(K),
+                                                    center_kernel_low_rank(K))
+                        a[i] = fro_prod_low_rank(center_kernel_low_rank(K), y)
+                    if a[j] == 0:
+                        M[j, j] = self.lbd2 + fro_prod_low_rank(center_kernel_low_rank(L),
+                                                    center_kernel_low_rank(L))
+                        a[j] = fro_prod_low_rank(center_kernel_low_rank(L), y)
 
         if self.typ == "linear":
             Mi = inv(M)
