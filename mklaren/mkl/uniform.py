@@ -13,6 +13,10 @@ class UniformAlignment:
 
     def __init__(self):
         self.trained = False
+        self.mu = None
+        self.Ks = None
+        self.trained = None
+        self.Kappa = None
 
     def fit(self, Ks):
         """
@@ -24,6 +28,7 @@ class UniformAlignment:
         self.mu = ones((len(Ks), ))
         self.Ks = Ks
         self.trained = True
+        self.Kappa = sum([K[:, :] for K in Ks])
 
     def __call__(self, i, j):
         """
@@ -41,9 +46,9 @@ class UniformAlignment:
         if isinstance(j, ndarray):
             j = j.astype(int).ravel()
         if isinstance(i, int) and isinstance(j, int):
-            return sum([K[i, j] for K in self.Ks])
+            return self.Kappa[i, j]
         else:
-            return sum([K[i, :][:, j] for K in self.Ks])
+            return self.Kappa[i, :][:, j]
 
     def __getitem__(self, item):
         """
@@ -54,7 +59,7 @@ class UniformAlignment:
         :return:  (``numpy.ndarray``) Value of the kernel matrix for item.
         """
         assert self.trained
-        return sum([K[item] for K in self.Ks])
+        return self.Kappa[item]
 
 
 
