@@ -64,7 +64,7 @@ te = range(n_tr+n_val, n_tr+n_val+n_te)
 for cv in cv_iter:
 
     # Random subset of N sequences of length L
-    X, _ = generate_data(N=N, L=L, p=0.0, motif="TGTG", mean=0, var=3)
+    X, _ = generate_data(N=N, L=L, p=0.0, motif="TGTG", mean=0, var=3, seed=cv)
     X = np.array(X)
 
     # Split into training in test set
@@ -159,4 +159,5 @@ for cv in cv_iter:
                           models=best_models,
                           xlabel="K-mer length",
                           xnames=K_range,
-                          truePar=K_range.index(trueK))
+                          truePar=K_range.index(trueK),
+                          seed=0)
