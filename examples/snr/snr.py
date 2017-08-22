@@ -617,7 +617,7 @@ def cumulative_histogram(in_file, out_dir):
                 ax.grid("on")
 
         # Layout + legend
-        axes[0][0].legend(ncol=3, loc=(0, 1.3))
+        axes[0][0].legend(ncol=3, loc=(0, 1.3), frameon=False)
         fig.tight_layout()
 
         # Store to files
