@@ -2,6 +2,7 @@ require(ggplot2)
 require(scmamp)
 setwd("~/Dev/mklaren/examples/string")
 
+# Plot example: cv_K-4_cv-1.pdf.pkl.gz
 # 30 replications with K-mer plots and CV w.r.t. regularization
 in_dir = "../output/string_lengthscales_cv_val/"
 in_file = file.path(in_dir, "2017-8-10/results_0.csv")
