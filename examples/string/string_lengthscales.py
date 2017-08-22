@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 import scipy.stats as st
 import matplotlib.pyplot as plt
 import pickle
@@ -13,7 +18,7 @@ from mklaren.regression.ridge import RidgeLowRank
 
 
 def generic_function_plot(f_out, Ks, X, models=(),
-                          sample_size=1000, seed=None,
+                          sample_size=5000, seed=None,
                           title="", xnames=(), xlabel="", truePar=None):
     """
     Plot a general function in any input space. Depending on (typically many) kernel hyperparameters,
@@ -65,10 +70,10 @@ def generic_function_plot(f_out, Ks, X, models=(),
             corrs[label] = corrs.get(label, []) + [pc[0]]
 
     # Plot a summary figure
-    plt.figure()
+    plt.figure(figsize=(3.2, 2.75))
     plt.title(title)
     for label, pc_vec in corrs.items():
-        kwargs = {"label": label}
+        kwargs = {"label": label.replace("Nystrom", "Nyström")}
         color = models[label].get("color", None)
         fmt = models[label].get("fmt", None)
         if color: kwargs["color"] = color
@@ -76,10 +81,10 @@ def generic_function_plot(f_out, Ks, X, models=(),
         plt.plot(par_range, pc_vec, linewidth=2, **kwargs)
 
     # X
-    plt.ylabel("Pearson correlation $d(i, j)$, $|y_i-y_j|$")
+    plt.ylabel("Pearson correlation $d(i, j)$, $|yp_i-yp_j|$")
     ylim = plt.gca().get_ylim()
     if truePar is not None:
-        plt.plot((truePar, truePar), ylim, "-", color="black", label="True hyperpar.")
+        plt.plot((truePar, truePar), ylim, "-", color="black")
     plt.ylim(ylim)
 
     # Y
@@ -88,8 +93,9 @@ def generic_function_plot(f_out, Ks, X, models=(),
     plt.xlim(par_range[0]-0.5, par_range[-1]+0.5)
     if len(xnames): plt.gca().set_xticklabels(map(str, xnames))
     plt.grid("on")
-    plt.legend(loc="best")
-    plt.savefig(f_out)
+    # plt.legend(loc="best")
+    plt.legend(ncol=3, loc=(0, 1.1), frameon=False)
+    plt.savefig(f_out, bbox_inches="tight")
     plt.close()
 
     obj = {"f_out": f_out,
