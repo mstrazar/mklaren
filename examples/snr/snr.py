@@ -242,8 +242,9 @@ def plot_signal_subplots(X, Xp, y, f, models=None, f_out=None):
     ymin, ymax = y.min(), y.max()
     nmods = len(models)
 
-    fig, ax = plt.subplots(sharex=True, ncols=1, nrows=nmods, figsize=(4.72, nmods * 1.0))
+    fig, ax = plt.subplots(sharex=True, ncols=1, nrows=nmods, figsize=(4.33, nmods * 0.8))
     for mi, (label, data) in enumerate(sorted(models.items(), key=lambda t: meth_order.index(t[0]))):
+        lbl = label.replace("Nystrom", "Nyström")
         yp = data.get("yp", np.zeros((len(X),)))
         color = meth2color[label]
 
@@ -259,7 +260,7 @@ def plot_signal_subplots(X, Xp, y, f, models=None, f_out=None):
         ancs = np.array(anchors).ravel()
         ax[mi].plot(ancs, [ymin + (ymax - ymin) * 0.05] * len(ancs),
                     "^", color=color, markersize=8, alpha=0.6)
-        ax[mi].set_ylabel(label)
+        ax[mi].set_ylabel(lbl)
 
     ax[-1].set_xlabel("Input space (x)")
     fig.tight_layout()
