@@ -347,7 +347,10 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
         yp_Klist = mkl.predict([Xp] * len(Klist))
         active_Klist = [flatten([mkl.data.get(gi, {}).get("act", []) for gi in range(P)])]
         anchors_Klist = [X[ix] for ix in active_Klist]
-        rho_Klist, _ = pearsonr(y_Klist, f)
+        try:
+            rho_Klist, _ = pearsonr(y_Klist, f)
+        except Exception as e:
+            rho_Klist = 0
         evar = (np.var(y) - np.var(y - y_Klist)) / np.var(y)
         results["Mklaren"] = {
                      "rho": rho_Klist,
@@ -395,7 +398,10 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
         t2 = time.time() - t1
         y_rff = rff.predict(X)
         yp_rff = rff.predict(Xp)
-        rho_rff, _ = pearsonr(y_rff, f)
+        try:
+            rho_rff, _ = pearsonr(y_rff, f)
+        except Exception as e:
+            rho_rff = 0
         evar = (np.var(y) - np.var(y - y_rff)) / np.var(y)
         results["RFF"] = {
             "rho": rho_rff,
@@ -449,7 +455,10 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
         yp_icd = icd.predict([Xp])
         active_icd = icd.active_set_
         anchors_icd = [X[ix] for ix in active_icd]
-        rho_icd, _ = pearsonr(y_icd, f)
+        try:
+            rho_icd, _ = pearsonr(y_icd, f)
+        except Exception as e:
+            rho_icd = 0
         evar = (np.var(y) - np.var(y - y_icd)) / np.var(y)
         results["ICD"] = {"rho": rho_icd,
                 "active": active_icd,
@@ -473,7 +482,10 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
         yp_nystrom = nystrom.predict([Xp])
         active_nystrom = nystrom.active_set_
         anchors_nystrom = [X[ix] for ix in active_nystrom]
-        rho_nystrom, _ = pearsonr(y_nystrom, f)
+        try:
+            rho_nystrom, _ = pearsonr(y_nystrom, f)
+        except Exception as e:
+            rho_nystrom = 0
         evar = (np.var(y) - np.var(y - y_nystrom)) / np.var(y)
         results["Nystrom"] = {
                 "rho": rho_nystrom,
