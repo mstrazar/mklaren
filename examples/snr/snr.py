@@ -613,7 +613,8 @@ def cumulative_histogram(in_file, out_dir):
                 else:          ax.plot(centers, cums, fmt, color=meth2color[meth], linewidth=2)
                 if j == 0: ax.set_ylabel("Cumulative probability")
                 if i == 1: ax.set_xlabel("Inducing point (pivot) location")
-                ax.set_title("Noise: %s \n sampling: %s" % (noise, sampling))
+                lbl = chr(97+(2*i+j))
+                ax.set_title("(%s) noise: %s \n sampling: %s" % (lbl, noise, sampling))
                 ax.grid("on")
 
         # Layout + legend
