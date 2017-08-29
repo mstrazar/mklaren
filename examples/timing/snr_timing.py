@@ -17,18 +17,22 @@ import matplotlib.pyplot as plt
 import pickle
 import shutil
 import subprocess
-from examples.snr.snr import generate_data, test, meth2color
+import argparse
+from examples.inducing_points.inducing_points import generate_data, test, meth2color
 from multiprocessing import Manager, Process
 from mklaren.regression.ridge import RidgeMKL
 
+# Hyperparameters
+n_range    = np.logspace(2, 6, 9).astype(int) # Varying number of data points
+rank_range = [5, 30]                          # Varying approximation rank
+p_range    = [1, 10]                          # Varying number of kernels
+d_range    = [100]                            # Varying input dimension
+limit      = 3600                             # Time limit (in seconds)for each subprocess; Recommended: 60 minutes
 
 # Global method list
 METHODS = list(RidgeMKL.mkls.keys()) + ["Mklaren", "ICD", "Nystrom", "RFF", "FITC", "CSI"]
 
-# METHODS = ["CSI"]
-# PYTHON = "/Users/martin/Dev/py2/bin/python"
-
-# Run CSI only
+# Settings related to CSI only ; Must be run in a child process
 TMP_DIR = "temp"
 PYTHON = "python"
 SCRIPT = "snr_timing_child.py"
@@ -41,14 +45,13 @@ names = {"align": "Align",
          "uniform": "Uniform"}
 
 def wrapsf(Ksum, Klist, inxs, X, Xp, y, f, method, return_dict):
-    """ Worker thread ; compute method running time;
-        funky behaviour on OSX if you run a simple np.linalg.inv ; works on Ubuntu; """
+    """ Worker thread ; compute method running time; works on Ubuntu/Linux systems; """
     r = test(Ksum, Klist, inxs, X, Xp, y, f, methods=(method,), lbd=0.1)
     return_dict[method] = r[method]["time"]
     return
 
 def wrapCSI(Ksum, Klist, inxs, X, Xp, y, f, method, return_dict):
-    """ Wrap CSI in an outside process"""
+    """ Wrap CSI in a child process via system call. """
     obj = (Ksum, Klist, inxs, X, Xp, y, f)
     fname = os.path.join(TMP_DIR, "%s.in.pkl" % hash(str(obj)))
     fout = os.path.join(TMP_DIR, "%s.out.pkl" % hash(str(obj)))
@@ -67,30 +70,15 @@ def cleanup():
     return
 
 
-def process():
-    # Fixed hyperparameters
-    n_range = np.logspace(2, 6, 9).astype(int)
-    # n_range = [1000]
-    rank_range = [5, 10, 30]
-    # rank_range = [30]
-    p_range = [1, 3, 10]
-    # p_range = np.logspace(1, 4, 13).astype(int)
-    d_range = [100]
-    limit = 3600 # 60 minutes
-
+def process(outdir):
     # Safe guard dict to kill off the methods that go over the limit
-    # Set a prior limit to full-rank methods to 4e5
+    # Set a prior limit to full-rank methods to 4e5 data points
     off_limits = dict([(m, int(4e5)) for m in RidgeMKL.mkls.keys()])
-    # off_limits = dict()
 
     # Fixed output
     # Create output directory
-    d = datetime.datetime.now()
-    dname = os.path.join("..", "output", "snr", "timings",
-                         "%d-%d-%d" % (d.year, d.month, d.day))
-    if not os.path.exists(dname): os.makedirs(dname)
-    rcnt = len(os.listdir(dname))
-    fname = os.path.join(dname, "results_%d.csv" % rcnt)
+    if not os.path.exists(outdir): os.makedirs(outdir)
+    fname = os.path.join(outdir, "results.csv")
     print("Writing to %s ..." % fname)
 
     # Output
@@ -165,19 +153,18 @@ def process():
                     "d": input_dim, "n": n, "p": P, "method": method, "limit": limit,
                    "lambda": 0.1, "rank": rank, "time": value}
             writer.writerow(row)
+        return fname
 
 
-def plot_timings(fname, ranks=(5, 30), kernels=(1, 10)):
+def plot_timings(fname, outdir, ranks=(5, 30), kernels=(1, 10)):
     """
     Summary plot of timings.
-    :param fname: Results.csv file
+    :param fname: Results.csv file.
+    :param outdir: Output directory.
     :param ranks: Selected ranks.
     :param kernels: Selected number of kernels.
     :return:
     """
-    # Output
-    out_dir = "/Users/martin/Dev/mklaren/examples/output/snr/timings/"
-
     # Read header and data
     cols = list(np.genfromtxt(fname, delimiter=",", dtype="str", max_rows=1))
     data = np.genfromtxt(fname, delimiter=",", dtype="str", skip_header=1)
@@ -209,8 +196,8 @@ def plot_timings(fname, ranks=(5, 30), kernels=(1, 10)):
         if i == len(kernels) - 1: ax.set_xlabel("log10 n")
         ax.set_title("Rank: %d, num. kernels: %d" % (r, p))
     axes[0][0].legend(ncol=int(np.ceil(len(set(method))/4.0)), loc=(0, 1.3), frameon=False)
-    pdfile = os.path.join(out_dir, "timings.pdf")
-    epsfile = os.path.join(out_dir, "timings.eps")
+    pdfile = os.path.join(outdir, "timings.pdf")
+    epsfile = os.path.join(outdir, "timings.eps")
     plt.savefig(pdfile, bbox_inches="tight")
     plt.savefig(epsfile, bbox_inches="tight")
     print("Written %s" % pdfile)
@@ -219,4 +206,12 @@ def plot_timings(fname, ranks=(5, 30), kernels=(1, 10)):
 
 
 if __name__ == "__main__":
-    process()
+    # Input arguments
+    parser = argparse.ArgumentParser(description=hlp)
+    parser.add_argument("output",  help="Output directory.")
+    args = parser.parse_args()
+
+    # Output directory
+    out_dir = args.output
+    f_out = process(out_dir)
+    plot_timings(f_out, out_dir)
