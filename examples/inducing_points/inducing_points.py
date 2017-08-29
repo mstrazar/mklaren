@@ -1,20 +1,9 @@
 # -*- coding: utf-8 -*-
+hlp = """
+    Comparison of the inducing point selection methods with varying noise rates
+    on a simple Gaussian Process signal.
 """
-Motivation: If one is allowed to sample columns with regularization,
-this leads to lower errors at high noise levels.
 
-Comparison of the three pivot selection methods with varying noise rates
-on a simple Gaussian Process signal.
-
-There is no training and test set, just comparison with recovering true
-signal.
-
-How to select lambda?
-    - Display results for all lambda.
-
-Add more kernels?
-
-"""
 if __name__ == "__main__":
     import matplotlib
     matplotlib.use("Agg")
@@ -31,6 +20,7 @@ import itertools as it
 import time
 import scipy
 import numpy as np
+import argparse
 from scipy.stats import multivariate_normal as mvn, pearsonr, entropy
 from mklaren.kernel.kernel import exponential_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
@@ -42,9 +32,17 @@ from mklaren.regression.ridge import RidgeMKL
 import matplotlib.pyplot as plt
 import pickle, gzip
 
+# Hyperparameters
+n_range     = (100,)            # Different numbers of data points
+input_dim   = 1                 # Input dimension; Generating grid becames untracable for input_dim > ~4 ...
+rank_range  = (3, 5,)           # Ranks
+lbd_range   = (0,)              # Regularization hyperparameter
+gamma_range = [0.1, 0.3, 1, 3]  # Exponentiated-quadratic kernel hyperparameters
+pc          = 0.1               # Pseudocount; prevents inf in KL-divergence.
+repeats     = 500               # Sampling repeats to compare distributions
 
-# Method order if required
-meth_order = ["Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC", "True"]
+# Method print ordering
+meth_order = ["M    klaren", "CSI", "ICD", "Nystrom", "RFF", "FITC", "True"]
 
 # Color mappings
 meth2color = {"Mklaren": "green",
@@ -278,36 +276,6 @@ def plot_signal_subplots(X, Xp, y, f, models=None, f_out=None):
         print("Written %s" % f_out_gz)
 
 
-
-def plot_signal_2d(X, Xp, y, f, models=None, tit=""):
-    # Plot signal
-    N = X.shape[0]
-    n = int(N ** 0.5)
-    Np = Xp.shape[0]
-    nn = int(Np ** 0.5)
-
-    F = f.reshape((n, n))
-    Y = y.reshape((n, n))
-
-    methods = set(models.keys()) - {"True"}
-    fig, ax = plt.subplots(nrows=2, ncols=len(methods))
-    ax[0][0].imshow(F)
-    ax[0][0].set_title("True signal")
-    ax[0][1].imshow(Y)
-    ax[0][1].set_title("Signal + noise")
-    for i in range(2, len(methods)):
-        ax[0][i].axis("off")
-
-
-    for mi, m in enumerate(methods):
-        yp = models[m]["yp"]
-        Yp = yp.reshape((nn, nn))
-        ax[1][mi].imshow(Yp)
-        ax[1][mi].set_title(m)
-
-    plt.show()
-
-
 def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
          methods=("Mklaren", "ICD", "CSI", "Nystrom", "FITC")):
     """
@@ -518,19 +486,6 @@ def hist_total_variation(h1, h2):
     return np.sum(np.absolute(h1 - h2))
 
 
-def inducing_points_distance(A, B):
-    """
-    Compute distance betwen two sets of inducing points)
-    :param A: Set of inducing points (in any dimension), given as coordinates.
-        Inducing points can be defined in terms of the training set or pseudo-inducing points.
-    :param B: Same as A.
-    :return: Minimal distance given permutations of x.
-    """
-    A = np.array(A)
-    B = np.array(B)
-    inxs = range(len(B))
-    return min((np.linalg.norm(A - B[list(ix)]) for ix in it.permutations(inxs)))
-
 def bin_centers(bins):
     """
     Centers of histogram bins to plothistograms as lines
@@ -689,32 +644,27 @@ def generate_GP_samples():
     plt.show()
 
 
-def main():
-    # Experiment paramaters
-    n_range = (100, )
-    input_dim = 1
+def process(outdir):
+    """
+    Run experiments with epcified parameters.
+    :param outdir: Output directory.
+    :return:
+    """
 
-    rank_range = (3, 5,)
-    lbd_range = (0, )
-    gamma_range = [0.1, 0.3, 1, 3]
-    repeats = 500
-    pc = 0.1 # pseudocount; prevents inf in KL-divergence.
     noise_models = ("fixed", "increasing")
     sampling_models = ("uniform", "biased")
     methods = ("Mklaren", "CSI", "ICD", "Nystrom", "FITC")
 
     # Create output directory
-    d = datetime.datetime.now()
-    dname = os.path.join("..", "output", "snr", "%d-%d-%d" % (d.year, d.month, d.day))
-    if not os.path.exists(dname):
-        os.makedirs(dname)
-    rcnt = len(os.listdir(dname))
-    subdname = os.path.join(dname, "details_%d" % rcnt)
-    if not os.path.exists(subdname):
-        os.makedirs(subdname)
-    fname = os.path.join(dname, "results_%d.csv" % rcnt)
+    subdname = os.path.join(outdir, "_details")
+    ipname   = os.path.join(outdir, "_inducing_points")
+    if not os.path.exists(outdir): os.makedirs(outdir)
+    if not os.path.exists(subdname): os.makedirs(subdname)
+    if not os.path.exists(ipname): os.makedirs(ipname)
+    fname = os.path.join(outdir, "results.csv")
     fname_details = os.path.join(subdname, "results.pkl.gz")
     print("Writing to %s ..." % fname)
+    print("Writing details to %s ..." % fname_details)
 
     # Output file
     header = ["method", "noise.model", "sampling.model", "n", "rank", "lbd", "gamma",
@@ -731,8 +681,8 @@ def main():
                                                                      noise_models,
                                                                      sampling_models,):
 
+        # Generate noise
         noise = generate_noise(n, noise_model, input_dim)
-
         avg_actives = dict()
         avg_anchors = dict()
 
@@ -843,6 +793,16 @@ def main():
             plt.close()
             print("Written %s" % figname)
 
+    # Split resulting files into text files
+    split_results(fname_details, ipname)
+
 
 if __name__ == "__main__":
-    main()
+    # Input arguments
+    parser = argparse.ArgumentParser(description=hlp)
+    parser.add_argument("output",  help="Output directory.")
+    args = parser.parse_args()
+
+    # Output directory
+    odir = args.output
+    process(odir)

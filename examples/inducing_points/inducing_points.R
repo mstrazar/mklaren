@@ -1,11 +1,25 @@
-require(ggplot2)
+hlp = "Post-processing of experiments with sampling inducing points. Draw LaTex tables with KL diveregence
+    total variation and Kolmogorov-Smirnoff test statistic."
+
+require(optparse)
 require(xtable)
 
-# Set paths
-setwd("/Users/martin/Dev/mklaren/examples")
-tabdir = "output/snr/tables/"
-in_file = "output/snr/sampling.csv"
-samp_dir = "output/snr/samples/"
+# Parse input arguments
+option_list = list(
+  make_option(c("-i", "--input"), type="character", help="Results file (.csv)"),
+  make_option(c("-a", "--actives"), type="character", help="Directory with selected active sets for each run."),
+  make_option(c("-o", "--output"), type="character", help="Output directory.")
+);
+opt_parser = OptionParser(option_list=option_list, description=hlp);
+opt = parse_args(opt_parser);
+in_file = opt$input
+active_dir = opt$actives
+out_dir = opt$output
+dir.create(out_dir, showWarnings = FALSE)
+
+# Fixed selected parameters
+n = 100
+lbd = 0
 
 # Load data
 # Initial results for rank 3 and rank 5 and different combinations of gamma;
@@ -19,10 +33,10 @@ for (i in 1:nrow(data)){
   row = data[i,]
   fname = sprintf("actives_method-%s_noise-%s_sampling-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.txt",
                    row$method, row$noise.model, row$sampling.model, row$n, row$rank, row$lbd, row$gamma)
-  samp = read.table(file.path(samp_dir, fname))$V1
+  samp = read.table(file.path(active_dir, fname))$V1
   fname = sprintf("actives_method-%s_noise-%s_sampling-%s_n-%d_rank-%d_lbd-%.3f_gamma-%.3f.txt",
                   "True", row$noise.model, row$sampling.model, row$n, row$rank, row$lbd, row$gamma)
-  tru = read.table(file.path(samp_dir, fname))$V1
+  tru = read.table(file.path(active_dir, fname))$V1
   test = ks.test(samp, tru, exact = FALSE)
   data[i, "KS.stat"] = test$statistic
   data[i, "KS.pvalue"] = test$p.value
@@ -40,10 +54,6 @@ metrics = c("kl.divergence", "total.variation", "KS.stat")
 M = matrix("", nrow=length(settings), length(methods))
 colnames(M) <- methods
 row.names(M) <- settings
-
-# Fixed parameters
-n = 100
-lbd = 0
 
 # Construct tables dependent on sampling metric; round at 3 decimals
 grid = expand.grid(metrics, ranks, gammas, stringsAsFactors = FALSE)
@@ -69,7 +79,7 @@ for (gi in 1:nrow(grid)){
       M[ri, ci] = sprintf("%.3f %s", score, sfx)
     }
   }
-  fname = file.path(tabdir, sprintf("%s_gamma-%.3f_rank-%d_n-%d.tex", gr$metric, gr$gamma, gr$rank, n))
+  fname = file.path(out_dir, sprintf("%s_gamma-%.3f_rank-%d_n-%d.tex", gr$metric, gr$gamma, gr$rank, n))
   sink(fname)
   tab = xtable(M, caption = sprintf("%s; $\\gamma=%.1f$, K=%d, n=%d;", gr$metric, gr$gamma, gr$rank, n))
   align(tab) <- c("|", "r", "|", rep("l", length(methods)), "|")
