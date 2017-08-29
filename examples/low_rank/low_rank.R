@@ -8,7 +8,7 @@ require(xtable)
 # Parse input arguments
 option_list = list(
   make_option(c("-i", "--input"), type="character", help="Results file (.csv)"),
-  make_option(c("-o", "--output"), type="character", default="cbind.tab", help="Output directory")
+  make_option(c("-o", "--output"), type="character", help="Output directory")
 );
 opt_parser = OptionParser(option_list=option_list, description=hlp);
 opt = parse_args(opt_parser);
