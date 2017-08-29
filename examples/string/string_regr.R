@@ -1,11 +1,19 @@
-require(ggplot2)
+hlp = "Post-processing of experiments with synthetic data on string kernels. Store a CD plot."
+require(optparse)
 require(scmamp)
-setwd("~/Dev/mklaren/examples/string")
 
-# Plot example: cv_K-4_cv-1.pdf.pkl.gz
-# 30 replications with K-mer plots and CV w.r.t. regularization
-in_dir = "../output/string_lengthscales_cv_val/"
-in_file = file.path(in_dir, "2017-8-10/results_0.csv")
+# Parse input arguments
+option_list = list(
+  make_option(c("-i", "--input"), type="character", help="Results file (.csv)"),
+  make_option(c("-o", "--output"), type="character", help="Output directory.")
+);
+opt_parser = OptionParser(option_list=option_list, description=hlp);
+opt = parse_args(opt_parser);
+in_file = opt$input
+out_dir = opt$output
+dir.create(out_dir, showWarnings = FALSE)
+
+# Read input data
 data = read.csv(in_file, stringsAsFactors = FALSE, header = TRUE)
 
 # Cross-validation
@@ -23,10 +31,9 @@ colnames(R) <- methods
 row.names(R) <- iters
 for(i in 1:nrow(data)) R[as.character(data[i, "iteration"]), data[i, "method"]] = sqrt(data[i, "mse"])
 
-
-# Store PDF / EPS
-postscript(file.path(in_dir, "CD_RMSE.eps"), width=4.0, height = 3.0)
-# pdf(file.path(in_dir, "CD_RMSE.pdf"), width=4.0, height = 3.0)
+# Store PDF
+fname = file.path(out_dir, "CD_RMSE.pdf")
+pdf(fname, width=4.0, height = 3.0)
 plotCD(-R, alpha = 0.051)
 dev.off()
 message(sprintf("Written %s", fname))

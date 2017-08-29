@@ -6,15 +6,7 @@ sys.setdefaultencoding('utf8')
 import scipy.stats as st
 import matplotlib.pyplot as plt
 import pickle
-
-from collections import Counter
-from mklaren.kernel.string_kernel import *
 from mklaren.kernel.string_util import *
-from mklaren.kernel.kernel import kernel_sum
-from mklaren.kernel.kinterface import Kinterface
-from mklaren.mkl.mklaren import Mklaren
-from mklaren.regression.ridge import RidgeLowRank
-
 
 
 def generic_function_plot(f_out, Ks, X, models=(),
@@ -93,7 +85,6 @@ def generic_function_plot(f_out, Ks, X, models=(),
     plt.xlim(par_range[0]-0.5, par_range[-1]+0.5)
     if len(xnames): plt.gca().set_xticklabels(map(str, xnames))
     plt.grid("on")
-    # plt.legend(loc="best")
     plt.legend(ncol=3, loc=(0, 1.1), frameon=False)
     plt.savefig(f_out, bbox_inches="tight")
     plt.close()
@@ -104,97 +95,3 @@ def generic_function_plot(f_out, Ks, X, models=(),
            "title": title, "xnames": xnames, "xlabel": xlabel, "truePar": truePar}
     pickle.dump(obj, open(f_out + ".pkl", "w"), protocol=pickle.HIGHEST_PROTOCOL)
     print "Written %s" % f_out
-    return
-
-
-def process():
-
-    # Experimental parameters
-    rank = 3
-    delta = 10
-    lbd = 0
-    L = 30
-    N = 50
-    trueK = 4
-    max_K = 10
-    K_range = range(1, max_K+1)
-    normalize = False
-
-    # Random subset of N sequences of length L
-    X, _ = generate_data(N=N, L=L, p=0.0, motif="TGTG", mean=0, var=3)
-    X = np.array(X)
-
-    # Generate a sparse signal based on 4-mer composion (maximum lengthscale)
-    K = Kinterface(data=X, kernel=string_kernel, kernel_args={"mode": SPECTRUM, "K": trueK},
-                   row_normalize=normalize)
-    y = st.multivariate_normal.rvs(mean=np.zeros((N,)), cov=K[:, :]).reshape((N, 1))
-    yr = y.ravel()
-
-    # Proposal kernels
-    args = [{"mode": SPECTRUM, "K": k} for k in K_range]
-    Ksum = Kinterface(data=X, kernel=kernel_sum,
-                          row_normalize=normalize,
-                          kernel_args={"kernels": [string_kernel] * len(args),
-                                       "kernels_args": args})
-    Ks = [Kinterface(data=X, kernel=string_kernel, kernel_args=a, row_normalize=normalize) for a in args]
-
-    # Mklaren
-    mklaren = Mklaren(rank=rank, delta=delta, lbd=lbd)
-    mklaren.fit(Ks, y)
-    yp_mkl = mklaren.predict([X]*len(args)).ravel()
-    mklaren_kernels = [(args[int(ky)]["K"], val) for ky, val in sorted(Counter(mklaren.G_mask).items())]
-    for lg, num in sorted(mklaren_kernels, key=lambda t:t[1], reverse=True):
-        print "K: %d (%d)" % (lg, num)
-
-
-    # CSI
-    csi = RidgeLowRank(rank=rank, method="csi",
-                       method_init_args={"delta": delta}, lbd=lbd)
-    csi.fit([Ksum], y)
-    yp_csi = csi.predict([X]).ravel()
-
-
-    # Print data along with predictions
-    for xi, yi, ym, yc in sorted(zip(X, y, yp_mkl, yp_csi), key=lambda t: t[1]):
-        print "%s\t%.3f\t%.3f\t%.3f" % (xi, yi, ym, yc)
-
-    # Spearman correlation fo the fit
-    print "\nMklaren fit: %.3f (%.5f)" % st.spearmanr(y, yp_mkl)
-    print "CSI fit: %.3f (%.5f)" % st.spearmanr(y, yp_csi)
-
-    # Represent fit on figure
-    plt.figure()
-    plt.plot(yr, yp_mkl, ".", color="green", label="Mklaren")
-    plt.plot(yr, yp_csi, ".", color="blue", label="CSI")
-    plt.xlabel("True")
-    plt.ylabel("Predicted")
-    plt.legend()
-
-
-    # Spearman correlation fo the fit
-    print "\nMklaren residual corr.: %.3f (%.5f)" % st.spearmanr(yr, yr-yp_mkl,)
-    print "CSI residual corr.: %.3f (%.5f)" % st.spearmanr(yr, yr-yp_csi)
-    print
-
-    # Residual graph
-    plt.figure()
-    plt.plot(yr, yr-yp_mkl, ".", color="green", label="Mklaren")
-    plt.plot(yr, yr-yp_csi, ".", color="blue", label="CSI")
-    plt.xlabel("True")
-    plt.ylabel("Residual")
-    plt.legend()
-
-
-    # fname = "/Users/martin/Dev/mklaren/examples/output/string/lengthscales_%d_1.pdf" % trueK
-    fname = "/Users/martin/Dev/mklaren/examples/output/string/test.pdf"
-    generic_function_plot(f_out=fname, Ks=Ks, X=X,
-                          models={"True": {"y": yr, "color": "black", "fmt": "--",},
-                                  "Mklaren": {"y": yp_mkl, "color": "green", "fmt": "-",},
-                                  "CSI": {"y": yp_csi, "color": "red", "fmt": "-"}},
-                          xlabel="K-mer length",
-                          xnames=K_range,
-                          truePar=K_range.index(trueK))
-
-
-if __name__ == "__main__":
-    process()
