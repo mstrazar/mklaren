@@ -17,7 +17,7 @@ from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern32_gpy, 
 from mklaren.kernel.kinterface import Kinterface
 from sklearn.metrics import mean_squared_error as mse
 from datasets.energy import load_energy
-from examples.snr.snr import plot_signal_subplots, test
+from examples.inducing_points.inducing_points import plot_signal_subplots, test
 
 # Hyperparameters
 delta        = 10                                   # Look-ahead parameter
