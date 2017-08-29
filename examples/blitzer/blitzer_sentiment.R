@@ -1,41 +1,25 @@
+hlp = "Post-processing of Blitzer sentiment results. Store a LaTeX table with RMSE at different ranks,
+       with corresponding boxplots (PDF)."
+
+require(optparse)
 require(ggplot2)
 require(xtable)
-setwd("~/Dev/mklaren/examples/blitzer")
-out_dir = "../output/blitzer_sentiment/"
 
-# Read all datasets and stack them
-# Datasets 0-3 contain true results for mklaren
-# Datasets 4-7 contain true results for other methods, 
-# with their own column selection methods
-data = data.frame()
+# Parse input arguments
+option_list = list(
+  make_option(c("-i", "--input"), type="character", help="Results file (.csv)"),
+  make_option(c("-o", "--output"), type="character", default="cbind.tab", help="Output directory")
+);
+opt_parser = OptionParser(option_list=option_list, description=hlp);
+opt = parse_args(opt_parser);
+in_file = opt$input
+out_dir = opt$output
 
-# Books
-data1 = read.csv("../output/blitzer_sentiment/2017-6-27/results_0.csv", header = TRUE, stringsAsFactors = FALSE)
-data2 = read.csv("../output/blitzer_sentiment/2017-6-27/results_4.csv", header = TRUE, stringsAsFactors = FALSE)
-df  = rbind(data2, data1[data1$method == "Mklaren",])
-data = rbind(data, df)
+# Read data
+data = read.csv(in_file, header = TRUE, stringsAsFactors = FALSE)
 
-# DVD
-data1 = read.csv("../output/blitzer_sentiment/2017-6-27/results_1.csv", header = TRUE, stringsAsFactors = FALSE)
-data2 = read.csv("../output/blitzer_sentiment/2017-6-27/results_5.csv", header = TRUE, stringsAsFactors = FALSE)
-df  = rbind(data2, data1[data1$method == "Mklaren",])
-data = rbind(data, df)
-
-# Electronics
-data1 = read.csv("../output/blitzer_sentiment/2017-6-27/results_2.csv", header = TRUE, stringsAsFactors = FALSE)
-data2 = read.csv("../output/blitzer_sentiment/2017-6-27/results_6.csv", header = TRUE, stringsAsFactors = FALSE)
-df  = rbind(data2, data1[data1$method == "Mklaren",])
-data = rbind(data, df)
-
-# Kitchen
-data1 = read.csv("../output/blitzer_sentiment/2017-6-27/results_3.csv", header = TRUE, stringsAsFactors = FALSE)
-data2 = read.csv("../output/blitzer_sentiment/2017-6-27/results_7.csv", header = TRUE, stringsAsFactors = FALSE)
-df  = rbind(data2, data1[data1$method == "Mklaren",])
-data = rbind(data, df)
-
-
+# Create a LaTeX table
 to.latex <- function(fname, df){
-  # TODO: add l2krr when done
   rows = c("uniform", "align", "alignf", "alignfc", "Mklaren") 
   cols = unique(df$rank)
   M = matrix("", ncol=length(cols), nrow=length(rows))
@@ -66,21 +50,18 @@ to.latex <- function(fname, df){
   sink()
 }
 
-# Remove uniform 
-for (dset in unique(data$dataset)){
-  # Plot a boxplot
-  qplot(data=data[data$method != "uniform" & data$dataset == dset,], 
-        x=as.factor(rank), 
-        y=RMSE, fill=method, 
-        geom="boxplot",
-        xlab="Rank", main=dset)
-  fname = file.path(out_dir, sprintf("%s.boxplot.pdf", dset))
-  ggsave(fname, width = 5, height = 2)
-  message(sprintf("Written %s", fname))
-  
-  # Store latex table
-  fname = file.path(out_dir, sprintf("%s.boxplot.tex", dset))
-  df = data[data$dataset == dset,]
-  to.latex(fname, df)
-  message(sprintf("Written %s", fname))
-}
+# Plot a boxplot without uniform
+dset = unique(data$dataset)
+qplot(data=data, 
+      x=as.factor(rank), 
+      y=RMSE, fill=method, 
+      geom="boxplot",
+      xlab="Rank", main=dset)
+fname = file.path(out_dir, sprintf("%s.boxplot.pdf", dset))
+ggsave(fname, width = 5, height = 2)
+message(sprintf("Written %s", fname))
+
+# Store latex table
+fname = file.path(out_dir, sprintf("%s.boxplot.tex", dset))
+to.latex(fname, data)
+message(sprintf("Written %s", fname))
