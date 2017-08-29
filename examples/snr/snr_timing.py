@@ -1,7 +1,12 @@
+# -*- coding: utf-8 -*-
 hlp = """
     Timing experiments spawning multiple processes to limit the execution time.
     CSI does not work due to unknown subprocessing (oct2py) issues.
 """
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 import os
 import csv
 import time
@@ -19,6 +24,7 @@ from mklaren.regression.ridge import RidgeMKL
 
 # Global method list
 METHODS = list(RidgeMKL.mkls.keys()) + ["Mklaren", "ICD", "Nystrom", "RFF", "FITC", "CSI"]
+
 # METHODS = ["CSI"]
 # PYTHON = "/Users/martin/Dev/py2/bin/python"
 
@@ -26,6 +32,13 @@ METHODS = list(RidgeMKL.mkls.keys()) + ["Mklaren", "ICD", "Nystrom", "RFF", "FIT
 TMP_DIR = "temp"
 PYTHON = "python"
 SCRIPT = "snr_timing_child.py"
+
+names = {"align": "Align",
+         "alignf": "AlignF",
+         "alignfc": "AlignFC",
+         "Nystrom": "Nyström",
+         "l2krr": "L2-KRR",
+         "uniform": "Uniform"}
 
 def wrapsf(Ksum, Klist, inxs, X, Xp, y, f, method, return_dict):
     """ Worker thread ; compute method running time;
@@ -57,14 +70,18 @@ def cleanup():
 def process():
     # Fixed hyperparameters
     n_range = np.logspace(2, 6, 9).astype(int)
+    # n_range = [1000]
     rank_range = [5, 10, 30]
+    # rank_range = [30]
     p_range = [1, 3, 10]
-    d_range = [1, 10, 100]
+    # p_range = np.logspace(1, 4, 13).astype(int)
+    d_range = [100]
     limit = 3600 # 60 minutes
 
     # Safe guard dict to kill off the methods that go over the limit
     # Set a prior limit to full-rank methods to 4e5
     off_limits = dict([(m, int(4e5)) for m in RidgeMKL.mkls.keys()])
+    # off_limits = dict()
 
     # Fixed output
     # Create output directory
@@ -107,6 +124,7 @@ def process():
         return_dict = manager.dict()
         jobs = dict()
         for method in METHODS:
+            # if off_limits.get(method, np.inf) <= P:
             if off_limits.get(method, np.inf) <= n:
                 print("%s is off limit for d=%d n=%d rank=%d p=%d" % (method, input_dim, n, rank, P))
                 return_dict[method] = float("inf")
@@ -137,6 +155,7 @@ def process():
                         # Note that this is the minimal point in (n, p, rank) for which if doesn't work
                         print("%s REGISTERED for d=%d n=%d rank=%d p=%d" % (method, input_dim, n, rank, P))
                         return_dict[method] = float("inf")
+                        # off_limits[method] = min(off_limits.get(method, np.inf), P)
                         off_limits[method] = min(off_limits.get(method, np.inf), n)
                         p.terminate()
 
@@ -148,12 +167,12 @@ def process():
             writer.writerow(row)
 
 
-def plot_timings(fname, num_kernels=10, dims=(1, 10, 100)):
+def plot_timings(fname, ranks=(5, 30), kernels=(1, 10)):
     """
     Summary plot of timings.
     :param fname: Results.csv file
-    :param num_kernels: Number of kernels.
-    :param dims: Selected dimensions.
+    :param ranks: Selected ranks.
+    :param kernels: Selected number of kernels.
     :return:
     """
     # Output
@@ -165,36 +184,33 @@ def plot_timings(fname, num_kernels=10, dims=(1, 10, 100)):
 
     # Filter by number of kernels.
     num_k = np.array(data[:, cols.index("p")]).astype(int)
-    inxs = num_k == num_kernels
 
     # Read columns
-    method = np.array(data[inxs, cols.index("method")]).astype(str)
-    n = np.array(data[inxs, cols.index("n")]).astype(int)
-    dim = np.array(data[inxs, cols.index("d")]).astype(int)
-    rank = np.array(data[inxs, cols.index("rank")]).astype(int)
-    tm = np.array(data[inxs, cols.index("time")]).astype(float)
+    method = np.array(data[:, cols.index("method")]).astype(str)
+    n = np.array(data[:, cols.index("n")]).astype(int)
+    rank = np.array(data[:, cols.index("rank")]).astype(int)
+    tm = np.array(data[:, cols.index("time")]).astype(float)
     mins = tm / 60.0
 
     # Set figure
-    ranks = sorted(set(rank))
-    fig, axes = plt.subplots(figsize=(3*3.5, 2*3.5),
-                           ncols=len(ranks), nrows=len(dims),
+    fig, axes = plt.subplots(figsize=(5, 4.5),
+                           ncols=len(ranks), nrows=len(kernels),
                            sharex=True, sharey=True)
-    for d, r in it.product(dims, ranks):
-        i, j = dims.index(d), ranks.index(r)
+    for p, r in it.product(kernels, ranks):
+        i, j = kernels.index(p), ranks.index(r)
         ax = axes[i][j]
-        for meth in sorted(set(method), key=lambda m: m not in RidgeMKL.mkls.keys()):
+        for meth in sorted(set(method), key=lambda m: (m not in RidgeMKL.mkls.keys(), m.lower())):
             fmt = "s--" if meth in RidgeMKL.mkls.keys() else "s-"
-            inxs = ((rank == r) * (dim == d) * (method == meth)).astype(bool)
-            ax.plot(np.log10(n[inxs]), np.log10(mins[inxs]), fmt, label=meth,
+            inxs = ((rank == r) * (num_k == p) * (method == meth)).astype(bool)
+            ax.plot(np.log10(n[inxs]), np.log10(mins[inxs]), fmt, label=names.get(meth, meth),
                      linewidth=2, color=meth2color[meth])
         ax.grid("on")
         if j == 0: ax.set_ylabel("log10 time (mins)")
-        if i == len(dims) - 1: ax.set_xlabel("log10 n")
-        ax.set_title("Rank: %d, input dim: %d" % (r, d))
-    axes[0][0].legend(ncol=len(set(method))/2, loc=(0, 1.3), frameon=False)
-    pdfile = os.path.join(out_dir, "timings_p-%d.pdf" % num_kernels)
-    epsfile = os.path.join(out_dir, "timings_p-%d.eps" % num_kernels)
+        if i == len(kernels) - 1: ax.set_xlabel("log10 n")
+        ax.set_title("Rank: %d, num. kernels: %d" % (r, p))
+    axes[0][0].legend(ncol=int(np.ceil(len(set(method))/4.0)), loc=(0, 1.3), frameon=False)
+    pdfile = os.path.join(out_dir, "timings.pdf")
+    epsfile = os.path.join(out_dir, "timings.eps")
     plt.savefig(pdfile, bbox_inches="tight")
     plt.savefig(epsfile, bbox_inches="tight")
     print("Written %s" % pdfile)
