@@ -1,24 +1,24 @@
+hlp = "Post-processing of experiments with 1D time series (Energy dataset)."
+
+require(optparse)
 require(ggplot2)
 require(scmamp)
 require(xtable)
-setwd("/Users/martin/Dev/mklaren/examples/time_series/")
+
+# Parse input arguments
+option_list = list(
+  make_option(c("-i", "--input"), type="character", help="Results file (.csv)"),
+  make_option(c("-o", "--output"), type="character", help="Output directory.")
+);
+opt_parser = OptionParser(option_list=option_list, description=hlp);
+opt = parse_args(opt_parser);
+in_file = opt$input
+out_dir = opt$output
+dir.create(out_dir, showWarnings = FALSE)
 
 # Selection of methods
 methods = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC")
-methods2 = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC") # for bolding best score only
-
-# Exponetial kernel
-alldata = read.csv("../output/energy/data_exponential/results_0.csv", 
-                   header = TRUE, stringsAsFactors = FALSE) # optimize FITC
-
-# Matern kernel
-alldata = read.csv("../output/energy/data_matern/results.csv", 
-                   header = TRUE, stringsAsFactors = FALSE) # optimize FITC
-
-# Periodic kernel
-alldata = read.csv("../output/energy/data_periodic/results.csv", 
-                   header = TRUE, stringsAsFactors = FALSE) # optimize FITC
-
+alldata = read.csv(in_file, header = TRUE, stringsAsFactors = FALSE) 
 
 # Select scores via cross-validation
 alldata$name = sprintf("%s.%s.%s.%s", alldata$method, alldata$tsi, 
@@ -35,7 +35,7 @@ data = alldata[alldata$best,]
 # Validation RMSE per each rank
 for (r in unique(data$rank)){
   k = unique(data$experiment)
-  fname = sprintf("../output/energy/test_kernel-%s_rank-%02d.pdf", k, r)
+  fname = file.path(out_dir, sprintf("test_kernel-%s_rank-%02d.pdf", k, r))
   dr = data[data$rank == r,]
   p = qplot(data=dr, x=as.factor(signal), 
         y=sqrt(mse_y), fill=method, geom="boxplot",
@@ -71,13 +71,13 @@ for (r in unique(data$rank)){
   colnames(R) = signals
   for(j in 1:ncol(M)){
     R[names(M[,j]), colnames(M)[j]] = sprintf("%.2f$\\pm$%.2f", M[,j], S[,j])
-    vals = M[methods2, j]
+    vals = M[methods, j]
     best = names(which(vals == min(vals)))
     R[best, j] = sprintf("\\textbf{%.2f$\\pm$%.2f}", M[best,j], S[best,j])
   }
   
   # Store table
-  fname = sprintf("../output/energy/tex/table_kernel-%s_rank-%02d.tex", k, r)
+  fname = file.path(out_dir, sprintf("table_kernel-%s_rank-%02d.tex", k, r))
   tab = xtable(R)
   sink(fname)
   print(xtable(t(R)),
