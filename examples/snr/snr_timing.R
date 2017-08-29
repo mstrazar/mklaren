@@ -6,7 +6,6 @@ setwd("/Users/martin/Dev/mklaren/examples/snr/")
 dname = "../output/snr/timings/tex/"
 in_file = "../output/snr/timings/timings.csv"
 data = read.csv(in_file, header=TRUE, stringsAsFactors = FALSE)
-data = subset(data, method != "alignf")
 dims = unique(data$d)
 num_kernels = unique(data$p)
 ranks = unique(data$rank)
