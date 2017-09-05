@@ -20,3 +20,13 @@ A Multiple kernel learning Python library.
 * Mklaren method article [[arXiv]](http://arxiv.org/abs/1601.04366) [[.py scripts]](https://github.com/mstrazar/mklaren/wiki/Experiments-in-the-Mklaren-article)
 
 * Full documentation [[html]](https://cdn.rawgit.com/mstrazar/mklaren/master/docs/build/html/index.html)
+
+#### Installation
+
+
+    Mklaren and its dependencies are installed from the PyPI package repository:
+
+    pip install mklaren
+
+    (Optional requirement) Running the method CSI (Cholseksy with Side Information) assumes a local `octave`
+    installation as well as Oct2Py python module.
