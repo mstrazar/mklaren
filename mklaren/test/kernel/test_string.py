@@ -1,7 +1,6 @@
 import unittest
 from mklaren.kernel.string_kernel import *
 from mklaren.kernel.string_util import *
-from mklaren.kernel.kernel import kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
@@ -22,7 +21,7 @@ class TestString(unittest.TestCase):
     def testMklarenFit(self):
         model = Mklaren(rank=10)
         model.fit(self.Ks, self.y)
-        yp = model.predict([self.Xa] * len(Ks))
+        yp = model.predict([self.Xa] * len(self.Ks))
         c, p = st.spearmanr(yp, self.y)
         self.assertGreater(c, 0)
         self.assertLess(p, 0.05)
