@@ -4,4 +4,3 @@ cvxopt
 sklearn
 octave
 oct2py
-matplotlib
