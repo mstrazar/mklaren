@@ -24,9 +24,9 @@ A Multiple kernel learning Python library.
 #### Installation
 
 
-    Mklaren and its dependencies are installed from the PyPI package repository:
+Mklaren and its dependencies are installed from the PyPI package repository:
 
     pip install mklaren
 
-    (Optional requirement) Running the method CSI (Cholseksy with Side Information) assumes a local `octave`
-    installation as well as Oct2Py python module.
+(Optional requirement) Running the method CSI (Cholseksy with Side Information) assumes a local `octave`
+installation as well as Oct2Py python module.
