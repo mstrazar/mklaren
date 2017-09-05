@@ -182,7 +182,7 @@ class AlignfLowRank(Alignf):
     Use the align method using low-rank kernels.
     Useful for computing alignment of low-rank representations.
     """
-    def __init__(self, typ="linear"):
+    def __init__(self, typ="linear", lbd2=1e-5):
         """
         :param typ: (``str``) "linear" or "convex" combination of kernels.
         """
@@ -190,7 +190,7 @@ class AlignfLowRank(Alignf):
         self.typ     = typ
         self.trained = False
         self.low_rank = True
-
+        self.lbd2 = lbd2
 
     def __call__(self, i, j):
         """

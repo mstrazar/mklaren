@@ -10,7 +10,7 @@ import scipy.stats as st
 class TestString(unittest.TestCase):
 
     def setUp(self):
-        X, y = generate_data(N=100, L=100, p=0.5, motif="TGTG", mean=0, var=3, )
+        X, y = generate_data(N=100, L=100, p=0.5, motif="TGTG", mean=0, var=3, seed=42)
         self.Xa = np.array(X)
         self.y = y
 
@@ -19,7 +19,7 @@ class TestString(unittest.TestCase):
 
 
     def testMklarenFit(self):
-        model = Mklaren(rank=10)
+        model = Mklaren(rank=5)
         model.fit(self.Ks, self.y)
         yp = model.predict([self.Xa] * len(self.Ks))
         c, p = st.spearmanr(yp, self.y)
