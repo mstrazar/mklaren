@@ -1,0 +1,389 @@
+Fri 10 Mar 2017
+===============
+
+d2:
+"output/functions_systematic_ICD_CSI_MKL.csv"
+
+Sun 12 Mar 2017
+===============
+d2: 37924.funcdebug
+output/funcdebug
+Simple graphs revealing the relationship between regularization, precision and Kendall.
+
+Mon 13 Mar 2017
+===============
+d2: 37924.funcdebug
+output/funcdebug
+Add larger ranks to see whether best correlation persists at lambda=0.
+
+d2: 34221.mklaren_functions_cso
+Compute weights by norm approximation for both ICD and Mklaren.
+
+Tue 21 Mar 2017
+===============
+
+[detached from 14942.mklaren]
+Fitting lambda with cross-validation.
+
+Wed 29 Mar 2017
+===============
+d3: [detached from 135022.mklaren]
+Testing timing properties for up to 1e2 - 1e6 examples. (timing.py)
+
+Wed 17 May 2017
+===============
+d:
+    [detached from 13185.mklaren_snr] running snr.py
+    [detached from 13185.mklaren_timing] running timing.py
+
+Fri 19 May 2017
+===============
+d:
+    [detached from 13185.mklaren_snr] running snr.py (Varying gamma, smaller rank, increase lambda range)
+
+
+Sat 20 May 2017
+===============
+
+Repeat after NFS reset.
+d:
+    2775.mklaren_timing (05/20/2017 11:16:01 PM)    (Detached)
+    2759.mklaren_snr    (05/20/2017 11:15:19 PM)    (Detached)
+
+
+Mon 22 May 2017
+===============
+
+d:
+   [detached from 2775.mklaren_timing]
+   Repeating lambda-cv fitting for timing/2017-5-22/results_11.csv.
+
+
+Mon 29 May 2017
+===============
+Running large-scale snr.py test for different levels of N, rank, gamma, sampling and noise.
+[detached from 2759.mklaren_snr]
+snr/2017-5-20/results_13.csv
+
+
+Tue 30 May 2017
+===============
+# Added CSI and storage of distributions.
+Running large-scale snr.py test for different levels of N, rank, gamma, sampling and noise.
+[detached from 2759.mklaren_snr]
+output/snr/2017-5-30/results_14.csv
+
+
+Wed 31 May 2017
+===============
+Testing in 2D space.
+[detached from 2759.mklaren_snr]
+output/snr/2017-5-31/results_0.csv
+
+
+Thu 15 Jun 2017
+===============
+Testing for FITC too.
+output/snr/2017-6-15/results_0.csv
+
+Thu 20 Jun 2017
+===============
+    Implemented cross-validation for all values of lambda.
+        ../output/energy/2017-6-20/results_4.csv
+
+Wed 21 Jun 2017
+===============
+Implemented periodic
+    ../output/energy/2017-6-21/details_6/
+and Matern kernel
+    ../output/energy/2017-6-21/details_4/
+and Exponential
+    ../output/energy/2017-6-21/details_8/
+scenarios.
+
+modify
+    export PYTHONPATH=../..
+    export MKL_NUM_THREADS=7
+
+
+Thu 22 Jul 2017
+===============
+Speed-up and enable FITC to use Matern32 kernel.
+
+modify
+    export PYTHONPATH=../..
+    export MKL_NUM_THREADS=7
+
+../output/energy/2017-6-22/details_0/ <- exponential [DONE]
+../output/energy/2017-6-22/details_2/ <- periodic [NOK]
+../output/energy/2017-6-22/details_4/ <- matern [SEGFAULT]
+
+
+Mon 26 Jun 2017
+===============
+Running matern kernel for 10 signals in parallel on d:
+../output/energy/2017-6-26/details_0/
+-
+../output/energy/2017-6-26/details_20/
+
+Tue 27 Jun 2017
+===============
+
+# Merge results into one file
+cd /Users/martin/Dev/mklaren/examples/output/energy/2017-6-26
+head -n 1 results_0.csv > results.csv
+grep -h "matern" results_*.csv >> results.csv
+
+# Run Blitzer sentiment with L2 KRR (d)
+blitzer_sentiment/2017-6-27/results_0.csv
+blitzer_sentiment/2017-6-27/results_1.csv
+blitzer_sentiment/2017-6-27/results_2.csv
+blitzer_sentiment/2017-6-27/results_3.csv
+
+# Repeating with custom kernel for each method (d3)
+# Mklaren is not used here to save time. Merge all files into 1 in the end.
+blitzer_sentiment/2017-6-27/results_4.csv
+blitzer_sentiment/2017-6-27/results_5.csv
+blitzer_sentiment/2017-6-27/results_6.csv
+blitzer_sentiment/2017-6-27/results_7.csv
+
+
+# Replacing tabulars in a directory with .tex tables
+for f in *.tex ; do
+    grep -v "table\|caption" $f > $f.temp
+    mv $f.temp $f
+done
+
+# Sync with current results
+rsync -ruvz blitzer_sentiment/ ~/PhD/writing/mkl-cholesky-lar/results/blitzer_sentiment/ --include=*.pdf --include=*.tex --exclude=*
+
+
+Wed 28 Jun 2017
+===============
+Repeat blitzer_sentiment2 with correct L2-KRR method. The results here will be
+equal to the uniform alignment, but at least there will be stored in one file.
+2017-6-28/results_0.csv
+2017-6-28/results_1.csv
+2017-6-28/results_2.csv
+2017-6-28/results_3.csv
+
+Fri 30 Jun 2017
+===============
+Repeat Delve regression with varying number of kernels 5-100.
+
+Sun 2 Jul 2017
+==============
+delve_regression2: Fix issues with CSI, add RFF, add two more datasets.
+2017-7-2/results_0.csv
+...
+2017-7-2/results_7.csv
+
+Mon 10 Jul 2017
+===============
+# Run delve on keel datasets
+2017-7-10/results_0.csv
+...
+2017-7-10/results_28.csv
+
+Mon 17 Jul 2017
+===============
+# Added explained variance to keel datasets
+2017-7-17/results_0.csv
+...
+2017-7-17/results_28.csv
+
+
+Tue 18 Jul 2017
+===============
+d;
+Performance dependent on N.
+(13750, 'ailerons')
+(14998, 'pole')
+(16599, 'elevators')
+(20640, 'california')
+(22784, 'house')
+(40768, 'mv')
+
+Wed 19 Jul 2017
+===============
+For 30k, 100k to illuminate the effect even more.
+(Actual n is a little less, since not all datasets contain nuff samples)
+python delve_regressionN.py ailerons
+python delve_regressionN.py pole
+python delve_regressionN.py elevators
+python delve_regressionN.py california
+python delve_regressionN.py house
+python delve_regressionN.py mv
+
+Thu 20 Jul 2017
+===============
+Testing on small geostats datasets.
+
+Mon 31 Jul 2017
+===============
+# 145434.mklaren_fixed	(07/18/2017 10:28:28 AM)	(Detached)
+# Repeating on n=3000 datasets
+python delve_regression2.py boston
+python delve_regression2.py abalone
+python delve_regression2.py comp
+python delve_regression2.py bank
+python delve_regression2.py pumadyn
+python delve_regression2.py kin
+python delve_regression2.py ionosphere
+python delve_regression2.py census
+
+[detached from 179564.mklaren_string]
+Running strig analysis on degenerate kernels.
+
+# TODO: Synchronize output directories when done, by clearing up old stuff.
+
+
+Tue 1 Aug 2017
+==============
+[detached from 179564.mklaren_string]
+Running string analysis on degenerate kernels (N=500, L=500), slow.
+
+Tue 2 Aug 2017
+==============
+[detached from 179564.mklaren_string]
+Running strig analysis on a complete set kernels for K in (2, 5) (N=100, L=100).
+
+[detached from 181198.mklaren_string_big]
+Initial run of RNA context with spectrum 3-5 kernels.
+
+[detached from 145434.mklaren_fixed]
+Running with a complete set of kernels for K=4.
+
+Thu 3 Aug 2017
+==============
+[detached from 145434.mklaren_fixed]
+Running rnacontext with spectrum kernels 1-10.
+
+
+Tue 8 Aug 2017
+==============
+d3: [detached from 2912.string_cv_val]
+Repeating cv_val on d with plots.
+Writing to ../output/string_lengthscales_cv_val/2017-8-8/results_0.csv
+
+
+Wed 9 Aug 2017
+==============
+d3: [detached from 2579.rnacontext_kmer]
+Running rnacontext again with spectrum kernels 1-10, rank 5 and generic function plot.
+results 0-8.csv
+
+Merge results into one file depending on kernel used:
+    # Running periodic kernels for ICD, CSI, Nystrom, Mklaren
+    (not implemented for FITC (no support in GPy, not our fault!), RFF)
+    [detached from 4407.mklaren_periodic]
+
+    # Additional tests for Matern due to a different hyperparameter range.
+    [detached from 4663.mklaren_matern]
+
+
+Thu 10 Aug 2017
+==============
+
+# Merge & cleanup after run:
+    d3: 5564.string_cv	(08/10/2017 03:06:41 PM)	(Detached)
+    Repeating string cv_lengthsales_val with RMSE.
+
+
+# Merge & cleanup after run:
+    d3: [detached from 2579.rnacontext_kmer]
+    Running rnacontext again with spectrum kernels 1-10, rank 5 and generic function plot.
+    Computing MSE.
+    results 0-8.csv
+
+    d3: [detached from 5809.rnacontext_kmer_alltest]
+    Use all remaining points for testing.
+    results 9-17.csv
+
+d3: [detached from 6074.delve_eff_rank]
+    Try delve back with comparable ranks for ICD2, CSI2, Nystrom2.
+    The rows with each rank are now comparable.
+
+
+Fri 11 Aug 2017
+===============
+d3: [detached from 32923.snr_timing]
+Running the timing experiment for up to 1e6 points.
+results_0.csv
+
+Sat 12 Aug 2017
+===============
+d3: [detached from 6074.delve_eff_rank]
+Repeating for CSI2, ICD2, Nystrom2 due to unexplicable errors.
+Remember to merge on finish. OK
+
+Sun 13 Aug 2017
+===============
+d3: [detached from 6074.delve_eff_rank]
+Repeating everything with ranks 2-100 for all methods to use the time.
+
+
+Mon 14 Aug 2017
+===============
+d3: 32923.snr_timing
+Running timing for input dimensions 100-1.
+
+d3: [detached from 5809.rnacontext_kmer_alltest]
+Repeat rnacontext with ranks 10, 20
+
+
+Tue 15 Aug 2017
+===============
+Increase lambda resolution and store chosen k-mer lengths.
+[detached from 5809.rnacontext_kmer_alltest]
+
+
+Wed 16 Aug 2017
+===============
+[detached from 123458.rnacontex_test]
+Increase training set size to 2k.
+
+
+Thu 17 Aug 2017
+===============
+123458.rnacontex_test	(08/16/2017 10:50:41 AM)	(Detached)
+Changed the rnacontext dataset to "weak".
+rnacontext/2017-8-17/results_*.csv  0-8
+* WORKS
+* tag: rnacontext_regr_canonical
+
+Fri 18 Aug 2017
+===============
+[detached from 134075.rnacontext_spectrum]
+Efficient pre-computation of spectrum kernels.
+rnacontext/2017-8-18/results_*.csv 1-18
+Increased training and validation sets to 3000.
+
+134713.timing_test	(08/18/2017 04:47:08 PM)	(Detached)
+Added CSI to timing test within a spearate process.
+
+
+Sun 20 Aug 2017
+===============
+[detached from 145371.rnacotnext_spectrum]
+rnacontext/2017-8-18/results_*.csv 1-18
+Final try with training and validation sets to 1000.
+
+Mon 21 Aug 2017
+===============
+[detached from 148946.snr_timing]
+Re-run timings with fixed bugs on alignf and uniform.
+
+Wed 23 Aug 2017
+===============
+[detached from 148946.snr_timing]
+../output/snr/timings/2017-8-23/results_0.csv
+Varying number of kernels.
+
+../output/snr/timings/2017-8-23/results_1.csv
+Repeating due to errors.
+
+Fri 25 Aug 2017
+===============
+../output/snr/timings/2017-8-25/results_0.csv
+Repeating due to errors.
