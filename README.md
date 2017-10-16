@@ -24,9 +24,23 @@ A Multiple kernel learning Python library.
 #### Installation
 
 
+The Mklaren package is heavily based on NumPy and SciPy packages. Make sure these are installed and visible in the
+Python environment.
+
+    pip install numpy
+    pip install scipy
+
 Mklaren and its dependencies are installed from the PyPI package repository:
 
     pip install mklaren
 
-(Optional requirement) Running the method CSI (Cholseksy with Side Information) assumes a local `octave`
+(Optional requirement) Running the method CSI (Cholesky with Side Information) assumes a local `octave`
 installation as well as Oct2Py python module.
+
+Alternatively, the package can be installed by cloning this repository and running:
+
+    python setup.py install
+
+Unit tests are run with:
+
+    python setup.py test
