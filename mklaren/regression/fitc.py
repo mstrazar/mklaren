@@ -1,6 +1,10 @@
-import GPy
+import warnings
+try:
+    import GPy
+    from mklaren.kernel.kernel import exponential_kernel, matern32_gpy, matern52_gpy, periodic_gpy
+except ImportError:
+    warnings.warn("Install module 'GPy' to use the FITC method.")
 import numpy as np
-from mklaren.kernel.kernel import exponential_kernel, matern32_gpy, matern52_gpy, periodic_gpy
 
 class FITC:
     """
@@ -24,6 +28,11 @@ class FITC:
         Initialize model.
         :param rank: Number of inducing points.
         """
+        try:
+            GPy.__version__
+        except NameError:
+            raise NameError("Install module 'GPy' to use the FITC method.")
+
         self.rank = rank
         self.anchors_ = None
         self.model = None
