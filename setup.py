@@ -2,7 +2,8 @@ from setuptools import setup
 
 setup(
   name = 'mklaren',
-  packages = ['mklaren'],
+  packages = ['mklaren', 'mklaren.kernel', 'mklaren.mkl', 'mklaren.projection', 'mklaren.regression',
+              'mklaren.util'],
   version = '1.1',
   description = 'The Multiple Kernel Learning Python Library.',
   author = 'Martin Strazar',
@@ -17,9 +18,5 @@ setup(
                     "scipy>=0.19.0",
                     "scikit-learn>=0.18.1",
                     "cvxopt",
-                    # "oct2py>=4.0.6",
-                    # "paramz",
-                    # "matplotlib",
-                    # "GPy>=1.6.1",
                     ],
 )
