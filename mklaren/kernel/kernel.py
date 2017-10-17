@@ -1,12 +1,16 @@
 """ Methods related to calculation of kernel function values and kernel
     matrices.
 """
-import GPy
 import numpy as np
 import scipy.sparse as sp
 from sklearn.gaussian_process.kernels import Matern
 from scipy.spatial.distance import cdist
 
+# Install the GPy module to use included kernels
+try:
+    import GPy
+except ImportError:
+    pass
 
 def correct_xy(x, y):
     """
