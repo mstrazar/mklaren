@@ -21,7 +21,7 @@ from mklaren.kernel.kinterface import Kinterface
 from mklaren.regression.ridge import RidgeLowRank
 from datasets.rnacontext import load_rna, RNA_OPTIMAL_K, dataset2spectrum, RNA_DATASETS
 from examples.inducing_points.inducing_points import meth2color
-from examples.string.string_utils import generic_function_plot
+from examples.strings.string_utils import generic_function_plot
 
 
 # Hyperparameters
