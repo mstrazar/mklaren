@@ -1,1 +1,1 @@
-import la
+from .la import *
