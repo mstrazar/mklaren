@@ -18,7 +18,7 @@ from mklaren.kernel.kernel import kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
-from examples.string.string_utils import generic_function_plot
+from examples.strings.string_utils import generic_function_plot
 from examples.inducing_points.inducing_points import meth2color
 
 # Hyperparameters
