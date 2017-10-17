@@ -14,7 +14,11 @@ The implementation is based on the MATLAB/octave code provided by authors. It as
 """
 
 
-from oct2py import octave
+import warnings
+try:
+    from oct2py import octave
+except ImportError:
+    warnings.warn("Install module 'oct2py' to use the CSI method.")
 from os.path import join, dirname, realpath
 import numpy as np
 
@@ -47,7 +51,10 @@ class CSI:
         self.I         = list()
         self.active_set_ = list()
         self.trained   = False
-        octave.addpath(join(dirname(realpath(__file__)), 'csi'))
+        try:
+            octave.addpath(join(dirname(realpath(__file__)), 'csi'))
+        except NameError:
+            raise NameError("Install module 'oct2py' to use the CSI method.")
 
 
     def fit(self, K, y):
