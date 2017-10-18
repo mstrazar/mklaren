@@ -2,6 +2,3 @@ numpy
 scipy
 cvxopt
 sklearn
-octave
-oct2py
-GPy
