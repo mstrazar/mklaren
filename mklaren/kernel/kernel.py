@@ -79,7 +79,7 @@ def poly_kernel(x, y, degree=2, b=0):
             return (b + x.dot(y.T)) ** degree
 
 
-def sigmoid_kernel(x, y, b=1, c=0):
+def sigmoid_kernel(x, y, c=1, b=0):
         """
         The sigmoid kernel.
 
@@ -100,9 +100,9 @@ def sigmoid_kernel(x, y, b=1, c=0):
             x = np.array(x.todense())
             y = np.array(y.todense())
         if not hasattr(x, "shape"):
-            return np.tanh(b * x * y + c)
+            return np.tanh(c * x * y + b)
         else:
-            return np.tanh(b * x.dot(y.T) + c)
+            return np.tanh(c * x.dot(y.T) + b)
 
 
 def exponential_kernel(x, y, sigma=2.0, gamma=None):
