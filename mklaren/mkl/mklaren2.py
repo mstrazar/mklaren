@@ -221,10 +221,10 @@ def test(N = 100):
     n = 100
     rank = 10
     gamma = 0.1
-    noise = 100
+    noise = 10
     X = linspace(-10, 10, n).reshape((n, 1))
     K = exponential_kernel(X, X, gamma=gamma)
-    results = {"lars": [], "greedy": [], "win": []}
+    results = {"lars": [], "greedy": [], "win": [], "null": []}
 
     for run in range(N):
         w = randn(n, 1)
@@ -241,8 +241,10 @@ def test(N = 100):
         greedy = MklarenNyst(rank=rank)
         greedy.fit_greedy(Ks, y)
 
+        rnull = norm(f)
         rm = norm(f - model.sol_path[-1])
         rg = norm(f - greedy.sol_path[-1])
+        results["null"] = results["null"] + [rnull]
         results["greedy"] = results["greedy"] + [rg]
         results["lars"] = results["lars"] + [rm]
         results["win"] = results["win"] + [rm < rg]
