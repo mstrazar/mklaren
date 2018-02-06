@@ -114,6 +114,35 @@ class MklarenNyst:
         self.active = active
         self.G = hstack([ones((n, 1)) / norm(ones((n, 1))), Xa])
 
+    def fit_greedy(self, Ks, y):
+        n = Ks[0].shape[0]
+
+        # Expand full kernel matrices ; basis functions stored in rows
+        Xs = array([norm_matrix(K[:, :]).T for K in Ks])
+        Xa = ones((n, 1))
+        regr = least_sq(Xa, y)
+        residual = y - regr
+        active = []
+
+        for t in range(self.rank):
+            # Compute correlations with residual
+            c = Xs.dot(residual)
+
+            # Choose a new point to add based on maximum correlation
+            for q, i in active:
+                c[q, i] = float("-inf")
+            nq, ni, _ = unravel_index(absolute(c.argmax()), c.shape)
+
+            # Update active set and model
+            active = active + [(nq, ni)]
+            Xa = hstack([Xa] + [Xs[nq, ni, :].reshape((n, 1))])
+            regr = least_sq(Xa, y)
+            residual = y - regr
+            self.sol_path += [regr]
+
+        self.active = active
+        self.G = hstack([ones((n, 1)) / norm(ones((n, 1))), Xa])
+
     def predict(self, X):
         pass
 
@@ -127,6 +156,7 @@ if __name__ == "__main__":
 
     # Generate data
     n = 100
+    rank = 20
     gamma = 0.1
     noise_range = [0, 1.0, 3.0, 10]
 
@@ -145,20 +175,11 @@ if __name__ == "__main__":
         Ks = [Kinterface(data=X,
                          kernel=exponential_kernel,
                          kernel_args={"gamma": gamma}) for gamma in gamma_range]
-        model = MklarenNyst(rank=10)
+        model = MklarenNyst(rank=rank)
         model.fit(Ks, y)
-
-        # Least-squares solution
-        G = model.G
-        lsq = least_sq(G, y)
-        print(norm(lsq - model.sol_path[-1]))
-
-        # Full solution path
-        full_path = []
-        for k in range(len(model.sol_path)):
-            Gk = model.G[:, :k+1]
-            lsq = least_sq(Gk, y)
-            full_path.append(lsq)
+        greedy = MklarenNyst(rank=rank)
+        greedy.fit_greedy(Ks, y)
+        full_path = greedy.sol_path
 
         # Residual variance
         evar = lambda fx: (var(y) - var(y - fx)) / var(y)
@@ -178,18 +199,18 @@ if __name__ == "__main__":
     plt.grid()
 
 
-    # Plot
-    plt.figure(figsize=(12, 4))
-    plt.title("Solution path")
-    plt.plot(X.ravel(), y.ravel(), "k.")
-    for pi, p in enumerate(model.sol_path[:-1]):
-        plt.plot(X.ravel(), p.ravel(), "c-", linewidth=1+pi, alpha=0.3)
-    plt.plot(X.ravel(), lsq.ravel(), "r-", linewidth=1)
-    for pi, (q, i) in enumerate(model.active):
-        plt.text(X[i], 0, "%d" % pi)
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.show()
-
-
+    # Model plot
+    for md, col in [(model, "orange"), (greedy, "cyan")]:
+        plt.figure(figsize=(12, 4))
+        plt.title("Solution path")
+        plt.plot(X.ravel(), y.ravel(), "k.")
+        for pi, p in enumerate(md.sol_path[:-1]):
+            plt.plot(X.ravel(), p.ravel(), "-", color=col, linewidth=1+pi, alpha=0.3)
+        plt.plot(X.ravel(), md.sol_path[-1].ravel(), "r-", linewidth=1)
+        for pi, (q, i) in enumerate(md.active):
+            plt.text(X[i], 0, "%d" % pi)
+        plt.plot(X.ravel(), f, "k--")
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.show()
 
