@@ -15,7 +15,7 @@ from mklaren.projection.nystrom import Nystrom
 
 from numpy import zeros, diag, sqrt, mean, argmax, \
     array, log, eye, ones, absolute, ndarray, where, sign, min as npmin, argmin,\
-    sum as npsum, isnan, isinf, hstack, unravel_index, minimum, var
+    sum as npsum, isnan, isinf, hstack, unravel_index, minimum, var, std
 from numpy.linalg import inv, norm
 from numpy.random import choice
 
@@ -214,3 +214,38 @@ if __name__ == "__main__":
         plt.ylabel("y")
         plt.show()
 
+
+
+def test(N = 100):
+    # Generate data
+    n = 100
+    rank = 10
+    gamma = 0.1
+    noise = 100
+    X = linspace(-10, 10, n).reshape((n, 1))
+    K = exponential_kernel(X, X, gamma=gamma)
+    results = {"lars": [], "greedy": [], "win": []}
+
+    for run in range(N):
+        w = randn(n, 1)
+        f = K.dot(w) / K.dot(w).mean()
+        noise_vec = randn(n, 1)
+        y = f + noise * noise_vec
+        # Beacon kernels
+        gamma_range = [0.01, 0.03, 0.1, 0.3, 1.0]
+        Ks = [Kinterface(data=X,
+                         kernel=exponential_kernel,
+                         kernel_args={"gamma": gamma}) for gamma in gamma_range]
+        model = MklarenNyst(rank=rank)
+        model.fit(Ks, y)
+        greedy = MklarenNyst(rank=rank)
+        greedy.fit_greedy(Ks, y)
+
+        rm = norm(f - model.sol_path[-1])
+        rg = norm(f - greedy.sol_path[-1])
+        results["greedy"] = results["greedy"] + [rg]
+        results["lars"] = results["lars"] + [rm]
+        results["win"] = results["win"] + [rm < rg]
+
+    for ky in results.keys():
+        print("%s: %.2f +- %.2f" % (ky, mean(results[ky]), std(results[ky])))
