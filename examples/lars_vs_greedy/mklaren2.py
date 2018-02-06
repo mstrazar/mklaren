@@ -218,36 +218,42 @@ if __name__ == "__main__":
 
 def test(N = 100):
     # Generate data
+    import csv
     n = 100
     rank = 10
     gamma = 0.1
-    noise = 10
+    noise_range = [0, 1, 3, 10, 30]
     X = linspace(-10, 10, n).reshape((n, 1))
     K = exponential_kernel(X, X, gamma=gamma)
-    results = {"lars": [], "greedy": [], "win": [], "null": []}
 
-    for run in range(N):
-        w = randn(n, 1)
-        f = K.dot(w) / K.dot(w).mean()
-        noise_vec = randn(n, 1)
-        y = f + noise * noise_vec
-        # Beacon kernels
-        gamma_range = [0.01, 0.03, 0.1, 0.3, 1.0]
-        Ks = [Kinterface(data=X,
-                         kernel=exponential_kernel,
-                         kernel_args={"gamma": gamma}) for gamma in gamma_range]
-        model = MklarenNyst(rank=rank)
-        model.fit(Ks, y)
-        greedy = MklarenNyst(rank=rank)
-        greedy.fit_greedy(Ks, y)
+    rows = []
+    for noise in noise_range:
+        for run in range(N):
+            w = randn(n, 1)
+            f = K.dot(w) / K.dot(w).mean()
+            noise_vec = randn(n, 1)
+            y = f + noise * noise_vec
+            # Beacon kernels
+            gamma_range = [0.01, 0.03, 0.1, 0.3, 1.0]
+            Ks = [Kinterface(data=X,
+                             kernel=exponential_kernel,
+                             kernel_args={"gamma": gamma}) for gamma in gamma_range]
 
-        rnull = norm(f)
-        rm = norm(f - model.sol_path[-1])
-        rg = norm(f - greedy.sol_path[-1])
-        results["null"] = results["null"] + [rnull]
-        results["greedy"] = results["greedy"] + [rg]
-        results["lars"] = results["lars"] + [rm]
-        results["win"] = results["win"] + [rm < rg]
+            model = MklarenNyst(rank=rank)
+            model.fit(Ks, y)
+            greedy = MklarenNyst(rank=rank)
+            greedy.fit_greedy(Ks, y)
+            rnull = norm(f)
+            rm = norm(f - model.sol_path[-1])
+            rg = norm(f - greedy.sol_path[-1])
 
-    for ky in results.keys():
-        print("%s: %.2f +- %.2f" % (ky, mean(results[ky]), std(results[ky])))
+            row = {"N": N, "noise": noise, "method": "lars", "score": rm}
+            rows.append(row)
+            row = {"N": N, "noise": noise, "method": "greedy", "score": rg}
+            rows.append(row)
+
+        out = open("mklaren2.csv", "w")
+        writer = csv.DictWriter(out, fieldnames=rows[0].keys())
+        writer.writeheader()
+        writer.writerows(rows)
+        out.close()
