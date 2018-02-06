@@ -18,6 +18,7 @@ from numpy import zeros, diag, sqrt, mean, argmax, \
     sum as npsum, isnan, isinf, hstack, unravel_index, minimum, var, std
 from numpy.linalg import inv, norm
 from numpy.random import choice
+from scipy.stats import pearsonr
 
 
 def norm_matrix(X):
@@ -239,20 +240,26 @@ def test(N = 100):
                              kernel=exponential_kernel,
                              kernel_args={"gamma": gamma}) for gamma in gamma_range]
 
-            model = MklarenNyst(rank=rank)
-            model.fit(Ks, y)
-            greedy = MklarenNyst(rank=rank)
-            greedy.fit_greedy(Ks, y)
+            try:
+                model = MklarenNyst(rank=rank)
+                model.fit(Ks, y)
+                greedy = MklarenNyst(rank=rank)
+                greedy.fit_greedy(Ks, y)
+            except Exception as e:
+                print(e.message)
+                pass
             rnull = norm(f)
             rm = norm(f - model.sol_path[-1])
             rg = norm(f - greedy.sol_path[-1])
+            prm = pearsonr(f, model.sol_path[-1])[0][0]
+            prg = pearsonr(f, greedy.sol_path[-1])[0][0]
 
-            row = {"N": N, "noise": noise, "method": "lars", "score": rm}
+            row = {"N": N, "noise": noise, "method": "lars", "score": rm, "corr": prm}
             rows.append(row)
-            row = {"N": N, "noise": noise, "method": "greedy", "score": rg}
+            row = {"N": N, "noise": noise, "method": "greedy", "score": rg, "corr": prg}
             rows.append(row)
 
-        out = open("mklaren2.csv", "w")
+        out = open("/Users/martins/Dev/mklaren/examples/lars_vs_greedy/results.csv", "w")
         writer = csv.DictWriter(out, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
