@@ -1,12 +1,14 @@
 # Console import
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
-from mklaren.kernel.kernel import exponential_kernel
-from numpy import sqrt, array, ones, absolute, sign, hstack, unravel_index, minimum, var, linspace
+from mklaren.kernel.kernel import exponential_kernel, poly_kernel
+from numpy import sqrt, array, ones, absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange
 from numpy.random import randn
 from numpy.linalg import inv, norm
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
+import itertools as it
+import csv
 
 hlp = """
     A test Mklaren algorithm based on the Nystrom-type decomposition.
@@ -32,7 +34,7 @@ def find_bisector(X):
     A = 1.0 / sqrt(Gai.sum())
     omega = A * Gai.dot(ones((X.shape[1], 1)))
     bisector = X.dot(omega)
-    assert abs(norm(bisector) - 1) < 1e-8
+    assert abs(norm(bisector) - 1) < 1e-3
     return bisector, A
 
 
@@ -210,28 +212,46 @@ def process():
         plt.show()
 
 
-def test(N=100):
-    # Generate data
-    import csv
+def test():
+    """ A systematic test script. """
+    EXPONENTIAL = "exponential"
+    POLYNOMIAL = "polynomial"
+
+    # Generate data ; fixed parameters
+    N = 300
     n = 100
-    rank = 10
     gamma = 0.1
-    noise_range = [0, 1, 3, 10, 30]
+    degree = 2
     X = linspace(-10, 10, n).reshape((n, 1))
-    K = exponential_kernel(X, X, gamma=gamma)
+
+    # Varying parameters
+    noise_range = [0, 1, 3, 10, 30]
+    rank_range = [5, 10, 30]
+    p_range = [1, 3, 6]
+    kernel_range = [EXPONENTIAL, POLYNOMIAL]
 
     rows = []
-    for noise in noise_range:
+
+    for kernel, rank, p, noise in it.product(kernel_range, rank_range, p_range, noise_range):
+
+        gamma_range = logspace(-2, 0, p)
+        degree_range = arange(p + 1)
+        if kernel == EXPONENTIAL:
+            K = exponential_kernel(X, X, gamma=gamma)
+            Ks = [Kinterface(data=X,
+                             kernel=exponential_kernel,
+                             kernel_args={"gamma": gam}) for gam in gamma_range]
+        elif kernel == POLYNOMIAL:
+            K = poly_kernel(X, X, degree=degree)
+            Ks = [Kinterface(data=X,
+                             kernel=poly_kernel,
+                             kernel_args={"degree": deg}) for deg in degree_range]
+
         for run in range(N):
             w = randn(n, 1)
             f = K.dot(w) / K.dot(w).mean()
             noise_vec = randn(n, 1)
             y = f + noise * noise_vec
-            # Beacon kernels
-            gamma_range = [0.01, 0.03, 0.1, 0.3, 1.0]
-            Ks = [Kinterface(data=X,
-                             kernel=exponential_kernel,
-                             kernel_args={"gamma": gamma}) for gamma in gamma_range]
 
             try:
                 model = MklarenNyst(rank=rank)
@@ -239,21 +259,30 @@ def test(N=100):
                 greedy = MklarenNyst(rank=rank)
                 greedy.fit_greedy(Ks, y)
             except Exception as e:
-                print(e.message)
+                print(e)
                 pass
-            rnull = norm(f)
+
             rm = norm(f - model.sol_path[-1])
             rg = norm(f - greedy.sol_path[-1])
             prm = pearsonr(f, model.sol_path[-1])[0][0]
             prg = pearsonr(f, greedy.sol_path[-1])[0][0]
 
-            row = {"N": N, "noise": noise, "method": "lars", "score": rm, "corr": prm}
+            row = {"N": N, "noise": noise, "method": "lars", "norm": rm, "corr": prm,
+                   "kernel": kernel, "p": p, "rank": rank}
             rows.append(row)
-            row = {"N": N, "noise": noise, "method": "greedy", "score": rg, "corr": prg}
+            row = {"N": N, "noise": noise, "method": "greedy", "norm": rg, "corr": prg,
+                   "kernel": kernel, "p": p, "rank": rank}
             rows.append(row)
 
-        out = open("/Users/martins/Dev/mklaren/examples/lars_vs_greedy/results.csv", "w")
+        # Write to output
+        out_file = "/Users/martins/Dev/mklaren/examples/lars_vs_greedy/results_sys.csv"
+        out = open(out_file, "w")
         writer = csv.DictWriter(out, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
         out.close()
+        print("Written %d rows in %s." % (len(rows), out_file))
+
+
+if __name__ == "__main__":
+    test()
