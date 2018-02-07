@@ -1,24 +1,17 @@
+# Console import
+from mklaren.util.la import safe_divide as div
+from mklaren.kernel.kinterface import Kinterface
+from mklaren.kernel.kernel import exponential_kernel
+from numpy import sqrt, array, ones, absolute, sign, hstack, unravel_index, minimum, var, linspace
+from numpy.random import randn
+from numpy.linalg import inv, norm
+from scipy.stats import pearsonr
+import matplotlib.pyplot as plt
+
 hlp = """
     A test Mklaren algorithm based on the Nystrom-type decomposition.
     The basis functions are selected via the LAR criterion.
 """
-
-# from ..util.la import safe_divide as div, outer_product, safe_func, qr
-# from ..kernel.kinterface import Kinterface
-# from ..projection.nystrom import Nystrom
-
-# Console import
-from mklaren.util.la import safe_divide as div, outer_product, safe_func, qr
-from mklaren.kernel.kinterface import Kinterface
-from mklaren.kernel.kernel import center_kernel
-from mklaren.projection.nystrom import Nystrom
-
-from numpy import zeros, diag, sqrt, mean, argmax, \
-    array, log, eye, ones, absolute, ndarray, where, sign, min as npmin, argmin,\
-    sum as npsum, isnan, isinf, hstack, unravel_index, minimum, var, std
-from numpy.linalg import inv, norm
-from numpy.random import choice
-from scipy.stats import pearsonr
 
 
 def norm_matrix(X):
@@ -31,6 +24,18 @@ def least_sq(G, y):
     return G.dot(inv(G.T.dot(G)).dot(G.T).dot(y))
 
 
+def find_bisector(X):
+    """ Find bisector and the normalizing constant for vectors in X."""
+    # Compute bisector
+    Ga = X.T.dot(X)
+    Gai = inv(Ga)
+    A = 1.0 / sqrt(Gai.sum())
+    omega = A * Gai.dot(ones((X.shape[1], 1)))
+    bisector = X.dot(omega)
+    assert abs(norm(bisector) - 1) < 1e-8
+    return bisector, A
+
+
 class MklarenNyst:
 
     def __init__(self, rank, lbd=0, delta=10, debug=False):
@@ -40,6 +45,8 @@ class MklarenNyst:
         self.trained = False
         self.debug = debug
         self.sol_path = []
+        self.active = None
+        self.G = None
         assert self.lbd >= 0
 
     def fit(self, Ks, y):
@@ -63,12 +70,7 @@ class MklarenNyst:
             assert abs(norm(Xa[:, t - 1]) - 1) < 1e-8
 
             # Compute bisector
-            Ga = Xa.T.dot(Xa)
-            Gai = inv(Ga)
-            A = 1.0 / sqrt(Gai.sum())
-            omega = A * Gai.dot(ones((len(active), 1)))
-            bisector = Xa.dot(omega)
-            assert abs(norm(bisector)-1) < 1e-8
+            bisector, A = find_bisector(Xa)
 
             # Compute correlations with residual and bisector
             C = max(Xa.T.dot(residual))
@@ -100,13 +102,8 @@ class MklarenNyst:
             # Finish in the last step
             if t == (self.rank - 1):
                 # Compute bisector
-                Ga = Xa.T.dot(Xa)
-                Gai = inv(Ga)
-                A = 1.0 / sqrt(Gai.sum())
-                omega = A * Gai.dot(ones((len(active), 1)))
-                bisector = Xa.dot(omega)
+                bisector, A = find_bisector(Xa)
                 C = max(Xa.T.dot(residual))
-                A = 1.0 / sqrt(inv(Xa.T.dot(Xa)).sum())
                 grad = C / A
                 regr = regr + grad * bisector
                 residual = residual - grad * bisector
@@ -120,7 +117,7 @@ class MklarenNyst:
 
         # Expand full kernel matrices ; basis functions stored in rows
         Xs = array([norm_matrix(K[:, :]).T for K in Ks])
-        Xa = ones((n, 1))
+        Xa = ones((n, 1)) / norm(ones((n, 1)))
         regr = least_sq(Xa, y)
         residual = y - regr
         active = []
@@ -142,18 +139,13 @@ class MklarenNyst:
             self.sol_path += [regr]
 
         self.active = active
-        self.G = hstack([ones((n, 1)) / norm(ones((n, 1))), Xa])
+        self.G = Xa
 
     def predict(self, X):
         pass
 
 
-if __name__ == "__main__":
-
-    from mklaren.kernel.kernel import exponential_kernel
-    from numpy import linspace
-    from numpy.random import randn, rand
-    import matplotlib.pyplot as plt
+def process():
 
     # Generate data
     n = 100
@@ -182,6 +174,10 @@ if __name__ == "__main__":
         greedy.fit_greedy(Ks, y)
         full_path = greedy.sol_path
 
+        # Assert correctness
+        assert norm(least_sq(model.G, y) - model.sol_path[-1]) < 1e-5
+        assert norm(least_sq(greedy.G, y) - greedy.sol_path[-1]) < 1e-5
+
         # Residual variance
         evar = lambda fx: (var(y) - var(y - fx)) / var(y)
         sol_var = map(evar, model.sol_path)
@@ -199,7 +195,6 @@ if __name__ == "__main__":
     plt.show()
     plt.grid()
 
-
     # Model plot
     for md, col in [(model, "orange"), (greedy, "cyan")]:
         plt.figure(figsize=(12, 4))
@@ -216,8 +211,7 @@ if __name__ == "__main__":
         plt.show()
 
 
-
-def test(N = 100):
+def test(N=100):
     # Generate data
     import csv
     n = 100
