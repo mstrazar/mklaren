@@ -45,7 +45,7 @@ class MklarenNyst:
         self.trained = False
         self.debug = debug
         self.sol_path = []
-        self.active = None
+        self.active = []
         self.G = None
         assert self.lbd >= 0
 
@@ -66,8 +66,8 @@ class MklarenNyst:
         active = [(q, i)]
         Xa = hstack([sign(Xs[q, i, :].dot(residual)) * Xs[q, i, :].reshape((n, 1)) for q, i in active])
 
+        # Add rank more columns (last step adds two)
         for t in range(1, self.rank):
-            assert abs(norm(Xa[:, t - 1]) - 1) < 1e-8
 
             # Compute bisector
             bisector, A = find_bisector(Xa)
@@ -82,8 +82,7 @@ class MklarenNyst:
             T1 = div((C + c), (A + a))
             T2 = div((C - c), (A - a))
             for q, i in active:
-                T1[q, i] = float("inf")
-                T2[q, i] = float("inf")
+                T1[q, i] = T2[q, i] = float("inf")
             T1[T1 <= 0] = float("inf")
             T2[T2 <= 0] = float("inf")
             T = minimum(T1, T1)
