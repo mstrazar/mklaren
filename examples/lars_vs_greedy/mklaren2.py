@@ -150,9 +150,9 @@ def process():
 
     # Generate data
     n = 100
-    rank = 20
+    rank = 5
     gamma = 0.1
-    noise_range = [0, 1.0, 3.0, 10]
+    noise_range = [0, 1.0, 3.0, 10, 30]
 
     X = linspace(-10, 10, n).reshape((n, 1))
     K = exponential_kernel(X, X, gamma=gamma)
@@ -206,6 +206,7 @@ def process():
         plt.plot(X.ravel(), md.sol_path[-1].ravel(), "r-", linewidth=1)
         for pi, (q, i) in enumerate(md.active):
             plt.text(X[i], 0, "%d" % pi)
+            print("Model: %s, step: %d, gamma: %f" % (col, i, gamma_range[q]))
         plt.plot(X.ravel(), f, "k--")
         plt.xlabel("x")
         plt.ylabel("y")
