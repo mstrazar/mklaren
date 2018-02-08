@@ -2,7 +2,8 @@
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel, poly_kernel
-from numpy import sqrt, array, ones, absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange
+from numpy import sqrt, array, ones, zeros, \
+    absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange
 from numpy.random import randn
 from numpy.linalg import inv, norm
 from scipy.stats import pearsonr
@@ -283,6 +284,56 @@ def test():
         writer.writerows(rows)
         out.close()
         print("Written %d rows in %s." % (len(rows), out_file))
+
+
+def test_variance(noise=3):
+    """ Compare selected bandwidths for LARS/stagewise. """
+    from collections import Counter
+
+    # Generate data ; fixed parameters
+    N = 300
+    n = 100
+    gamma = 0.1     # True bandwidth
+    rank = 10
+    gamma_range = [0.01, 0.03, 0.1, 0.3, 1.0]
+    R_lars = zeros((N, len(gamma_range)))
+    R_stage = zeros((N, len(gamma_range)))
+
+    for repl in range(N):
+        # Generate data
+        X = linspace(-10, 10, n).reshape((n, 1))
+        K = exponential_kernel(X, X, gamma=gamma)
+        w = randn(n, 1)
+        f = K.dot(w) / K.dot(w).mean()
+        noise_vec = randn(n, 1)     # Crucial: noise is normally distributed
+        y = f + noise * noise_vec
+
+        # Modeling
+        Ks = [Kinterface(data=X,
+                         kernel=exponential_kernel,
+                         kernel_args={"gamma": gam}) for gam in gamma_range]
+
+        lars = MklarenNyst(rank=rank)
+        lars.fit(Ks, y)
+        stagewise = MklarenNyst(rank=rank)
+        stagewise.fit_greedy(Ks, y)
+
+        # Count bandwidths
+        c_lars = Counter(map(lambda t: t[0], lars.active))
+        c_stage = Counter(map(lambda t: t[0], stagewise.active))
+        R_lars[repl, c_lars.keys()] = c_lars.values()
+        R_stage[repl, c_stage.keys()] = c_stage.values()
+
+    # Plot comparison
+    plt.figure()
+    plt.plot(R_lars.sum(axis=0), ".-", label="lars")
+    plt.plot(R_stage.sum(axis=0), ".-", label="stagewise")
+    plt.legend()
+    plt.xticks(range(len(gamma_range)))
+    plt.gca().set_xticklabels(gamma_range)
+    plt.xlabel("Bandwidth")
+    plt.ylabel("Count")
+    plt.show()
 
 
 if __name__ == "__main__":
