@@ -3,7 +3,7 @@ from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel, poly_kernel
 from numpy import sqrt, array, ones, zeros, \
-    absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange
+    absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange, eye, trace
 from numpy.random import randn
 from numpy.linalg import inv, norm
 from scipy.stats import pearsonr
@@ -37,6 +37,21 @@ def find_bisector(X):
     bisector = X.dot(omega)
     assert abs(norm(bisector) - 1) < 1e-3
     return bisector, A
+
+
+def bias_variance(X, f, y, noise, lbd=1):
+    """ Bias-variance decomposition for design matrix X.
+    Although the OLS solution provides non-biased regression estimates, the lower variance solutions produced by
+    regularization techniques provide superior MSE performance.
+    """
+    K = X.dot(X.T)
+    n = K.shape[0]
+    Ki = inv(K + n * lbd * eye(n, n))
+    f_est = K.dot(Ki.dot(y))
+    bias2 = n * lbd ** 2 * norm(Ki.dot(f))**2
+    variance = float(noise) / n * trace(K.dot(K).dot(Ki).dot(Ki))
+    risk = 1.0 / n * norm(f - f_est)**2  # not exactly equal to expected bias/variance
+    return sqrt(bias2), variance
 
 
 class MklarenNyst:
@@ -286,7 +301,7 @@ def test():
         print("Written %d rows in %s." % (len(rows), out_file))
 
 
-def test_variance(noise=3):
+def test_bias_variance(noise=3):
     """ Compare selected bandwidths for LARS/stagewise. """
     from collections import Counter
 
@@ -298,6 +313,11 @@ def test_variance(noise=3):
     gamma_range = [0.01, 0.03, 0.1, 0.3, 1.0]
     R_lars = zeros((N, len(gamma_range)))
     R_stage = zeros((N, len(gamma_range)))
+
+    # Bias variance decomposition
+    lbd = 1e-5
+    bv_lars = zeros((N, 2))
+    bv_stage = zeros((N, 2))
 
     for repl in range(N):
         # Generate data
@@ -315,16 +335,19 @@ def test_variance(noise=3):
 
         lars = MklarenNyst(rank=rank)
         lars.fit(Ks, y)
-        stagewise = MklarenNyst(rank=rank)
-        stagewise.fit_greedy(Ks, y)
+        stage = MklarenNyst(rank=rank)
+        stage.fit_greedy(Ks, y)
 
         # Count bandwidths
         c_lars = Counter(map(lambda t: t[0], lars.active))
-        c_stage = Counter(map(lambda t: t[0], stagewise.active))
+        c_stage = Counter(map(lambda t: t[0], stage.active))
         R_lars[repl, c_lars.keys()] = c_lars.values()
         R_stage[repl, c_stage.keys()] = c_stage.values()
 
-    # Plot comparison
+        bv_lars[repl, :] = bias_variance(lars.G, y=y, f=f, noise=noise, lbd=lbd)
+        bv_stage[repl, :] = bias_variance(stage.G, y=y, f=f, noise=noise, lbd=lbd)
+
+    # Plot comparison - selected bandwidths
     plt.figure()
     plt.plot(R_lars.sum(axis=0), ".-", label="lars")
     plt.plot(R_stage.sum(axis=0), ".-", label="stagewise")
@@ -333,7 +356,26 @@ def test_variance(noise=3):
     plt.gca().set_xticklabels(gamma_range)
     plt.xlabel("Bandwidth")
     plt.ylabel("Count")
+
+    plt.figure()
+    a = min(min(bv_lars[:, 0]), min(bv_stage[:, 0]))
+    b = max(max(bv_lars[:, 0]), max(bv_stage[:, 0]))
+    plt.plot(bv_lars[:, 0], bv_stage[:, 0], ".")
+    plt.plot([a, b], [a, b], "--", color="gray")
+    plt.xlabel("Bias (LARS)")
+    plt.ylabel("Bias (Stage)")
     plt.show()
+
+    plt.figure()
+    a = min(min(bv_lars[:, 1]), min(bv_stage[:, 1]))
+    b = max(max(bv_lars[:, 1]), max(bv_stage[:, 1]))
+    plt.plot(bv_lars[:, 1], bv_stage[:, 1], ".")
+    plt.plot([a, b], [a, b], "--", color="gray")
+    plt.xlabel("Variance (LARS)")
+    plt.ylabel("Variance (Stage)")
+    plt.show()
+
+
 
 
 if __name__ == "__main__":
