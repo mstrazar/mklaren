@@ -1,10 +1,10 @@
 # Console import
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
-from mklaren.kernel.kernel import exponential_kernel, poly_kernel
+from mklaren.kernel.kernel import exponential_kernel, poly_kernel, linear_kernel
 from numpy import sqrt, array, ones, zeros, \
     absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange, eye, trace
-from numpy.random import randn
+from numpy.random import randn, rand
 from numpy.linalg import inv, norm
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
@@ -323,6 +323,8 @@ def test_bias_variance(noise=3):
         # Generate data
         X = linspace(-10, 10, n).reshape((n, 1))
         K = exponential_kernel(X, X, gamma=gamma)
+        # X = rand(n, n)
+        # K = linear_kernel(X, X)
         w = randn(n, 1)
         f = K.dot(w) / K.dot(w).mean()
         noise_vec = randn(n, 1)     # Crucial: noise is normally distributed
