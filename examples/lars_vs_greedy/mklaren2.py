@@ -3,7 +3,7 @@ from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel, poly_kernel, linear_kernel
 from numpy import sqrt, array, ones, zeros, \
-    absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange, eye, trace
+    absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange, eye, trace, set_printoptions
 from numpy.random import randn, rand
 from numpy.linalg import inv, norm
 from scipy.stats import pearsonr
@@ -16,10 +16,13 @@ hlp = """
     The basis functions are selected via the LAR criterion.
 """
 
+set_printoptions(precision=2)
+
 
 def norm_matrix(X):
     """ Ensure matrix columns have mean=0, norm=1"""
-    return (X - X.mean(axis=0)) / norm(X - X.mean(axis=0), axis=0)
+    # return (X - X.mean(axis=0)) / norm(X - X.mean(axis=0), axis=0)
+    return X / norm(X, axis=0)
 
 
 def least_sq(G, y):
@@ -65,6 +68,7 @@ class MklarenNyst:
         self.sol_path = []
         self.active = []
         self.G = None
+        self.bias = 0
         assert self.lbd >= 0
 
     def fit(self, Ks, y):
@@ -74,9 +78,10 @@ class MklarenNyst:
         Xs = array([norm_matrix(K[:, :]).T for K in Ks])
 
         # Set initial estimate and residual
-        regr = ones((n, 1)) * y.mean()
+        self.sol_path = []
+        self.bias = y.mean()
+        regr = ones((n, 1)) * self.bias
         residual = y - regr
-        self.sol_path = [regr]
 
         # Initial vector is selected by maximum *absolute* correlation
         Cs = Xs.dot(residual)
@@ -116,18 +121,15 @@ class MklarenNyst:
             # Update active set
             Xa = hstack([sign(Xs[q, i, :].dot(residual)) * Xs[q, i, :].reshape((n, 1)) for q, i in active])
 
-            # Finish in the last step
-            if t == (self.rank - 1):
-                # Compute bisector
-                bisector, A = find_bisector(Xa)
-                C = max(Xa.T.dot(residual))
-                grad = C / A
-                regr = regr + grad * bisector
-                residual = residual - grad * bisector
-                self.sol_path += [regr]
+        # Last step - full least-sq. solution
+        bisector, A = find_bisector(Xa)
+        C = max(Xa.T.dot(residual))
+        grad = C / A
+        regr = regr + grad * bisector
 
+        self.sol_path += [regr]
         self.active = active
-        self.G = hstack([ones((n, 1)) / norm(ones((n, 1))), Xa])
+        self.G = Xa
 
     def fit_greedy(self, Ks, y):
         n = Ks[0].shape[0]
@@ -158,11 +160,11 @@ class MklarenNyst:
         self.active = active
         self.G = Xa
 
-    def predict(self, X):
-        pass
+    def fitted_values(self):
+        return self.sol_path[-1]
 
 
-def process():
+def test_simple():
 
     # Generate data
     n = 100
@@ -179,6 +181,7 @@ def process():
 
     for noise in noise_range:
         y = f + noise * noise_vec
+        y -= y.mean()
 
         # Beacon kernels
         gamma_range = [0.01, 0.03, 0.1, 0.3, 1.0]
@@ -191,7 +194,7 @@ def process():
         greedy.fit_greedy(Ks, y)
         full_path = greedy.sol_path
 
-        # Assert correctness
+        # Assert correctness; true only for unbiased at the moment
         assert norm(least_sq(model.G, y) - model.sol_path[-1]) < 1e-5
         assert norm(least_sq(greedy.G, y) - greedy.sol_path[-1]) < 1e-5
 
@@ -229,7 +232,7 @@ def process():
         plt.show()
 
 
-def test():
+def test_systematic():
     """ A systematic test script. """
     EXPONENTIAL = "exponential"
     POLYNOMIAL = "polynomial"
@@ -378,7 +381,26 @@ def test_bias_variance(noise=3):
     plt.show()
 
 
+def test_orthog_case(noise=0):
+    """ LARS on a constructed orthogonal case"""
 
+    # Fixed data
+    n = 3
+    X = eye(n, n)
+    f = array([[1, -0.49, -0.51]]).T
+    noise_vec = randn(n, 1)  # Crucial: noise is normally distributed
+    y = f + noise * noise_vec
 
-if __name__ == "__main__":
-    test()
+    # Fit lars
+    lars = MklarenNyst(rank=n)
+    lars.fit([Kinterface(kernel=linear_kernel, data=X)], y)
+
+    print "y"
+    print y.ravel()
+
+    print "Design:"
+    print lars.G
+
+    print "Solution path:"
+    for p in lars.sol_path:
+        print p.ravel()
