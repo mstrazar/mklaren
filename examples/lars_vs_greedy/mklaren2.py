@@ -2,7 +2,7 @@
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel, poly_kernel, linear_kernel
-from numpy import sqrt, array, ones, zeros, \
+from numpy import sqrt, array, ones, zeros, argsort, \
     absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange, eye, trace, set_printoptions
 from numpy.random import randn, rand
 from numpy.linalg import inv, norm
@@ -387,7 +387,7 @@ def test_orthog_case(noise=0):
     # Fixed data
     n = 3
     X = eye(n, n)
-    f = array([[1, -0.49, -0.51]]).T
+    f = array([[1, -0.48, -0.52]]).T
     noise_vec = randn(n, 1)  # Crucial: noise is normally distributed
     y = f + noise * noise_vec
 
@@ -395,12 +395,22 @@ def test_orthog_case(noise=0):
     lars = MklarenNyst(rank=n)
     lars.fit([Kinterface(kernel=linear_kernel, data=X)], y)
 
-    print "y"
+    print "\ny"
     print y.ravel()
 
-    print "Design:"
+    print "\nDesign:"
     print lars.G
 
-    print "Solution path:"
-    for p in lars.sol_path:
-        print p.ravel()
+    print "\n Order statistic"
+    inxs = argsort(-absolute(y.ravel()))
+    print y[inxs].ravel(), "-"
+    print absolute(array(list(y[inxs][1:].ravel())+[0]))
+    print "-------------------"
+    print absolute(y[inxs]).ravel() - absolute(array(list(y[inxs][1:].ravel())+[0]))
+
+    paths = [zeros((n, 1))] + lars.sol_path
+    print "\nSolution transitions:"
+    for p0, p1 in zip(paths, paths[1:]):
+        print p0.ravel(), "->"
+        print p1.ravel(), "grad", (p1-p0).ravel()
+        print
