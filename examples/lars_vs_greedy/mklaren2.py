@@ -356,7 +356,7 @@ def test_bias_variance(noise=3):
         bv_stage[repl, :] = bias_variance(stage.G, y=y, f=f, noise=noise, lbd=lbd)
 
         error_lars[repl] = norm(f.ravel()-lars.sol_path[-1].ravel())
-        error_stage[repl] =norm(f.ravel() - stage.sol_path[-1].ravel())
+        error_stage[repl] = norm(f.ravel() - stage.sol_path[-1].ravel())
 
     # Plot comparison - selected bandwidths
     plt.close("all")
