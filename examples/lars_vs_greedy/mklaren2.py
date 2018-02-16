@@ -1,5 +1,5 @@
 # Console import
-from mklaren.util.la import safe_divide as div
+from mklaren.util.la import safe_divide as div, qr
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel, poly_kernel, linear_kernel
 from numpy import sqrt, array, ones, zeros, argsort, \
@@ -21,8 +21,8 @@ set_printoptions(precision=2)
 
 def norm_matrix(X):
     """ Ensure matrix columns have mean=0, norm=1"""
-    # return (X - X.mean(axis=0)) / norm(X - X.mean(axis=0), axis=0)
-    return X / norm(X, axis=0)
+    return (X - X.mean(axis=0)) / norm(X - X.mean(axis=0), axis=0)
+    # return X / norm(X, axis=0)
 
 
 def least_sq(G, y):
@@ -76,6 +76,7 @@ class MklarenNyst:
 
         # Expand full kernel matrices ; basis functions stored in rows
         Xs = array([norm_matrix(K[:, :]).T for K in Ks])
+        # Xs = array([qr(K[:, :])[0].T for K in Ks])
 
         # Set initial estimate and residual
         self.sol_path = []
@@ -321,6 +322,8 @@ def test_bias_variance(noise=3):
     lbd = 1e-5
     bv_lars = zeros((N, 2))
     bv_stage = zeros((N, 2))
+    error_lars = zeros((N,))
+    error_stage = zeros((N,))
 
     for repl in range(N):
         # Generate data
@@ -352,7 +355,11 @@ def test_bias_variance(noise=3):
         bv_lars[repl, :] = bias_variance(lars.G, y=y, f=f, noise=noise, lbd=lbd)
         bv_stage[repl, :] = bias_variance(stage.G, y=y, f=f, noise=noise, lbd=lbd)
 
+        error_lars[repl] = norm(f.ravel()-lars.sol_path[-1].ravel())
+        error_stage[repl] =norm(f.ravel() - stage.sol_path[-1].ravel())
+
     # Plot comparison - selected bandwidths
+    plt.close("all")
     plt.figure()
     plt.plot(R_lars.sum(axis=0), ".-", label="lars")
     plt.plot(R_stage.sum(axis=0), ".-", label="stagewise")
@@ -378,6 +385,15 @@ def test_bias_variance(noise=3):
     plt.plot([a, b], [a, b], "--", color="gray")
     plt.xlabel("Variance (LARS)")
     plt.ylabel("Variance (Stage)")
+    plt.show()
+
+    plt.figure()
+    a = min(min(error_lars), min(error_stage))
+    b = max(max(error_stage), max(error_stage))
+    plt.plot(error_lars, error_stage, ".")
+    plt.plot([a, b], [a, b], "--", color="gray")
+    plt.xlabel("Error (LARS)")
+    plt.ylabel("Error (Stage)")
     plt.show()
 
 
