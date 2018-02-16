@@ -3,10 +3,11 @@ from mklaren.util.la import safe_divide as div, qr
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel, poly_kernel, linear_kernel
 from numpy import sqrt, array, ones, zeros, argsort, \
-    absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange, eye, trace, set_printoptions
+    absolute, sign, hstack, unravel_index, minimum, var, linspace, logspace, arange, eye, trace, set_printoptions, \
+    sum, mean, power
 from numpy.random import randn, rand
 from numpy.linalg import inv, norm
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, multivariate_normal as mvn
 import matplotlib.pyplot as plt
 import itertools as it
 import csv
@@ -28,6 +29,47 @@ def norm_matrix(X):
 def least_sq(G, y):
     """ Least-squares fit for G, y """
     return G.dot(inv(G.T.dot(G)).dot(G.T).dot(y))
+
+
+def risk(Ks, f, sigma, N=100, greedy=False, rank=10):
+    """
+    Estimate in-sample risk (Cp statistic).
+    :param Ks: List of kernel interfaces.
+    :param f: True function.
+    :param sigma: Known variance.
+    :param N: number of replications.
+    :param greedy: Use a greedy fit.
+    :return:s
+    """
+    n = Ks[0].shape[0]
+    Y = mvn.rvs(mean=f.ravel(), cov=sigma * eye(n, n), size=N)
+    Y = Y - Y.mean(axis=1).reshape((N, 1))
+
+    # MSE
+    Mu = Y * 0
+    for i, y in enumerate(Y):
+        model = MklarenNyst(rank=rank)
+        r = 10
+        while r > 0:
+            try:
+                if greedy:
+                    model.fit_greedy(Ks, y.reshape((n, 1)))
+                else:
+                    model.fit(Ks, y.reshape((n, 1)))
+                r = 0
+            except:
+                r = r - 1
+        Mu[i, :] = model.sol_path[-1].ravel()
+
+    # Covariances
+    C = zeros(n)
+    for i in range(n):
+        C[i] = sum((Y[:, i] - Y[:, i].mean()) * (Mu[:, i])) / (N - 1)
+
+    mse = mean(power(Y - Mu, 2).sum(axis=1)) / sigma
+    df = sum(C) / sigma
+    c = mse - n + 2 * df
+    return c, df
 
 
 def find_bisector(X):
@@ -395,6 +437,45 @@ def test_bias_variance(noise=3):
     plt.xlabel("Error (LARS)")
     plt.ylabel("Error (Stage)")
     plt.show()
+
+
+def test_risk(noise=10):
+    # Generate data ; fixed parameters
+    N = 100
+    n = 100
+    gamma = 0.1     # True bandwidth
+    rank_range = [2, 3, 5, 8, 10, 20, 30]
+    gamma_range = [0.01, 0.03, 0.1, 0.3, 1.0]
+
+    # Generate data
+    X = linspace(-10, 10, n).reshape((n, 1))
+    K = exponential_kernel(X, X, gamma=gamma)
+    w = randn(n, 1)
+    f = K.dot(w) / K.dot(w).mean()
+    noise_vec = randn(n, 1)     # Crucial: noise is normally distributed
+
+    Ks = [Kinterface(data=X,
+                     kernel=exponential_kernel,
+                     kernel_args={"gamma": gam}) for gam in gamma_range]
+
+    risks = {"LARS": zeros((len(rank_range),)),
+             "Greedy": zeros((len(rank_range),)), }
+
+    for ri, rank in enumerate(rank_range):
+        risks["LARS"][ri], _ = risk(Ks, f, sigma=noise, greedy=False, rank=rank, N=N)
+        risks["Greedy"][ri], _ = risk(Ks, f, sigma=noise, greedy=True, rank=rank, N=N)
+
+    plt.figure()
+    for name in sorted(risks.keys()):
+        plt.plot(risks[name], label=name)
+    plt.xticks(range(len(rank_range)))
+    plt.gca().set_xticklabels(rank_range)
+    plt.xlabel("Rank")
+    plt.ylabel("$C_p$")
+    plt.title("$\sigma^2=%.2f$" % noise)
+    plt.legend()
+    plt.grid()
+
 
 
 def test_orthog_case(noise=0):
