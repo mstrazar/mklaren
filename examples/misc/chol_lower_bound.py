@@ -15,13 +15,15 @@ hlp = """
         Perhaps compare with the values that you already have checked.
     
     Define the approximate matrix.    
-        L = G G^T.
+        L = GG'.
     Approximation is exact for L[A, A] == K[A, A], where A is the active set.
     However, it is not exact for L[A, Aj] != K[A, Aj] where A != Aj.
     Adding a point, Aj = (A union j), makes L[Aj, Aj] == K[Aj, Aj]
     
     All values K[:, i] have to be computed at iteration i.
-    
+    The values K[:, i] - GG'[:, :i] are not used for anything and represent "how much we already approximated". 
+        Could they be used to complement the lower bound.
+        
 """
 
 # Generate data
