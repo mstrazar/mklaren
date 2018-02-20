@@ -32,6 +32,7 @@ class ICD:
         self.eps = eps
         self.G = None
         self.trained = False
+        self.D = None
 
     def fit(self, K):
         """Learn a low-rank kernel approximation.
@@ -40,6 +41,7 @@ class ICD:
         """
         n = K.shape[0]
         G = np.zeros((n, self.rank))
+        self.D = np.zeros((n, self.rank))
         if isinstance(K, Kinterface):
             D = K.diag().copy()
         else:
@@ -48,6 +50,7 @@ class ICD:
         I = list()
         for k in range(self.rank):
             # select pivot d
+            self.D[:, k] = D.ravel()
             i = np.argmax(D)
             I.append(i)
             J.remove(i)
