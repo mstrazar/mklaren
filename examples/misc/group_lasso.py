@@ -8,7 +8,7 @@ class GroupLasso:
     The design matrix is assumed to be orthonormal.
     """
 
-    def __init__(self, lbd=0, max_iter=10):
+    def __init__(self, lbd=0.0, max_iter=10):
         self.beta = None
         self.lbd = lbd
         self.bias = 0
@@ -29,22 +29,50 @@ class GroupLasso:
     def predict(self, Xs):
         return self.bias + sum(Xs[i].dot(self.beta[i]) for i in range(len(Xs)))
 
+    def df(self, Xs, y):
+        """ Compute degrees of freedom based on least-squares coefficients."""
+        self.fit(Xs, y)
+        X = np.hstack(Xs)
+        lsq = np.linalg.solve(X, y)
+
+        # Organize least-squares factors
+        lq = []
+        i = 0
+        for b in self.beta:
+            lq.append(lsq[i:i+len(b)])
+            i += len(b)
+
+        # Compute df
+        df = 0
+        for b, q in zip(self.beta, lq):
+            bn = np.linalg.norm(b)
+            pj = len(b)
+            spj = np.sqrt(pj)
+            if bn > self.lbd * spj:
+                df += 1 + (1 - self.lbd * spj / bn) * (pj - 1)
+
+        return df
+
 
 def plot_path(Xs, y):
     """ Plot regularization path in slices of a 2D space. """
     X = np.hstack(Xs)
     lsq = np.linalg.solve(X, y)
 
-    # Compute solution path
+    # Compute solution path & degrees of freedom
     lbd_range = np.linspace(0, 1, 100)
     W = np.zeros((len(lbd_range), X.shape[1]))
+    df = np.zeros((len(lbd_range), ))
+    dfk = np.zeros((len(lbd_range),))
     for i, lbd in enumerate(lbd_range):
         model = GroupLasso(lbd=lbd)
         model.fit(Xs, y)
         W[i, :2] = model.beta[0]
         W[i, 2] = model.beta[1]
+        dfk[i] = sum(W[i, :] != 0)
+        df[i] = model.df(Xs, y)
 
-    # Plot
+    # Plot coefficients paths - 2D
     inxs = [[1, 0], [1, 2]]
     fig, ax = plt.subplots(nrows=1, ncols=2)
     for j, inx in enumerate(inxs):
@@ -58,6 +86,7 @@ def plot_path(Xs, y):
         ax[j].plot(lsq[inx][0], lsq[inx][1], "s", markersize=3, color="red")
     fig.tight_layout()
 
+    # Plot coefficients paths - 1D
     plt.figure()
     for wi, w in enumerate(W.T):
         plt.plot(w)
@@ -66,6 +95,13 @@ def plot_path(Xs, y):
     plt.gca().set_xlim([-5, W.shape[0]])
     plt.xlabel("Step $\lambda=%d...%d$" % (lbd_range[0], lbd_range[-1]))
     plt.grid()
+
+    # Plot degrees of freedom and simple approximation
+    plt.figure()
+    plt.plot(df, label="$df(\\beta)$")
+    plt.plot(dfk, label="$df = k$")
+    plt.legend()
+    plt.xlabel("Step $\lambda=%d...%d$" % (lbd_range[0], lbd_range[-1]))
     plt.show()
 
 
@@ -78,7 +114,7 @@ def test():
     y = X.dot(w) + noise * np.random.randn(3)
     y -= y.mean()
 
-    model = GroupLasso(lbd=0)
+    model = GroupLasso(lbd=0.2)
     model.fit(Xs, y)
     yp = model.predict(Xs)
 
