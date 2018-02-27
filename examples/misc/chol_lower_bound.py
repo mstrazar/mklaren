@@ -80,3 +80,20 @@ plt.xlabel("Iteration")
 plt.ylabel("Error")
 plt.grid()
 plt.legend()
+
+
+# Compare LS solution
+G = model.G
+ls_error = [np.linalg.lstsq(G[:, :k+1], y.reshape((n, 1)))[1][0] for k in range(model.rank)]
+
+G = model_norm.G
+ls_error_norm = [np.linalg.lstsq(G[:, :k+1], y.reshape((n, 1)))[1][0] for k in range(model_norm.rank)]
+
+
+plt.figure()
+plt.plot(ls_error, "--", label="LS-Error (random)")
+plt.plot(ls_error_norm, label="LS-Error (norm)")
+plt.xlabel("Iteration")
+plt.ylabel("Error")
+plt.grid()
+plt.legend()
