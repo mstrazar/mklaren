@@ -22,7 +22,10 @@ class ICD:
     :ivar G: (``numpy.ndarray``) Low-rank approximation.
     """
 
-    def __init__(self, rank, eps=1e-10):
+    MODE_NORM = "norm_bound"
+    MODE_RANDOM = "random"
+
+    def __init__(self, rank, eps=1e-10, mode=MODE_NORM):
         """
         :param rank: (``int``) Maximal decomposition rank.
 
@@ -33,6 +36,7 @@ class ICD:
         self.G = None
         self.trained = False
         self.D = None
+        self.mode = mode
 
     def fit(self, K):
         """Learn a low-rank kernel approximation.
@@ -51,7 +55,8 @@ class ICD:
         for k in range(self.rank):
             # select pivot d
             self.D[:, k] = D.ravel()
-            i = np.argmax(D)
+            i = np.argmax(D) if self.mode == self.MODE_NORM \
+                else np.random.choice(np.array(list(J)))
             I.append(i)
             J.remove(i)
             j = list(J)
