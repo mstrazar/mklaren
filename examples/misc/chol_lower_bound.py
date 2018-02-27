@@ -35,29 +35,48 @@ y = K[:, :].dot(w)
 y = y - y.mean()
 
 # Fit model
-model = ICD(rank=30)
+rank = 30
+model = ICD(rank=rank, mode=ICD.MODE_RANDOM)
 model.fit(K)
+model_norm = ICD(rank=rank, mode=ICD.MODE_NORM)
+model_norm.fit(K)
 
 # Plot the fit
-plt.figure()
-plt.plot(X.ravel(), y.ravel(), "-")
-for k in range(model.rank):
-    ki = model.active_set_[k]
-    plt.plot(X.ravel(), model.D[:, k], "c-")
-    plt.plot(X.ravel()[ki], model.D[ki, k], "r.")
-    plt.text(X.ravel()[ki], model.D[ki, k]+1, str(k))
-plt.xlabel("x")
-plt.ylabel("f(x)")
+# plt.figure()
+# plt.plot(X.ravel(), y.ravel(), "-")
+# for k in range(model.rank):
+#     ki = model.active_set_[k]
+#     plt.plot(X.ravel(), model.D[:, k], "c-")
+#     plt.plot(X.ravel()[ki], model.D[ki, k], "r.")
+#     plt.text(X.ravel()[ki], model.D[ki, k]+1, str(k))
+# plt.xlabel("x")
+# plt.ylabel("f(x)")
 
 # Compare true gain and approximate gain
 G = model.G
 lb = [model.D[model.active_set_[k], k] for k in range(model.rank)]
 gain = [np.linalg.norm(G[:, :k+1].dot(G[:, :k+1].T) - G[:, :k].dot(G[:, :k].T), ord=1) for k in range(model.rank)]
+error = [np.linalg.norm(K[:, :] - G[:, :k].dot(G[:, :k].T), ord=1) for k in range(model.rank)]
+
+# Compare true gain and approximate gain
+G = model_norm.G
+lb = [model_norm.D[model_norm.active_set_[k], k] for k in range(model_norm.rank)]
+gain_norm = [np.linalg.norm(G[:, :k+1].dot(G[:, :k+1].T) - G[:, :k].dot(G[:, :k].T), ord=1) for k in range(model_norm.rank)]
+error_norm = [np.linalg.norm(K[:, :] - G[:, :k].dot(G[:, :k].T), ord=1) for k in range(model_norm.rank)]
+#
+# plt.figure()
+# plt.plot(lb, label="Lower bound")
+# plt.plot(gain, "--", label="Gain (random)")
+# plt.plot(gain_norm, label="Gain (norm)")
+# plt.xlabel("Iteration")
+# plt.ylabel("Gain")
+# plt.grid()
+# plt.legend()
 
 plt.figure()
-plt.plot(lb, label="Lower bound")
-plt.plot(gain, label="True gain")
+plt.plot(error, "--", label="Error (random)")
+plt.plot(error_norm, label="Error (norm)")
 plt.xlabel("Iteration")
-plt.ylabel("Gain")
+plt.ylabel("Error")
 plt.grid()
 plt.legend()
