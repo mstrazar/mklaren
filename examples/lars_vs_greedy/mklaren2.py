@@ -108,6 +108,8 @@ class MklarenNyst:
         self.trained = False
         self.debug = debug
         self.sol_path = []
+        self.grad_path = []
+        self.bisector_path = []
         self.active = []
         self.G = None
         self.bias = 0
@@ -160,6 +162,8 @@ class MklarenNyst:
             regr = regr + grad * bisector
             residual = residual - grad * bisector
             self.sol_path += [regr]
+            self.grad_path += [grad]
+            self.bisector_path += [bisector]
 
             # Update active set
             Xa = hstack([sign(Xs[q, i, :].dot(residual)) * Xs[q, i, :].reshape((n, 1)) for q, i in active])
