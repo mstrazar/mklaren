@@ -45,6 +45,7 @@ for i, (sp, bsk, g) in enumerate(zip(sol_path, model_lars.bisector_path, model_l
 
 path_cont = np.array([np.var(P[i, :].ravel() - y.ravel()) for i in range(len(P))])
 path_cont_f = np.array([np.var(P[i, :].ravel() - f.ravel()) for i in range(len(P))])
+path_norm_mu = np.array([np.linalg.norm(P[i, :]) for i in range(len(P))])
 inxs = range(0, len(path_cont), len(soft))
 
 # Plot path and sample points
@@ -56,6 +57,12 @@ plt.plot(inxs, path_cont_f[inxs], ".", color="orange")
 plt.xlabel("Model capacity $\\rightarrow$")
 plt.ylabel("MSE")
 plt.legend()
+
+plt.figure()
+plt.plot(range(len(path_cont)), path_norm_mu, "-", color="blue")
+plt.plot(inxs, path_norm_mu[inxs], ".", color="blue")
+plt.xlabel("Model capacity $\\rightarrow$")
+plt.ylabel("$\|h(x)\|$")
 
 
 # Ridge regression
