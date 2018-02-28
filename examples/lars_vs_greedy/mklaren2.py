@@ -153,7 +153,7 @@ class MklarenNyst:
                 T1[q, i] = T2[q, i] = float("inf")
             T1[T1 <= 0] = float("inf")
             T2[T2 <= 0] = float("inf")
-            T = minimum(T1, T1)
+            T = minimum(T1, T2)
             nq, ni, _ = unravel_index(T.argmin(), T.shape)
             grad = T[nq, ni]
 
