@@ -126,8 +126,8 @@ def orthog_lars_sequential():
     for step in range(n):
         print("Step: %d" % step)
         nxt = [step + 1]
-        c_act = X[:, act].T.dot(r).ravel()
-        c_nxt = X[:, nxt].T.dot(r).ravel()
+        c_act = X[:, act].T.dot(y).ravel()
+        c_nxt = X[:, nxt].T.dot(y).ravel()
         C_a = max(c_act)
         C_n = max(c_nxt)
         if C_a > C_n:
@@ -137,7 +137,7 @@ def orthog_lars_sequential():
             C_path[step] = C_a
             r = y - mu
         else:
-            # Update residual too, in order to evaluate for new columns.
+            # Update residual too, in order to evaluate for new columns?
             inxs = C_path > C_n      # True: variables in correct positions
             p = np.argmin(inxs)      # Position of the current variable
             grad_01 = C_path[p - 1] - C_n if p > 0 else None
