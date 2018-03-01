@@ -122,10 +122,6 @@ def orthog_lars_sequential():
     # Path variables; to be reshuffled accordingly;
     grad_path = np.zeros((n,))
     C_path = np.zeros((n,))
-
-    c_all = X.T.dot(r).ravel()
-    act = np.argsort(-c_all)
-    grads = c_all[act] - np.concatenate((c_all[act][1:], np.array([0])))
     act = [0]
     for step in range(n):
         print("Step: %d" % step)
@@ -141,19 +137,21 @@ def orthog_lars_sequential():
             C_path[step] = C_a
             r = y - mu
         else:
+            # Update residual too, in order to evaluate for new columns.
             inxs = C_path > C_n      # True: variables in correct positions
             p = np.argmin(inxs)      # Position of the current variable
             grad_01 = C_path[p - 1] - C_n if p > 0 else None
             grad_12 = C_n - C_path[p]  # Positive by construction
             if p > 0:
                 C_path = np.hstack([C_path[:p],
-                                    np.array([grad_01]),
-                                    np.array([grad_12]),
+                                    np.array([C_n]),
                                     C_path[p+1:]])
                 grad_path = np.hstack([grad_path[:p],
                                        np.array([grad_01]),
                                        np.array([grad_12]),
-                                       C_path[p + 1:]])
+                                       grad_path[p + 1:]])
+                act = act[:p] + [step + 1] + act[p:]
+                # etc.
 
 
 def orthog_lars_simple_test():
