@@ -18,12 +18,17 @@ rank = 30
 delta = 5
 
 
-def find_gradient(X, r, b):
+def find_gradient(X, r, b, act):
     """ Find gradient over the bisector b and residual r. """
     c = X.T.dot(r).ravel()
     a = X.T.dot(b).ravel()
-    C = max(c.ravel())
-    A = max(a.ravel())
+    C = max(c[act].ravel())
+    A = max(a[act].ravel())
+    inxs = c > C
+    if any(inxs):
+        print("%s (%.3f)" % (str(c), C))
+        print("Correlation condition violated with %.2f > %.2f!" % (max(c), C))
+        raise ValueError
     t1 = (C - c) / (A - a)
     t2 = (C + c) / (A + a)
     valid1 = np.logical_and(t1 > 0, np.isfinite(t1))
@@ -33,105 +38,9 @@ def find_gradient(X, r, b):
         grad = min(t1[valid1])
     if sum(valid2):
         grad = min(grad, min(t2[valid2]))
-    return grad if np.isfinite(grad) else 0
-
-
-def fit_mklaren(Ks, y):
-    n = Ks[0].shape[0]
-
-    # Set initial estimate and residual
-    # self.sol_path = []
-    # self.bias = y.mean()
-    # regr = ones((n, 1)) * self.bias
-    sol_path = []
-    bias = y.mean()
-    regr = ones((n, 1)) * bias
-    residual = y - regr
-
-    for t in range(min(rank, rank - delta)):
-
-        # Expand full kernel matrices ; basis functions stored in rows ;
-        # Simulate look-ahead of delta basis funtions
-        # Xs = array([norm_matrix(Ka).T for K in Ks])
-        Ka = K[:, :t + delta]
-        Xs = array([norm_matrix(Ka).T])
-
-        # Approximate basis functions
-        Ga = sp.linalg.sqrtm(Ka.dot(np.linalg.inv(Ka[:t+delta, :])).dot(Ka.T))
-        Xs_app = np.real(array([norm_matrix(Ga).T for K in Ks]))
-
-        # Initial vector is selected by maximum *absolute* correlation
-        Cs = Xs.dot(residual)
-
-        # Make a deliberate bad selection in the beggining
-        # rnd = np.random.randint(0, Cs.size)
-        # q, i, _ = unravel_index(rnd, Cs.shape)
-
-        # True best value from available
-        q, i, _ = unravel_index(absolute(Cs).argmax(), Cs.shape)
-
-        active = [(q, i)]
-        Xa = hstack([sign(Xs[q, i, :].dot(residual)) * Xs[q, i, :].reshape((n, 1)) for q, i in active])
-
-        # Compute bisector
-        bisector, A = find_bisector(Xa)
-
-        # Compute correlations with residual and bisector
-        C = max(Xa.T.dot(residual))
-        c = Xs_app.dot(residual)
-        a = Xs_app.dot(bisector)
-        assert C > 0
-
-        # Select new basic function and define gradient
-        # Negative values mean that the predictor must be turned for 180 degrees
-
-        T1 = div((C + c), (A + a))
-        T2 = div((C - c), (A - a))
-        for q, i in active:
-            T1[q, i] = T2[q, i] = float("inf")
-        # T1[T1 <= 0] = float("inf")
-        # T2[T2 <= 0] = float("inf")
-        T = minimum(T1, T2)
-        nq, ni, _ = unravel_index(T.argmin(), T.shape)
-        grad = T[nq, ni]
-
-        # Update state
-        active = active + [(nq, ni)]
-        regr = regr + grad * bisector
-        residual = residual - grad * bisector
-
-    # Plot current situation
-    plt.figure()
-    plt.plot(Xa, label="$x_a$")
-    plt.plot(Xs[nq, ni, :], label="$x_{new}$")
-    plt.plot(regr, label="$\mu$")
-    plt.plot(residual, ".", label="$r$", color="black")
-    plt.legend()
-
-
-
-
-def test():
-    N = 100
-    n = 100
-    noise = 0.03
-    gamma = 0.1  # True bandwidth
-    rank_range = [2, 3, 5, 8, 10, 20, 30]
-    gamma_range = [gamma]
-
-    # Generate data
-    X = linspace(-10, 10, n).reshape((n, 1))
-    K = exponential_kernel(X, X, gamma=gamma)
-    w = randn(n, 1)
-    f = K.dot(w) - K.dot(w).mean()
-    noise_vec = randn(n, 1)  # Crucial: noise is normally distributed
-    y = f + noise * noise_vec
-
-    # Shuffle order and feed to model
-    shuffle = np.random.choice(range(n), size=n, replace=False)
-    K = K[shuffle, :][:, shuffle]
-    y = y[shuffle]
-    Ks = [K]
+    if not np.isfinite(grad):
+        raise Exception("Infinite gradient!")
+    return grad, C
 
 
 def example():
@@ -177,6 +86,99 @@ def example():
     plot3(X, y, mu3, title="Step 2b")
 
 
+def orthog_lars_simple(X, y):
+    """
+    Simple orthogonal LARS with full information. Solves the path in one sorting step.
+    Bisector is a simple sum of orthogonal components.
+    X is an orthogonal matrix.
+    :return:
+    """
+    n = X.shape[0]
+    X = X * np.sign(X.T.dot(y)).ravel()
+    c_all = X.T.dot(y).ravel()
+    act = np.argsort(-c_all)
+    grads = c_all[act] - np.concatenate((c_all[act][1:], np.array([0])))
+    path = np.zeros((n, n))
+    for i, a in enumerate(act):
+        bisec = X[:, act[:i+1]].sum(axis=1)
+        p = path[i-1] if i > 0 else 0
+        path[i] = p + grads[i] * bisec.ravel()
+    return path
+
+
+def orthog_lars_sequential():
+    """
+    Example computation of late-coming vectors.
+    Y determines the order in which variables enter the model.
+    Have to remember what the value of C was when each variable entered the model.
+    Only makes sense if there is some smart selection of the variables based on the current estimate.
+    """
+    y = array([4, 2, 3, 1]).reshape((4, 1))
+    n = len(y)
+    X = eye(n)
+    r = y.reshape((n, 1))
+    mu = np.zeros((n, 1))
+
+    # Path variables; to be reshuffled accordingly;
+    grad_path = np.zeros((n,))
+    C_path = np.zeros((n,))
+
+    c_all = X.T.dot(r).ravel()
+    act = np.argsort(-c_all)
+    grads = c_all[act] - np.concatenate((c_all[act][1:], np.array([0])))
+    act = [0]
+    for step in range(n):
+        print("Step: %d" % step)
+        nxt = [step + 1]
+        c_act = X[:, act].T.dot(r).ravel()
+        c_nxt = X[:, nxt].T.dot(r).ravel()
+        C_a = max(c_act)
+        C_n = max(c_nxt)
+        if C_a > C_n:
+            grad = C_a - C_n
+            mu[act] += grad
+            grad_path[step] = grad
+            C_path[step] = C_a
+            r = y - mu
+        else:
+            inxs = C_path > C_n      # True: variables in correct positions
+            p = np.argmin(inxs)      # Position of the current variable
+            grad_01 = C_path[p - 1] - C_n if p > 0 else None
+            grad_12 = C_n - C_path[p]  # Positive by construction
+            if p > 0:
+                C_path = np.hstack([C_path[:p],
+                                    np.array([grad_01]),
+                                    np.array([grad_12]),
+                                    C_path[p+1:]])
+                grad_path = np.hstack([grad_path[:p],
+                                       np.array([grad_01]),
+                                       np.array([grad_12]),
+                                       C_path[p + 1:]])
+
+
+def orthog_lars_simple_test():
+    n = 100
+    y = np.sort(np.random.rand(n))
+    X, _, _ = np.linalg.svd(np.random.rand(n, n))
+    paths = orthog_lars_simple(X, y)
+    norms = paths.sum(axis=1)
+
+    # Plot regularization path
+    plt.figure()
+    plt.plot(norms / norms.max())
+    plt.xlabel("Step")
+    plt.ylabel("$\|f\|_1$ / $\|f_{LS}\|_1$")
+    plt.grid()
+
+    # Plot function approximation
+    plt.figure()
+    plt.plot(y, ".", color="black")
+    for pi in range(0, n, 10):
+        plt.plot(paths[pi], "-", color="blue", alpha=0.2)
+    plt.xlabel("Index")
+    plt.ylabel("y")
+
+
 def plot3(X, r, mu, axislen=3, title="Step 0"):
     """ Plot data in 3D coordinate system. """
 
@@ -199,30 +201,3 @@ def plot3(X, r, mu, axislen=3, title="Step 0"):
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     ax.set_zlabel('z')
-
-
-
-def path3(X, mus, axislen=3, title="Solution path"):
-    """ Plot data in 3D coordinate system. """
-
-    # Coordinate system
-    soa = np.array([[0, 0, 0] + list(X[:, 0]),
-                    [0, 0, 0] + list(X[:, 1]),
-                    [0, 0, 0] + list(X[:, 2])]) * axislen
-
-    roa = np.array([[0, 0, 0] + list(r.ravel())])
-
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.set_title(title)
-    ax.quiver(*zip(*soa), color="black", alpha=0.2)
-    ax.quiver(*zip(*roa), color="blue")
-    ax.quiver(*zip(*mua), color="red")
-    ax.set_xlim([-3, 3])
-    ax.set_ylim([-3, 3])
-    ax.set_zlim([-3, 3])
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
-
