@@ -184,30 +184,6 @@ def orthog_lars_sequential():
 
 
 
-def orthog_lars_beta(X, y):
-    """
-    Simple orthogonal LARS with full information. Solves the path in one sorting step.
-    Bisector is a simple sum of orthogonal components.
-    X is an orthogonal matrix.
-    :return:
-    """
-    n = X.shape[0]
-    X = X * np.sign(X.T.dot(y)).ravel()
-    c_all = X.T.dot(y).ravel()
-    act = np.argsort(-c_all)
-    grads = c_all[act] - np.concatenate((c_all[act][1:], np.array([0])))
-    path = np.zeros((n, n))
-    r = y.reshape((n, 1))
-    mu = np.zeros((n, 1))
-
-    for step in range(n):
-        pass
-
-
-
-
-
-    return mu
 
 
 def orthog_lars_simple_test():
@@ -231,6 +207,74 @@ def orthog_lars_simple_test():
         plt.plot(paths[pi], "-", color="blue", alpha=0.2)
     plt.xlabel("Index")
     plt.ylabel("y")
+
+
+def lars_beta(X, y):
+    """
+    Simple orthogonal LARS with full information. Solves the path in one sorting step.
+    Bisector is a simple sum of orthogonal components.
+    X is an orthogonal matrix.
+    :return: Solution path of implicit regression weigths.
+    """
+    n = X.shape[0]
+    r = y.reshape((n, 1))
+    mu = np.zeros((n, 1))
+
+    act = [np.argmax(X.T.dot(y))]
+    ina = list(set(range(n)) - set(act))
+    path = np.zeros((n, n))
+
+    for step in range(n):
+        c = X.T.dot(r)
+        C_a = np.max(c)
+        b, A = find_bisector(X[:, act])
+        if step == n - 1:
+            grad = C_a / A
+        else:
+            grad, _ = find_gradient(X, r, b, act)
+            j = ina[np.argmax(X.T.dot(r)[ina])]
+            act.append(j)
+            ina.remove(j)
+        mu = mu + grad * b
+        r = r - grad * b
+        path[step, :] = np.linalg.lstsq(X, mu)[0].ravel()
+
+    return np.round(path, 3)
+
+
+def lars_beta_test(mode="orthog"):
+    """ Test the LAR algorithm in the orthogonal or general case. """
+    n = 15
+    y = np.sort(np.random.randn(n))
+    if mode == "orthog":
+        X, _, _ = np.linalg.svd(np.random.rand(n, n))
+    else:
+        X = np.random.rand(n, n)
+    X = X * np.sign(X.T.dot(y)).ravel()
+    path = lars_beta(X, y)
+    plot_path(path)
+
+
+def plot_path(path):
+    """ Plot weigths as solution paths."""
+    plt.figure()
+    P = path.T
+    for p in P:
+        plt.plot(p, ".-")
+    plt.ylim((np.min(P), np.max(P)))
+    plt.xlabel("Model capacity $\\rightarrow$")
+    plt.ylabel("Feature size")
+    plt.grid()
+
+    plt.figure()
+    norms = [np.linalg.norm(p, ord=1) for p in path]
+    plt.plot(norms, ".-")
+    plt.xlabel("Model capacity $\\rightarrow$")
+    plt.ylabel("$\|\\beta\|_1$")
+    plt.grid()
+
+
+
 
 
 def qr_order():
