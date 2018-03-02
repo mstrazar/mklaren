@@ -177,6 +177,38 @@ def orthog_lars_simple_test():
     plt.ylabel("y")
 
 
+def qr_order():
+    """ Order or columns in the QR decomposition can have an effect on the solution in the original space. """
+    X = np.array(([1, 1], [1, 0]))
+    # Q = np.eye(2)       # "Wrong" QR step
+    Q = 1.0/np.sqrt(2) * np.array(([1, 1], [1, -1])) # "Right" QR step
+    R = Q.T.dot(X)
+    y = np.array([0.7, 0.8]).reshape((2, 1))
+
+    # LAR solution path in the Q space
+    # W = np.array([[0, 0], [0, 0.1], [0.7, 0.8]]).T      # "Wrong" QR step
+    W = np.array([[0, 0], [0.9, 0.0], [1.06, -0.07]]).T # "Right" QR step
+
+    # Solution path in the original space
+    Wo = np.linalg.inv(R).dot(W)
+
+    for Ax, Sw in [(X, Wo)]:
+        plt.figure()
+        plt.plot([0, Ax[0, 0]], [0, Ax[1, 0]], "k-")
+        plt.plot([0, Ax[0, 1]], [0, Ax[1, 1]], "k-")
+        a = np.array([0, 0])
+        for w in Sw.T:
+            x = Ax.dot(w)[::-1]
+            plt.plot([a[0], (x)[0]], [a[1], (x)[1]], "r.-")
+            a = x
+        plt.xlim(-0.5, 1.5)
+        plt.ylim(-0.5, 1.5)
+        plt.grid()
+    plt.show()
+
+
+
+
 def plot3(X, r, mu, axislen=3, title="Step 0"):
     """ Plot data in 3D coordinate system. """
 
