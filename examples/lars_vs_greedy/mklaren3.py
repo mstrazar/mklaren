@@ -43,6 +43,35 @@ def find_gradient(X, r, b, act):
     return grad, C
 
 
+def find_beta_grad(X, mu, r):
+    """
+    Find beta gradients s. t. one of the betas changes sign.
+    """
+    Ga = X.T.dot(X)
+    Gai = inv(Ga)
+    bisec, A = find_bisector(X)
+    omega = A * Gai.dot(ones((X.shape[1], 1)))
+    sj = np.sign(X.T.dot(r))
+    dj = sj * omega
+    beta = Gai.dot(X.T).dot(mu)
+    grad = -beta/dj
+    return grad
+
+
+def find_beta_grad_test():
+    """ Test beta gradient. """
+    n = 4
+    X, _, _ = np.linalg.svd(np.random.rand(n, n))
+    mu = np.ones((n, 1))
+    r = X.sum(axis=1).reshape((n, 1)) + np.random.rand(n, 1) * 0.0
+    grad = find_beta_grad(X, mu, r)
+    gm = min(grad[grad > 0])
+    bisec, A = find_bisector(X)
+    mu_new = mu + gm * bisec
+    beta_new = inv(X.T.dot(X)).dot(X.T).dot(mu_new)
+    assert beta_new[grad == gm] < 1e-5
+
+
 def example():
     """
     Example computation of late-coming vectors.
@@ -152,6 +181,33 @@ def orthog_lars_sequential():
                                        grad_path[p + 1:]])
                 act = act[:p] + [step + 1] + act[p:]
                 # etc.
+
+
+
+def orthog_lars_beta(X, y):
+    """
+    Simple orthogonal LARS with full information. Solves the path in one sorting step.
+    Bisector is a simple sum of orthogonal components.
+    X is an orthogonal matrix.
+    :return:
+    """
+    n = X.shape[0]
+    X = X * np.sign(X.T.dot(y)).ravel()
+    c_all = X.T.dot(y).ravel()
+    act = np.argsort(-c_all)
+    grads = c_all[act] - np.concatenate((c_all[act][1:], np.array([0])))
+    path = np.zeros((n, n))
+    r = y.reshape((n, 1))
+    mu = np.zeros((n, 1))
+
+    for step in range(n):
+        pass
+
+
+
+
+
+    return mu
 
 
 def orthog_lars_simple_test():
