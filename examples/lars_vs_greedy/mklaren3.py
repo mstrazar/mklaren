@@ -297,6 +297,8 @@ def lars_beta_test_qr():
     Ri = Qi.T.dot(Xi)      # Merely a least squares solution
     print "Difference  |Xi - QiRi|: ", np.linalg.norm(Xi-Qi.dot(Ri))
 
+    # Conclusion: need to add features to the QR on a one-by-one basis.
+
 
 def qr_order():
     """ Order or columns in the QR decomposition can have an effect on the solution in the original space. """
