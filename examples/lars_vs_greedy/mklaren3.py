@@ -244,7 +244,7 @@ def lars_beta(X, y):
 
 def lars_beta_test(mode="orthog"):
     """ Test the LAR algorithm in the orthogonal or general case. """
-    n = 15
+    n = 30
     y = np.sort(np.random.randn(n))
     if mode == "orthog":
         X, _, _ = np.linalg.svd(np.random.rand(n, n))
@@ -274,7 +274,28 @@ def plot_path(path):
     plt.grid()
 
 
+def lars_beta_test_qr():
+    """ Test the LAR algorithm in the orthogonal or general case. """
+    n = 10
+    y = np.sort(np.random.randn(n))
+    X = np.random.rand(n, n)
+    X = X * np.sign(X.T.dot(y)).ravel()
+    Q, R = np.linalg.qr(X)
+    path = lars_beta(Q, y)  # Original path
+    pathX = (np.linalg.inv(R)).dot(path.T).T
+    pq = Q.dot(path.T)
+    px = X.dot(pathX.T)
+    plot_path(path)
+    plot_path(pathX)
+    print "Difference in projection |pq - px|: ", np.linalg.norm(pq - px)
 
+    # Example sparsity comparison
+    p2 = path[2, :]  # includes only 3 features
+    inxs = p2 != 0
+    Qi = Q[:, inxs]
+    Xi = X[:, inxs]
+    Ri = Qi.T.dot(Xi)      # Merely a least squares solution
+    print "Difference  |Xi - QiRi|: ", np.linalg.norm(Xi-Qi.dot(Ri))
 
 
 def qr_order():
