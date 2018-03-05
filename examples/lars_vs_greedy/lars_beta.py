@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 def find_bisector(X):
     """ Find bisector and the normalizing constant for vectors in X."""
@@ -68,6 +68,44 @@ def lars_beta(X, y):
         r = r - grad * b
         path[step, :] = np.linalg.lstsq(X, mu)[0].ravel()
     return np.round(path, 3), mu
+
+
+# Plots
+def plot_path(path):
+    """ Plot weigths as solution paths."""
+    plt.figure()
+    P = path.T
+    for p in P:
+        plt.plot(p, ".-")
+    plt.ylim((np.min(P), np.max(P)))
+    plt.xlabel("Model capacity $\\rightarrow$")
+    plt.ylabel("Feature size")
+    plt.grid()
+
+    plt.figure()
+    norms = [np.linalg.norm(p, ord=1) for p in path]
+    plt.plot(norms, ".-")
+    plt.xlabel("Model capacity $\\rightarrow$")
+    plt.ylabel("$\|\\beta\|_1$")
+    plt.grid()
+
+
+def plot_residuals(X, y, path):
+    mus = X.dot(path.T).T
+    norms = [np.linalg.norm(p, ord=1) for p in path]
+    res = [np.linalg.norm(y.ravel() - mu.ravel()) for mu in mus]
+    plt.figure()
+    plt.plot(res, ".-")
+    plt.xlabel("Model capacity $\\rightarrow$")
+    plt.ylabel("$\|h(x)-y\|_2$")
+    plt.grid()
+
+    plt.figure()
+    plt.plot(norms, res, ".-")
+    plt.xlabel("$\|\\beta\|_1$")
+    plt.ylabel("$\|h(x)-y\|_2$")
+    plt.grid()
+
 
 
 # Unit tests
