@@ -113,6 +113,42 @@ def compare_nonrandom():
     plot_residuals(X, y, path_q_mapped, tit="X-Q mapped")
 
 
+def compare_correlated():
+    from mklaren.kernel.kernel import exponential_kernel
+    from scipy.stats import multivariate_normal as mvn
+    n = 30
+    noise = 0.01
+    gamma = 0.1
+    X = np.linspace(-10, 10, n).reshape((n, 1))
+    K = exponential_kernel(X, X, gamma=gamma)
+    y = mvn.rvs(mean=np.zeros(n, ), cov=K + noise * np.eye(n))
+    Q, R = np.linalg.qr(K)
+    print "cond(K):", np.linalg.cond(K)
+    print "cond(Q):", np.linalg.cond(Q)
+
+    # Solve problem
+    path_orig, mu_orig = lars_beta(K, y)
+    path_q, mu_q = lars_beta(Q, y)
+    path_q_mapped = (np.linalg.inv(R).dot(path_q.T)).T
+
+    # Kernels can be highly correlated objects
+    C = np.corrcoef(K)
+    plt.hist(C.ravel())
+
+    plot_path(path_orig, tit="K")
+    plot_path(path_q, tit="Q")
+    plot_path(path_q_mapped, tit="K-Q mapped")
+
+    plot_residuals(K, y, path_orig, tit="K")
+    plot_residuals(K, y, path_q_mapped, tit="K-Q mapped")
+    plot_residuals(Q, y, path_q, tit="Q")
+
+    plt.figure()
+    plt.plot(y, "-")
+    plt.plot(mu_q, ".")
+    plt.xlabel("x")
+    plt.ylabel("f(x)")
+
 
 
 # Plots
