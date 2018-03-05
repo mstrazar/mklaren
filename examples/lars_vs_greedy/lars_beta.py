@@ -52,9 +52,10 @@ def find_beta_grad(X, mu, r):
     beta = Gai.dot(X.T).dot(mu)
     grad = -beta/dj
     if not any(grad > 0):
-        return float("inf")
+        return float("inf"), None
     gm = min(grad[grad > 0])
-    return gm
+    gi = np.where(grad == gm)[0][0]
+    return gm, gi
 
 
 def lars_beta(X, y):
@@ -87,6 +88,67 @@ def lars_beta(X, y):
         r = r - grad * b
         path[step, :] = np.linalg.lstsq(X, mu)[0].ravel()
     return np.round(path, 3), mu
+
+
+# TODO: simplify and check
+def lasso(X, y, max_iter=100):
+    """
+    LASSO solutions via LARS, with information.
+    X is a matrix with positive correlation to y.
+    :return: Solution path of implicit regression weigths.
+    """
+    n = X.shape[0]
+    r = y.reshape((n, 1))
+    mu = np.zeros((n, 1))
+    act = [np.argmax(np.absolute(X.T.dot(r)))]
+    ina = list(set(range(n)) - set(act))
+    path = []
+
+    step = 0
+    last = False
+    while step < max_iter:
+        sj = np.sign(X[:, act].T.dot(r)).T.ravel()
+        Xa = X[:, act] * sj
+        b, A = find_bisector(Xa)
+        if len(act) == n:
+            C_a = np.max(np.absolute(X.T.dot(r)))
+            grad_mu = C_a / A
+            grad_beta, gi = find_beta_grad(Xa, mu, r)
+            grad = min(grad_mu, grad_beta)
+            last = grad_mu < grad_beta
+            if not last:
+                j = act[gi]
+                act.remove(j)
+                ina.append(j)
+        else:
+            grad_mu = find_gradient(X, r, b, act)
+            grad_beta, gi = find_beta_grad(Xa, mu, r)
+            grad = min(grad_mu, grad_beta)
+            if grad_beta < grad_mu:
+                # Remove culprit from the active set and increase mu
+                # in the direction >>> including culprit <<< to set it to zero
+                j = act[gi]
+                act.remove(j)
+                ina.append(j)
+                print("Step %d: Remove %s from the active set" % (step, j))
+            else:
+                # Add a new variable to the potential active set
+                rnew = r - grad * b
+                j = ina[int(np.argmax(np.absolute(X[:, ina].T.dot(rnew))))]
+                act.append(j)
+                ina.remove(j)
+        mu = mu + grad * b
+        r = r - grad * b
+        path.append(np.linalg.lstsq(X, mu)[0].ravel())
+        step += 1
+        if len(ina):
+            print np.absolute(Xa.T.dot(r)).ravel(), \
+                np.array([np.max(np.absolute(X[:, ina].T.dot(r)))]), \
+                np.array([np.linalg.norm(r)])
+        if last:
+            break
+
+    return np.round(np.array(path), 3), mu
 
 
 # Comparisons
@@ -168,7 +230,6 @@ def compare_correlated():
     plt.ylabel("f(x)")
 
 
-
 # Plots
 def plot_path(path, tit=""):
     """ Plot weigths as solution paths."""
@@ -213,12 +274,22 @@ def plot_residuals(X, y, path, tit=""):
 
 # Unit tests
 def test_lars_beta_full():
-    n = 5
+    n = 10
     X = np.random.rand(n, n)
     X = X / np.linalg.norm(X, axis=0).ravel()
     y = np.random.rand(n, 1)
     y = np.sort(y - y.mean(), axis=0)
     path, mu = lars_beta(X, y)
+    assert np.linalg.norm(mu - y) < 1e-3
+
+
+def test_lasso():
+    n = 10
+    X = np.random.rand(n, n)
+    X = X / np.linalg.norm(X, axis=0).ravel()
+    y = np.random.rand(n, 1)
+    y = np.sort(y - y.mean(), axis=0)
+    path, mu = lasso(X, y)
     assert np.linalg.norm(mu - y) < 1e-3
 
 
@@ -253,12 +324,12 @@ def test_find_beta_grad():
     X = np.random.rand(n, n)
     mu = np.random.rand(n, 1)
     r = np.random.rand(n, 1)
-    gm = find_beta_grad(X, mu, r)
+    gm, gi = find_beta_grad(X, mu, r)
     bisec, A = find_bisector(X)
     if np.isfinite(gm):
         mu_new = mu + gm * bisec
         beta_new = np.linalg.lstsq(X, mu_new)[0]
-        assert np.any(np.absolute(beta_new) < 1e-5)
+        assert np.absolute(beta_new[gi]) < 1e-5
 
 
 def test_all():
