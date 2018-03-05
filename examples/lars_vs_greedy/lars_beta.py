@@ -92,6 +92,29 @@ def compare_original_qr():
     plot_residuals(X, y, path_q_mapped, tit="X-Q mapped")
 
 
+def compare_nonrandom():
+    """ Compare the detection of a ground truth model. """
+    n = 100
+    X = np.random.rand(n, n)
+    X = X / np.linalg.norm(X, axis=0).ravel()
+
+    y = X[:, n/2].reshape((n, 1)) + np.random.rand(n, 1) * 0.1
+    path_orig, mu_orig = lars_beta(X, y)
+
+    Q, R = np.linalg.qr(X)
+    path_q, mu_q = lars_beta(Q, y)
+    path_q_mapped = (np.linalg.inv(R).dot(path_q.T)).T
+
+    plot_path(path_orig, tit="X")
+    plot_path(path_q, tit="Q")
+    plot_path(path_q_mapped, tit="X-Q mapped")
+
+    plot_residuals(X, y, path_orig, tit="X")
+    plot_residuals(X, y, path_q_mapped, tit="X-Q mapped")
+
+
+
+
 # Plots
 def plot_path(path, tit=""):
     """ Plot weigths as solution paths."""
