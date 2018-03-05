@@ -71,10 +71,32 @@ def lars_beta(X, y):
     return np.round(path, 3), mu
 
 
+# Comparisons
+def compare_original_qr():
+    """ Test the LAR algorithm in the orthogonal and general case. """
+    n = 100
+    X = np.random.rand(n, n)
+    X = X / np.linalg.norm(X, axis=0).ravel()
+    y = np.random.rand(n, 1)
+    y = np.sort(y - y.mean(), axis=0)
+    Q, R = np.linalg.qr(X)
+    path_orig, mu_orig = lars_beta(X, y)
+    path_q, mu_q = lars_beta(Q, y)
+    path_q_mapped = (np.linalg.inv(R).dot(path_q.T)).T
+
+    plot_path(path_orig, tit="X")
+    plot_path(path_q, tit="Q")
+    plot_path(path_q_mapped, tit="X-Q mapped")
+    plot_residuals(X, y, path_orig, tit="X")
+    plot_residuals(Q, y, path_q, tit="Q")
+    plot_residuals(X, y, path_q_mapped, tit="X-Q mapped")
+
+
 # Plots
-def plot_path(path):
+def plot_path(path, tit=""):
     """ Plot weigths as solution paths."""
     plt.figure()
+    plt.title(tit)
     P = path.T
     for p in P:
         plt.plot(p, ".-")
@@ -84,6 +106,7 @@ def plot_path(path):
     plt.grid()
 
     plt.figure()
+    plt.title(tit)
     norms = [np.linalg.norm(p, ord=1) for p in path]
     plt.plot(norms, ".-")
     plt.xlabel("Model capacity $\\rightarrow$")
@@ -91,18 +114,20 @@ def plot_path(path):
     plt.grid()
 
 
-def plot_residuals(X, y, path):
+def plot_residuals(X, y, path, tit=""):
     """ Plot model residuals given the path."""
     mus = X.dot(path.T).T
     norms = [np.linalg.norm(p, ord=1) for p in path]
     res = [np.linalg.norm(y.ravel() - mu.ravel()) for mu in mus]
     plt.figure()
+    plt.title(tit)
     plt.plot(res, ".-")
     plt.xlabel("Model capacity $\\rightarrow$")
     plt.ylabel("$\|h(x)-y\|_2$")
     plt.grid()
 
     plt.figure()
+    plt.title(tit)
     plt.plot(norms, res, ".-")
     plt.xlabel("$\|\\beta\|_1$")
     plt.ylabel("$\|h(x)-y\|_2$")
@@ -113,7 +138,7 @@ def plot_residuals(X, y, path):
 def test_lars_beta_full():
     n = 5
     X = np.random.rand(n, n)
-    X = X / np.linalg.norm(X, axis=0)
+    X = X / np.linalg.norm(X, axis=0).ravel()
     y = np.random.rand(n, 1)
     y = np.sort(y - y.mean(), axis=0)
     path, mu = lars_beta(X, y)
