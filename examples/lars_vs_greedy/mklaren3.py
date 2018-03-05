@@ -1,16 +1,6 @@
 import numpy as np
-import scipy as sp
 from examples.lars_vs_greedy.mklaren2 import *
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-
-
-
-# class MklarenL1(MklarenNyst):
-#
-#     def __init__(self, rank, lbd=0, delta=10, debug=False):
-#         MklarenNyst.__init__(self, rank, lbd, delta, debug)
 
 
 # Simulate hyperparameters
@@ -22,7 +12,7 @@ def find_gradient(X, r, b, act):
     """ Find gradient over the bisector b and residual r. """
     c = X.T.dot(r).ravel()
     a = X.T.dot(b).ravel()
-    C = max(c[act].ravel())
+    C = max(np.absolute(c[act].ravel()))
     A = max(a[act].ravel())
     inxs = c > C
     if any(inxs):
@@ -183,9 +173,6 @@ def orthog_lars_sequential():
                 # etc.
 
 
-
-
-
 def orthog_lars_simple_test():
     n = 100
     y = np.sort(np.random.rand(n))
@@ -211,9 +198,8 @@ def orthog_lars_simple_test():
 
 def lars_beta(X, y):
     """
-    Simple orthogonal LARS with full information. Solves the path in one sorting step.
-    Bisector is a simple sum of orthogonal components.
-    X is an orthogonal matrix.
+    General LARS with full information.
+    X is a matrix with positive correlation to y.
     :return: Solution path of implicit regression weigths.
     """
     n = X.shape[0]
@@ -299,6 +285,61 @@ def lars_beta_test_qr():
 
     # Conclusion: need to add features to the QR on a one-by-one basis.
 
+    # Does the correlation depend on the order in which a feature is included in the QR decomposition? NO.
+    c = np.absolute(Q.T.dot(y))
+    order = np.argsort(c)[::-1]
+    Qo, Ro = np.linalg.qr(X[:, order])
+    co = np.absolute(Qo.T.dot(y))
+
+    # Pathological example where the projection of y into Q does not reveal the correct order
+    X = np.array([[1, 0], [1, 0.1]]).T
+    y = np.array([[0, 0.9]]).T
+    Q, R = np.linalg.qr(X)
+    # Q, R = np.linalg.qr(X[:, ::-1])
+    Q.T.dot(y)
+
+
+def lars_beta_sequential(X, y):
+    """
+    General LARS with sequential information.
+    X is a matrix with positive correlation to y.
+    :return: Solution path of implicit regression weigths.
+    """
+    n = X.shape[0]
+    r = y.reshape((n, 1))
+    mu = np.zeros((n, 1))
+
+    X = X * np.sign(X.T.dot(y)).T.ravel()
+    act = [np.argmax(np.absolute(X.T.dot(r)))]
+    ina = list(set(range(n)) - set(act))
+    path = np.zeros((n, n))
+
+    for step in range(n):
+        b, A = find_bisector(X[:, act])
+        if step == n - 1:
+            C_a = np.max(np.absolute(X.T.dot(r)))
+            grad = C_a / A
+        else:
+            grad, _ = find_gradient(X, r, b, act)
+            j = ina[np.argmax(np.absolute(X[:, ina].T.dot(r - grad * b)))]
+            act.append(j)
+            ina.remove(j)
+        mu = mu + grad * b
+        r = r - grad * b
+        path[step, :] = np.linalg.lstsq(X, mu)[0].ravel()
+        c = np.absolute(X.T.dot(r))
+    return np.round(path, 3)
+
+
+def lars_beta_sequential_test(X, y):
+    n = 5
+    X = np.random.rand(n, n)
+    X = X / np.linalg.norm(X, axis=0)
+    y = np.random.rand(n, 1)
+    y = np.sort(y - y.mean(), axis=0)
+    path = lars_beta_sequential(X, y)
+    X.dot(path.T)
+
 
 def qr_order():
     """ Order or columns in the QR decomposition can have an effect on the solution in the original space. """
@@ -328,8 +369,6 @@ def qr_order():
         plt.ylim(-0.5, 1.5)
         plt.grid()
     plt.show()
-
-
 
 
 def plot3(X, r, mu, axislen=3, title="Step 0"):
