@@ -38,9 +38,9 @@ def find_gradient(X, r, b, act):
     return grad
 
 
-def lars_beta_sequential(X, y):
+def lars_beta(X, y):
     """
-    General LARS with sequential information.
+    General LARS with full information.
     X is a matrix with positive correlation to y.
     :return: Solution path of implicit regression weigths.
     """
@@ -70,15 +70,14 @@ def lars_beta_sequential(X, y):
     return np.round(path, 3), mu
 
 
-### Unit tests
-
-def test_lars_beta_sequential():
+# Unit tests
+def test_lars_beta_full():
     n = 5
     X = np.random.rand(n, n)
     X = X / np.linalg.norm(X, axis=0)
     y = np.random.rand(n, 1)
     y = np.sort(y - y.mean(), axis=0)
-    path, mu = lars_beta_sequential(X, y)
+    path, mu = lars_beta(X, y)
     assert np.linalg.norm(mu - y) < 1e-3
 
 
@@ -111,4 +110,4 @@ def test_all():
     for i in range(1000):
         test_bisector()
         test_find_gradient()
-        test_lars_beta_sequential()
+        test_lars_beta_full()
