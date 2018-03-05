@@ -39,6 +39,24 @@ def find_gradient(X, r, b, act):
     return grad
 
 
+def find_beta_grad(X, mu, r):
+    """
+    Find beta gradients s. t. one of the betas changes sign.
+    """
+    Ga = X.T.dot(X)
+    Gai = np.linalg.inv(Ga)
+    bisec, A = find_bisector(X)
+    omega = A * Gai.dot(np.ones((X.shape[1], 1)))
+    sj = np.sign(X.T.dot(r))
+    dj = sj * omega
+    beta = Gai.dot(X.T).dot(mu)
+    grad = -beta/dj
+    if not any(grad > 0):
+        return float("inf")
+    gm = min(grad[grad > 0])
+    return gm
+
+
 def lars_beta(X, y):
     """
     General LARS with full information.
@@ -72,9 +90,9 @@ def lars_beta(X, y):
 
 
 # Comparisons
-def compare_original_qr():
+def compare_random():
     """ Test the LAR algorithm in the orthogonal and general case. """
-    n = 100
+    n = 30
     X = np.random.rand(n, n)
     X = X / np.linalg.norm(X, axis=0).ravel()
     y = np.random.rand(n, 1)
@@ -229,8 +247,23 @@ def test_find_gradient():
     assert np.max(np.absolute(cnew[act])) - np.max(np.absolute(cnew[ina])) < 1e-3
 
 
+def test_find_beta_grad():
+    """ Test beta gradient. X agrees in sign with residual."""
+    n = 5
+    X = np.random.rand(n, n)
+    mu = np.random.rand(n, 1)
+    r = np.random.rand(n, 1)
+    gm = find_beta_grad(X, mu, r)
+    bisec, A = find_bisector(X)
+    if np.isfinite(gm):
+        mu_new = mu + gm * bisec
+        beta_new = np.linalg.lstsq(X, mu_new)[0]
+        assert np.any(np.absolute(beta_new) < 1e-5)
+
+
 def test_all():
     for i in range(1000):
         test_bisector()
         test_find_gradient()
         test_lars_beta_full()
+        test_find_beta_grad()
