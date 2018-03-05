@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def find_bisector(X):
     """ Find bisector and the normalizing constant for vectors in X."""
     # Compute bisector
@@ -61,7 +62,7 @@ def lars_beta(X, y):
         else:
             grad = find_gradient(X, r, b, act)
             rnew = r - grad * b
-            j = ina[np.argmax(np.absolute(X[:, ina].T.dot(rnew)))]
+            j = ina[int(np.argmax(np.absolute(X[:, ina].T.dot(rnew))))]
             act.append(j)
             ina.remove(j)
         mu = mu + grad * b
@@ -91,6 +92,7 @@ def plot_path(path):
 
 
 def plot_residuals(X, y, path):
+    """ Plot model residuals given the path."""
     mus = X.dot(path.T).T
     norms = [np.linalg.norm(p, ord=1) for p in path]
     res = [np.linalg.norm(y.ravel() - mu.ravel()) for mu in mus]
@@ -105,7 +107,6 @@ def plot_residuals(X, y, path):
     plt.xlabel("$\|\\beta\|_1$")
     plt.ylabel("$\|h(x)-y\|_2$")
     plt.grid()
-
 
 
 # Unit tests
