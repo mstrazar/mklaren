@@ -9,6 +9,8 @@ def qr_steps(G, Q, R, max_steps=None, start=0):
     Updates the matrix K in-place;
 
     :param G: Existing Matrix.
+    :param Q: Existing array.
+    :param R: Existing array.
     :param start: Starting index.
     :param max_steps. Number of steps to take. The order is implied by the columns in G, which match columns in Q.
     :return: Updated Cholesky factors.
@@ -27,6 +29,7 @@ def qr_steps(G, Q, R, max_steps=None, start=0):
 
 def qr(G):
     """ QR decomposition of matrix G in steps. """
+    n, k = G.shape
     Q = np.zeros((n, k))
     R = np.zeros((k, k))
     qr_steps(G, Q, R)
