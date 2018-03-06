@@ -5,6 +5,7 @@ from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel
 
 
+# TODO: this could be implemented more efficiently without iterating through inactive list.
 def cholesky_steps(K, G, D, start, act, ina, order=None, no_steps=None):
     """
     Perform Cholesky steps for kernel K, starting from the existing matrix
