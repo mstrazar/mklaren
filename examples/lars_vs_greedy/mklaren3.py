@@ -50,15 +50,14 @@ def find_beta_grad(X, mu, r):
 
 def find_beta_grad_test():
     """ Test beta gradient. """
-    n = 4
+    n = 5
     X, _, _ = np.linalg.svd(np.random.rand(n, n))
     mu = np.ones((n, 1))
     r = X.sum(axis=1).reshape((n, 1)) + np.random.rand(n, 1) * 0.0
     grad = find_beta_grad(X, mu, r)
-    gm = min(grad[grad > 0])
     bisec, A = find_bisector(X)
-    mu_new = mu + gm * bisec
-    beta_new = inv(X.T.dot(X)).dot(X.T).dot(mu_new)
+    mu_new = mu + grad * bisec
+    beta_new = np.linalg.lstsq(X, mu_new)[0]
     assert beta_new[grad == gm] < 1e-5
 
 
@@ -298,47 +297,6 @@ def lars_beta_test_qr():
     # Q, R = np.linalg.qr(X[:, ::-1])
     Q.T.dot(y)
 
-
-def lars_beta_sequential(X, y):
-    """
-    General LARS with sequential information.
-    X is a matrix with positive correlation to y.
-    :return: Solution path of implicit regression weigths.
-    """
-    n = X.shape[0]
-    r = y.reshape((n, 1))
-    mu = np.zeros((n, 1))
-
-    X = X * np.sign(X.T.dot(y)).T.ravel()
-    act = [np.argmax(np.absolute(X.T.dot(r)))]
-    ina = list(set(range(n)) - set(act))
-    path = np.zeros((n, n))
-
-    for step in range(n):
-        b, A = find_bisector(X[:, act])
-        if step == n - 1:
-            C_a = np.max(np.absolute(X.T.dot(r)))
-            grad = C_a / A
-        else:
-            grad, _ = find_gradient(X, r, b, act)
-            j = ina[np.argmax(np.absolute(X[:, ina].T.dot(r - grad * b)))]
-            act.append(j)
-            ina.remove(j)
-        mu = mu + grad * b
-        r = r - grad * b
-        path[step, :] = np.linalg.lstsq(X, mu)[0].ravel()
-        c = np.absolute(X.T.dot(r))
-    return np.round(path, 3)
-
-
-def lars_beta_sequential_test(X, y):
-    n = 5
-    X = np.random.rand(n, n)
-    X = X / np.linalg.norm(X, axis=0)
-    y = np.random.rand(n, 1)
-    y = np.sort(y - y.mean(), axis=0)
-    path = lars_beta_sequential(X, y)
-    X.dot(path.T)
 
 
 def qr_order():
