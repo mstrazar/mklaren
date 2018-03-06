@@ -332,9 +332,22 @@ def test_find_beta_grad():
         assert np.absolute(beta_new[gi]) < 1e-5
 
 
+def test_weigths_orthogonal():
+    """ The weights in the orthogonal case change monotonically. """
+    n = 10
+    y = np.random.randn(n, 1)
+    X, _, _ = np.linalg.svd(np.random.randn(n, n))
+    r = y - y.mean()
+    path, mu = lars_beta(X, r)
+    assert np.linalg.norm(mu - r) < 1e-3
+    for j in range(path.shape[1]):
+        assert len(set(np.sign(path[:, j])) - {0}) <= 1
+
+
 def test_all():
     for i in range(1000):
         test_bisector()
         test_find_gradient()
         test_lars_beta_full()
         test_find_beta_grad()
+        test_weigths_orthogonal()
