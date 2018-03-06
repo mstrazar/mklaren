@@ -90,6 +90,46 @@ def lars_beta(X, y):
     return np.round(path, 3), mu
 
 
+def orthog_lars_seq(Q, y):
+    """
+    Example computation of late-coming vectors. In general, only one vector at a time is examined.
+    * Have to remember what the value of C was when each variable entered the mode. *
+    Only makes sense if there is some smart selection of the variables based on the current estimate.
+
+    X is an orthonormal matrix (not necessarilly full column rank).
+    y is a centered target vector.
+    """
+
+    # Control variables
+    n = Q.shape[0]
+    grad_path = np.zeros((n,))  # Final result
+    C_path = np.zeros((n,))  # Essentially the same?
+    sj = np.sign(Q.T.dot(y)).ravel()
+
+    # Initial status
+    act = [0]
+    C_path[0] = grad_path[0] = np.absolute(Q[:, 0].T.dot(y))
+
+    # Reduces to insertion sort
+    for nxt in range(1, n):
+        c_nxt = np.absolute(Q[:, [nxt]].T.dot(y).ravel())
+        C_n = max(c_nxt)
+        inxs = C_path > C_n
+        p = np.argmin(inxs)
+        C_path[p+1:] = C_path[p:-1]
+        C_path[p] = C_n
+        grad_path = C_path - np.concatenate((C_path[1:], np.array([0])))
+        act = act[:p] + [nxt] + act[p:]
+
+    # Infer beta path from gradients
+    beta_path = np.zeros((n, n))
+    for i in range(n):
+        beta_path[i, act[:i+1]] = beta_path[i-1, act[:i+1]] + grad_path[i] * sj[act[:i+1]]
+    mu = Q.dot(beta_path[-1].reshape((n, 1)))
+
+    return beta_path, mu
+
+
 # TODO: simplify and check
 def lasso(X, y, max_iter=100):
     """
@@ -344,6 +384,15 @@ def test_weigths_orthogonal():
         assert len(set(np.sign(path[:, j])) - {0}) <= 1
 
 
+def test_orthog_lars_seq():
+    n = 10
+    y = np.random.randn(n, 1)
+    y = y - y.mean()
+    n = len(y)
+    Q, _, _ = np.linalg.svd(np.random.randn(n, n))
+    beta_path, mu = orthog_lars_seq(Q, y)
+    assert np.linalg.norm(mu - y) < 1e-5
+
 def test_all():
     for i in range(1000):
         test_bisector()
@@ -351,3 +400,4 @@ def test_all():
         test_lars_beta_full()
         test_find_beta_grad()
         test_weigths_orthogonal()
+        test_orthog_lars_seq()
