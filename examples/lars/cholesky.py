@@ -6,7 +6,7 @@ from mklaren.kernel.kernel import exponential_kernel
 
 
 # TODO: this could be implemented more efficiently without iterating through inactive list.
-def cholesky_steps(K, G, D, start, act, ina, order=None, no_steps=None):
+def cholesky_steps(K, G, start, act, ina, order=None, no_steps=None):
     """
     Perform Cholesky steps for kernel K, starting from the existing matrix
     G at index k. Order of newly added pivots may be specified.
@@ -15,7 +15,6 @@ def cholesky_steps(K, G, D, start, act, ina, order=None, no_steps=None):
 
     :param K: Kernel matrix / interface.
     :param G: Existing Cholesky factors.
-    :param D: Existing diagonal.
     :param start: Starting index.
     :param order: Possible to specify desired order. If not specified, standard gain criterion is taken.
     :param no_steps. Number of steps to take.
@@ -27,6 +26,10 @@ def cholesky_steps(K, G, D, start, act, ina, order=None, no_steps=None):
     else:
         no_steps = len(order)
         have_order = True
+
+    # Compute current diagonal
+    d = K.diag() if isinstance(K, Kinterface) else np.diag(K).copy()
+    D = d - np.sum(G*G, axis=1).ravel()
 
     for ki, k in enumerate(xrange(start, start + no_steps)):
 
@@ -51,8 +54,7 @@ def cholesky(K, rank=None):
     n = K.shape[0]
     k = n if rank is None else rank
     G = np.zeros((n, k))
-    D = K.diag() if isinstance(K, Kinterface) else np.diag(K).copy()
-    cholesky_steps(K, G, D, 0, act=[], ina=range(n), no_steps=k)
+    cholesky_steps(K, G, start=0, act=[], ina=range(n), no_steps=k)
     return G
 
 
@@ -89,14 +91,13 @@ def test_cholesky_steps_lookahead():
 
     # Perform in-place Cholesky
     G = np.zeros((n, n))
-    D = K.diag() if isinstance(K, Kinterface) else np.diag(K).copy()
     act = []
 
-    cholesky_steps(K, G, D, start=0, act=act, ina=range(n), order=range(n/2))
-    norms1 = np.round(np.array([np.linalg.norm(K[:, :] - G[:, :i + 1].dot(G[:, :i + 1].T)) for i in act1]),
+    cholesky_steps(K, G, start=0, act=act, ina=range(n), order=range(n/2))
+    norms1 = np.round(np.array([np.linalg.norm(K[:, :] - G[:, :i + 1].dot(G[:, :i + 1].T)) for i in act]),
                       decimals=5)
 
-    cholesky_steps(K, G, D, start=len(act), act=act, ina=range(n/2, n), order=range(n/2, n))
+    cholesky_steps(K, G, start=len(act), act=act, ina=range(n/2, n), order=range(n/2, n))
     norms2 = np.round(np.array([np.linalg.norm(K[:, :] - G[:, :i + 1].dot(G[:, :i + 1].T)) for i in range(n)]),
                       decimals=5)
 
