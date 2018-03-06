@@ -6,7 +6,7 @@ from mklaren.kernel.kernel import exponential_kernel
 
 
 # TODO: this could be implemented more efficiently without iterating through inactive list.
-def cholesky_steps(K, G, act, ina, start=0, order=None, no_steps=None):
+def cholesky_steps(K, G, act, ina, start=0, order=None, max_steps=None):
     """
     Perform Cholesky steps for kernel K, starting from the existing matrix
     G at index k. Order of newly added pivots may be specified.
@@ -17,21 +17,21 @@ def cholesky_steps(K, G, act, ina, start=0, order=None, no_steps=None):
     :param G: Existing Cholesky factors.
     :param start: Starting index.
     :param order: Possible to specify desired order. If not specified, standard gain criterion is taken.
-    :param no_steps. Number of steps to take.
+    :param max_steps. Number of steps to take.
     :return: Updated Cholesky factors.
     """
     if order is None:
-        no_steps = K.shape[0] if no_steps is None else no_steps
+        max_steps = G.shape[1] if max_steps is None else max_steps
         have_order = False
     else:
-        no_steps = len(order)
+        max_steps = len(order)
         have_order = True
 
     # Compute current diagonal
     d = K.diag() if isinstance(K, Kinterface) else np.diag(K).copy()
     D = d - np.sum(G*G, axis=1).ravel()
 
-    for ki, k in enumerate(xrange(start, start + no_steps)):
+    for ki, k in enumerate(xrange(start, start + max_steps)):
 
         # Select best pivot
         i = order[ki] if have_order else ina[np.argmax(D[ina])]
@@ -54,7 +54,7 @@ def cholesky(K, rank=None):
     n = K.shape[0]
     k = n if rank is None else rank
     G = np.zeros((n, k))
-    cholesky_steps(K, G, start=0, act=[], ina=range(n), no_steps=k)
+    cholesky_steps(K, G, start=0, act=[], ina=range(n), max_steps=k)
     return G
 
 
