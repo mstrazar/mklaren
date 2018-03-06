@@ -6,7 +6,7 @@ from mklaren.kernel.kernel import exponential_kernel
 
 
 # TODO: this could be implemented more efficiently without iterating through inactive list.
-def cholesky_steps(K, G, start, act, ina, order=None, no_steps=None):
+def cholesky_steps(K, G, act, ina, start=0, order=None, no_steps=None):
     """
     Perform Cholesky steps for kernel K, starting from the existing matrix
     G at index k. Order of newly added pivots may be specified.
