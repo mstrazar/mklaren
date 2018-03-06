@@ -79,3 +79,28 @@ def test_cholesky_interface():
     assert np.linalg.norm(K[:, :]-G.dot(G.T)) < 1e-5
 
 
+def test_cholesky_steps_lookahead():
+    """ Simple test for complete Cholesky - Kinterface in two steps.
+        G, D, act, ina are updated in place. """
+    n = 10
+    X = np.random.rand(n, 1)
+    K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1})
+
+    # Perform in-place Cholesky
+    G = np.zeros((n, n))
+    D = K.diag() if isinstance(K, Kinterface) else np.diag(K).copy()
+    act = []
+
+    cholesky_steps(K, G, D, start=0, act=act, ina=range(n), order=range(n/2))
+    norms1 = np.round(np.array([np.linalg.norm(K[:, :] - G[:, :i + 1].dot(G[:, :i + 1].T)) for i in act1]),
+                      decimals=5)
+
+    cholesky_steps(K, G, D, start=len(act), act=act, ina=range(n/2, n), order=range(n/2, n))
+    norms2 = np.round(np.array([np.linalg.norm(K[:, :] - G[:, :i + 1].dot(G[:, :i + 1].T)) for i in range(n)]),
+                      decimals=5)
+
+    assert all(norms1[:-1] >= norms1[1:])
+    assert all(norms2[:-1] >= norms2[1:])
+    assert np.linalg.norm(K[:, :]-G.dot(G.T)) < 1e-5
+
+
