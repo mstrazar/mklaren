@@ -34,9 +34,11 @@ def risk(X, f, sigma, N=100):
     return c, mse, df
 
 
-def estimate_sigma(X, y):
+def estimate_sigma(X, y, lbd=1e-5):
     """ Estimate sigma from sample. """
-    mu = X.dot(np.linalg.lstsq(X, y)[0]).ravel()
+    n, k = X.shape
+    beta = np.linalg.inv(X.T.dot(X) + lbd * np.eye(k)).dot(X.T.dot(y))
+    mu = X.dot(beta).ravel()
     return mu, np.var(y.ravel() - mu)
 
 
@@ -82,7 +84,8 @@ def compare_risk():
 
     # Estimate sigma from linear model
     # sigma_est = sigma
-    mu_est, sigma_est = estimate_sigma(X, y)
+    # mu_est, sigma_est = estimate_sigma(X, y)
+    mu_est, sigma_est = estimate_sigma(K, y)
 
     # Compute risk - bootstrap
     rank_range = range(2, n + 1)
@@ -108,3 +111,32 @@ def compare_risk():
     plt.ylabel("$C_p$")
     plt.legend()
     plt.grid()
+
+
+# Experiments
+def compare_sigma_estimates():
+    """ Evaluate risk on generated data. """
+    n = 100
+    sigma = 0.3
+    X = np.linspace(-10, 10, n).reshape((n, 1))
+    K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.5})[:, :]
+    f = mvn.rvs(mean=np.zeros(n), cov=K)
+    y = mvn.rvs(mean=f, cov=sigma * np.eye(n))
+
+    N = 100
+    lbd_range = np.logspace(-10, 2, N)
+    sigma_est = np.zeros(N)
+
+    # Estimate sigma from linear model
+    for li, lbd in enumerate(lbd_range):
+        _, sigma_est[li] = estimate_sigma(K, y, lbd=lbd)
+
+    plt.figure()
+    plt.title("Regularized variance estimates")
+    plt.plot(sigma_est, "-")
+    plt.plot(range(N), N * [sigma], "k-")
+    plt.xlabel("$\\lambda \\rightarrow$")
+    plt.ylabel("$\\hat{\\sigma^2}$")
+    plt.grid()
+    plt.gca().set_xticks([0, N])
+    plt.gca().set_xticklabels([np.min(lbd_range), np.max(lbd_range)])
