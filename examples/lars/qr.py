@@ -1,4 +1,15 @@
 import numpy as np
+from scipy.linalg import solve_triangular
+
+
+def solve_R(R):
+    """ Invert up-to-permutation upper-triangular R. """
+    k = R.shape[0]
+    rs = np.sum(R != 0, axis=0).astype(int)-1
+    P = np.argsort(rs)
+    Ru = R[P, :][:, P]
+    Rui = solve_triangular(Ru, np.identity(k), lower=False)
+    return Rui[rs, :][:, rs]
 
 
 def reorder_first(G, Q, R, step, inxs):
@@ -92,3 +103,18 @@ def test_reorder():
     inxs = np.random.choice(range(step), size=step, replace=False)
     reorder_first(G, Q, R, step=step, inxs=inxs)
     assert np.linalg.norm(G - Q.dot(R)) < 1e-5
+
+
+def test_solve_R():
+    """ Reordering of columns in Chol/QR. """
+    n = 10
+    k = 5
+    G = np.random.rand(n, k)
+    Q, R = qr(G)
+    step = 3
+    inxs = np.random.choice(range(step), size=step, replace=False)
+    reorder_first(G, Q, R, step=step, inxs=inxs)
+    assert np.linalg.norm(G - Q.dot(R)) < 1e-5
+    Ri = np.linalg.inv(R)
+    Rui = solve_R(R)
+    assert np.linalg.norm(Ri - Rui) < 1e-5
