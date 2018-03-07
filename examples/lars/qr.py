@@ -36,14 +36,14 @@ def qr_steps(G, Q, R, max_steps=None, start=0):
     :param max_steps. Number of steps to take. The order is implied by the columns in G, which match columns in Q.
     :return: Updated Cholesky factors.
     """
-    max_steps = G.shape[1] if max_steps is None else max_steps
+    max_steps = G.shape[1] - start if max_steps is None else max_steps
     for i in range(start, start + max_steps):
         if i == 0:
             Q[:, i] = G[:, i] / np.linalg.norm(G[:, i])
             R[i, i] = np.linalg.norm(G[:, i])
         else:
             R[:i, i] = Q[:, :i].T.dot(G[:, i])
-            Q[:, i] = G[:, i] - sum([R[t, i] * Q[:, t] for t in range(i)])
+            Q[:, i] = G[:, i] - (R[:i, i] * Q[:, :i]).sum(axis=1)
             Q[:, i] /= np.linalg.norm(Q[:, i])
             R[i, i] = Q[:, i].T.dot(G[:, i])
 
