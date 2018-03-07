@@ -107,3 +107,4 @@ def compare_risk():
     plt.xlabel("Rank")
     plt.ylabel("$C_p$")
     plt.legend()
+    plt.grid()
