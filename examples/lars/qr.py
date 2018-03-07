@@ -1,6 +1,16 @@
 import numpy as np
 
 
+def reorder_first(G, Q, R, step, inxs):
+    """ In-place reorder of first step columns of G, Q and retin consistency.
+        Must have max(inxs) < step. """
+    G[:, :step] = G[:, :step][:, inxs]
+    Q[:, :step] = Q[:, :step][:, inxs]
+    R[:step, :] = R[inxs, :]
+    R[:, :step] = R[:, :step][:, inxs]
+    return
+
+
 def qr_steps(G, Q, R, max_steps=None, start=0):
     """
     Perform an in-place QR decomposition in steps.
@@ -16,7 +26,7 @@ def qr_steps(G, Q, R, max_steps=None, start=0):
     :return: Updated Cholesky factors.
     """
     max_steps = G.shape[1] if max_steps is None else max_steps
-    for i in range(start, max_steps):
+    for i in range(start, start + max_steps):
         if i == 0:
             Q[:, i] = G[:, i] / np.linalg.norm(G[:, i])
             R[i, i] = np.linalg.norm(G[:, i])
@@ -60,3 +70,25 @@ def test_qr_lookahead():
     qr_steps(G, Q, R, start=k1, max_steps=None)
     assert np.linalg.norm(G - Q.dot(R)) < 1e-5
     assert np.linalg.norm(Q.T.dot(Q) - np.eye(k)) < 1e-5
+
+
+def test_reorder():
+    """ Reordering of columns in Chol/QR. """
+    n = 10
+    k = 5
+    G = np.random.rand(n, k)
+    Q, R = qr(G)
+    assert np.linalg.norm(G - Q.dot(R)) < 1e-5
+
+    # Reshuffle all
+    inxs = np.random.choice(range(k), size=k, replace=False)
+    G = G[:, inxs]
+    Q = Q[:, inxs]
+    R = R[inxs, :][:, inxs]
+    assert np.linalg.norm(G - Q.dot(R)) < 1e-5
+
+    # Reshuffle first few
+    step = 3
+    inxs = np.random.choice(range(step), size=step, replace=False)
+    reorder_first(G, Q, R, step=step, inxs=inxs)
+    assert np.linalg.norm(G - Q.dot(R)) < 1e-5

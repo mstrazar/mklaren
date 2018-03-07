@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import multivariate_normal as mvn
-from examples.lars.cholesky import cholesky, cholesky_steps
-from examples.lars.qr import qr, qr_steps
+from examples.lars.cholesky import cholesky_steps
+from examples.lars.qr import qr_steps, reorder_first
 from examples.lars.lars_beta import plot_path, plot_residuals
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
@@ -13,16 +13,6 @@ np.set_printoptions(precision=2)
 # TODO: implement hard coded caluclations to check
 # TODO: do best elements always come from the lookahead set?
 # TODO: implement pivoting to cheaply update Chol/QR?
-
-
-def reorder_first(G, Q, R, step, inxs):
-    """ In-place reorder of first step columns of G, Q and retin consistency.
-        Must have max(inxs) < step. """
-    G[:, :step] = G[:, :step][:, inxs]
-    Q[:, :step] = Q[:, :step][:, inxs]
-    R[:step, :] = R[inxs, :]
-    R[:, :step] = R[:, :step][:, inxs]
-    return
 
 
 def lars_kernel(K, y, rank, delta):
@@ -80,7 +70,7 @@ def lars_kernel(K, y, rank, delta):
         reorder_first(G, Q, R, step + 1, inxs)
         C_path = np.absolute(Q[:, :step+1].T.dot(y)).ravel()
         assert np.linalg.norm(G - Q.dot(R)) < 1e-5
-        assert np.max(C_path[:-1] - C_path[1:]) >= 0
+        assert step == 0 or np.max(C_path[:-1] - C_path[1:]) >= 0
 
     # Compute regularization path
     sj = np.sign(Q[:, :rank].T.dot(y)).ravel()
@@ -90,29 +80,6 @@ def lars_kernel(K, y, rank, delta):
         beta_path[i, :i+1] = beta_path[i-1, :i+1] + grad_path[i] * sj[:i+1]
     mu = Q[:, :rank].dot(beta_path[-1].reshape((rank, 1)))
     return Q[:, :rank], R[:rank, :][:, :rank], beta_path, mu
-
-
-def test_cholesky_reorder():
-    """ Reordering of columns in Chol/QR. """
-    n = 10
-    X = np.random.rand(n, n)
-    K = X.dot(X.T)
-    G = cholesky(K)
-    Q, R = qr(G)
-    assert np.linalg.norm(G - Q.dot(R)) < 1e-5
-
-    # Reshuffle all
-    inxs = np.random.choice(range(n), size=n, replace=False)
-    G = G[:, inxs]
-    Q = Q[:, inxs]
-    R = R[inxs, :][:, inxs]
-    assert np.linalg.norm(G - Q.dot(R)) < 1e-5
-
-    # Reshuffle first few
-    step = 5
-    inxs = np.random.choice(range(step), size=step, replace=False)
-    reorder_first(G, Q, R, step=step, inxs=inxs)
-    assert np.linalg.norm(G - Q.dot(R)) < 1e-5
 
 
 # Plots
