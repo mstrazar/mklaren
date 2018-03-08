@@ -29,28 +29,34 @@ def lars_kernel(K, y, rank, delta):
     C_path = None
 
     # Initial look-ahead setup
-    cholesky_steps(K, G, act=[], ina=range(n), max_steps=delta)
-    qr_steps(G, Q, R, max_steps=delta)
-    assert np.linalg.norm(G - Q.dot(R)) < 1e-5
+    if delta > 0:
+        cholesky_steps(K, G, act=[], ina=range(n), max_steps=delta)
+        qr_steps(G, Q, R, max_steps=delta)
+        assert np.linalg.norm(G - Q.dot(R)) < 1e-5
 
     # Iterations to fill active set
     for step in range(rank):
 
         # Contribution has to be zero for active set
-        L_delta = G.dot(G.T) - G[:, :step].dot(G[:, :step].T)
-        IL = (np.eye(n) - Q[:, :step].dot(Q[:, :step].T)).dot(L_delta)
-        B = np.round(np.linalg.norm(IL, axis=0) ** 2, 5)
-        C = np.linalg.norm(y.T.dot(IL), axis=0) ** 2
-        gain = div(C, B)
-        jnew = np.argmax(gain)
-        assert len(act) == 0 or np.linalg.norm(gain[act]) == 0
-        assert jnew not in act
+        if delta > 0:
+            L_delta = G.dot(G.T) - G[:, :step].dot(G[:, :step].T)
+            IL = (np.eye(n) - Q[:, :step].dot(Q[:, :step].T)).dot(L_delta)
+            B = np.round(np.linalg.norm(IL, axis=0) ** 2, 5)
+            C = np.linalg.norm(y.T.dot(IL), axis=0) ** 2
+            gain = div(C, B)
+            jnew = np.argmax(gain)
+            assert len(act) == 0 or np.linalg.norm(gain[act]) == 0
+            assert jnew not in act
+            order = [jnew]
+        else:
+            # Selection based on standard Cholesky lower bound
+            order = None
 
         # Select pivot and update
         G[:, step:] = 0
         Q[:, step:] = 0
         R[:, step:] = 0
-        cholesky_steps(K, G, start=step, act=act, ina=ina, max_steps=1, order=[jnew])
+        cholesky_steps(K, G, start=step, act=act, ina=ina, max_steps=1, order=order)
         qr_steps(G, Q, R, max_steps=1, start=step)
         assert np.linalg.norm(G - Q.dot(R)) < 1e-5
 
