@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal as mvn
 from examples.lars.cholesky import cholesky_steps
 from examples.lars.qr import qr_steps, reorder_first
@@ -79,21 +80,50 @@ def lars_kernel(K, y, rank, delta):
     for i in range(rank):
         beta_path[i, :i+1] = beta_path[i-1, :i+1] + grad_path[i] * sj[:i+1]
     mu = Q[:, :rank].dot(beta_path[-1].reshape((rank, 1)))
-    return Q[:, :rank], R[:rank, :][:, :rank], beta_path, mu
+    return Q[:, :rank], R[:rank, :][:, :rank], beta_path, mu, act
+
+
+def lars_kernel_predict(X, K, Q, R, act, beta):
+    """ Prediction function via Nystrom approximation. Weigths are computed in the Q space. """
+    G = Q.dot(R)
+    Ka = K(X, K.data)[:, act]
+    Tr = np.linalg.inv(K[act, act]).dot(K[act, :]).dot(G).dot(np.linalg.inv(G.T.dot(G)))
+    H = Ka.dot(Tr).dot(np.linalg.inv(R))
+    return H.dot(beta)
 
 
 # Plots
 def plot_fit():
-    """ Simple model fit. """
+    """ Simple model fit."""
     n = 100
     rank = 20
     delta = 5
     X = np.linspace(-10, 10, n).reshape((n, 1))
     K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.3})[:, :]
     y = mvn.rvs(mean=np.zeros(n,), cov=K[:, :]).reshape((n, 1))
-    Q, R, path, mu = lars_kernel(K, y, rank, delta)
+    Q, R, path, mu, act = lars_kernel(K, y, rank, delta)
     plot_path(path)
     plot_residuals(Q, y, path)
+
+
+def plot_prediction():
+    """ Simple model fit. """
+    n = 100
+    rank = 20
+    delta = 5
+    X = np.linspace(-10, 10, n).reshape((n, 1))
+    Xt = np.linspace(-20, 20, n*2).reshape((n*2, 1))
+    K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.3})
+    y = mvn.rvs(mean=np.zeros(n,), cov=K[:, :]).reshape((n, 1))
+    Q, R, path, mu, act = lars_kernel(K, y, rank, delta)
+    yp = lars_kernel_predict(Xt, K, Q, R, act, path[-1])
+
+    plt.figure()
+    plt.plot(X.ravel(), y.ravel(), ".")
+    plt.plot(Xt.ravel(), yp.ravel(), "-")
+    plt.xlabel("x")
+    plt.ylabel("f(x)")
+    plt.show()
 
 
 # Unit tests
@@ -105,7 +135,7 @@ def test_lars_kernel():
     X = np.linspace(-10, 10, n).reshape((n, 1))
     K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.3})[:, :]
     y = mvn.rvs(mean=np.zeros(n,), cov=K[:, :]).reshape((n, 1))
-    Q, R, path, mu = lars_kernel(K, y, rank, delta)
+    Q, R, path, mu, act = lars_kernel(K, y, rank, delta)
     assert np.linalg.norm(Q.T.dot(y).ravel() - path[-1, :].ravel()) < 1e-5
 
 
@@ -117,6 +147,33 @@ def test_weigths_orthogonal():
     X = np.linspace(-10, 10, n).reshape((n, 1))
     K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.3})[:, :]
     y = mvn.rvs(mean=np.zeros(n,), cov=K[:, :]).reshape((n, 1))
-    Q, R, path, mu = lars_kernel(K, y, rank, delta)
+    Q, R, path, mu, act = lars_kernel(K, y, rank, delta)
     for j in range(path.shape[1]):
         assert len(set(np.sign(path[:, j])) - {0}) <= 1
+
+
+def test_approx_consistency():
+    """ Cholesky decomposition is equivalent to the subspace spanned by inducing points regardless of order. """
+    n = 100
+    rank = 20
+    delta = 5
+    X = np.linspace(-10, 10, n).reshape((n, 1))
+    K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.3})
+    y = mvn.rvs(mean=np.zeros(n,), cov=K[:, :]).reshape((n, 1))
+    Q, R, path, mu, act = lars_kernel(K, y, rank, delta)
+    L = K[:, act].dot(np.linalg.inv(K[act, :][:, act])).dot(K[act, :])
+    G = Q.dot(R)
+    assert np.linalg.norm(G.dot(G.T) - L) < 1e-5
+
+
+def test_prediction_consistency():
+    """ Cholesky decomposition is equivalent to the subspace spanned by inducing points regardless of order. """
+    n = 100
+    rank = 20
+    delta = 5
+    X = np.linspace(-10, 10, n).reshape((n, 1))
+    K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.3})
+    y = mvn.rvs(mean=np.zeros(n,), cov=K[:, :]).reshape((n, 1))
+    Q, R, path, mu, act = lars_kernel(K, y, rank, delta)
+    yp = lars_kernel_predict(X, K, Q, R, act, path[-1])
+    assert np.linalg.norm(yp - Q.dot(path[-1])) < 1e-5
