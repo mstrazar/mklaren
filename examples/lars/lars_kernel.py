@@ -83,13 +83,18 @@ def lars_kernel(K, y, rank, delta):
     return Q[:, :rank], R[:rank, :][:, :rank], beta_path, mu, act
 
 
-def lars_kernel_predict(X, K, Q, R, act, beta):
-    """ Prediction function via Nystrom approximation. Weigths are computed in the Q space. """
+def lars_map_Q(X, K, Q, R, act):
     G = Q.dot(R)
     Ka = K(X, K.data)[:, act]
     Tr = np.linalg.inv(K[act, act]).dot(K[act, :]).dot(G).dot(np.linalg.inv(G.T.dot(G)))
-    H = Ka.dot(Tr).dot(np.linalg.inv(R))
-    return H.dot(beta)
+    Qt = Ka.dot(Tr).dot(np.linalg.inv(R))
+    return Qt
+
+
+def lars_kernel_predict(X, K, Q, R, act, beta):
+    """ Prediction function via Nystrom approximation. Weigths are computed in the Q space. """
+    Qt = lars_map_Q(X, K, Q, R, act)
+    return Qt.dot(beta)
 
 
 # Plots
