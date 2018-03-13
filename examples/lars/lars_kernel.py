@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from warnings import warn
 from scipy.stats import multivariate_normal as mvn
 from examples.lars.cholesky import cholesky_steps
 from examples.lars.qr import qr_steps, reorder_first
@@ -48,6 +49,11 @@ def lars_kernel(K, y, rank, delta):
             C = np.absolute(y.T.dot(IL)) ** 2
             gain = div(C, B)
             jnew = np.argmax(gain)
+            if np.max(gain) == 0:
+                msg = "Iterations ended prematurely at step = %d < %d" % (step, rank)
+                warn(msg)
+                rank = step
+                break
             assert len(act) == 0 or np.linalg.norm(gain[act]) == 0
             assert jnew not in act
             order = [jnew]
