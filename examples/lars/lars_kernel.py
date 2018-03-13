@@ -19,6 +19,9 @@ np.set_printoptions(precision=2)
 def lars_kernel(K, y, rank, delta):
     """ Plain (suboptimal) implementation of LARS with kernels. """
 
+    if delta == 1:
+        raise ValueError("Unstable selection of delta. (delta = 1)")
+
     # Shared memory
     n = K.shape[0]
     G = np.zeros((n, rank + delta))
@@ -42,7 +45,7 @@ def lars_kernel(K, y, rank, delta):
             L_delta = G.dot(G.T) - G[:, :step].dot(G[:, :step].T)
             IL = (np.eye(n) - Q[:, :step].dot(Q[:, :step].T)).dot(L_delta)
             B = np.round(np.linalg.norm(IL, axis=0) ** 2, 5)
-            C = np.linalg.norm(y.T.dot(IL), axis=0) ** 2
+            C = np.absolute(y.T.dot(IL)) ** 2
             gain = div(C, B)
             jnew = np.argmax(gain)
             assert len(act) == 0 or np.linalg.norm(gain[act]) == 0
