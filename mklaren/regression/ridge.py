@@ -21,7 +21,7 @@ from sklearn.linear_model import Ridge
 
 from numpy import array, hstack, sqrt, where, isnan, zeros, cumsum
 from numpy import hstack, array, absolute
-from numpy.linalg import inv, norm
+from numpy.linalg import inv, norm, lstsq
 
 
 class RidgeMKL:
@@ -165,7 +165,6 @@ class RidgeLowRank:
     }
     supervised = ["csi"]
 
-
     def __init__(self, method_init_args=None,
                  method="icd", lbd=0, rank=10, normalize=False):
         """
@@ -204,9 +203,11 @@ class RidgeLowRank:
         self.rank       = rank
         self.mu         = None
         self.lr_models  = list()
-        self.reg_model  = Ridge(alpha=lbd, normalize=normalize)
+        self.lbd = lbd
+        self.normalize = normalize
+        self.reg_model  = Ridge(alpha=self.lbd, normalize=normalize)
         self.beta = None
-
+        self.model_path = None
 
     def fit(self, Ks, y, *method_args):
         """
@@ -299,7 +300,6 @@ class RidgeLowRank:
             XT = hstack(Gs)
         return XT
 
-
     def predict(self, Xs, Ks=None):
         """Predict responses for test samples.
 
@@ -312,6 +312,42 @@ class RidgeLowRank:
         XT = self.transform(Xs, Ks)
         return self.reg_model.predict(X=XT).ravel()
 
+    def path_compute(self, Xs, y, Ks=None):
+        """ Compute regularized least-squares regularization path (weights).
+
+        :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
+
+        :param y: (``numpy.ndarray``) Class labels :math:`y_i \in {-1, 1}` or regression targets.
+
+        :param Ks: (``list``) of (``numpy.ndarray``) Values of the kernel against K[test set, training set]. Optional.
+        """
+        XT = self.transform(Xs, Ks)
+        models = []
+        for j in range(XT.shape[1]):
+            model = Ridge(alpha=self.lbd,
+                          normalize=self.normalize,
+                          fit_intercept=False).fit(X=XT[:, :j+1], y=y)
+            models.append(model)
+        self.model_path = models
+        return
+
+    def path_predict(self, Xs, Ks=None):
+        """ Predict values for all possible weights on the regularization path.
+
+        :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
+
+        :param Ks: (``list``) of (``numpy.ndarray``) Values of the kernel against K[test set, training set]. Optional.
+
+        :return (``numpy.ndarray``) Predited values for each element in the path.
+        """
+        assert self.model_path is not None
+        XT = self.transform(Xs, Ks)
+        rank = len(self.model_path)
+        path = zeros((Xs[0].shape[0], rank))
+        for j in range(XT.shape[1]):
+            yp = self.model_path[j].predict(XT[:, :j+1])
+            path[:, j] = yp
+        return path
 
     def __getitem__(self, item):
         """
