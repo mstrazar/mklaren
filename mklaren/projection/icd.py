@@ -13,6 +13,7 @@ Given a kernel matrix :math:`\mathbf{K} \in \mathbb{R}^{n\ x\ n}` find a low-ran
 """
 
 from ..kernel.kinterface import Kinterface
+from warnings import warn
 import numpy as np
 
 
@@ -68,7 +69,9 @@ class ICD:
             D[i] = 0
 
             # check residual lower bound and maximum rank
-            if np.max(D) < self.eps or k + 1 == self.rank:
+            if np.max(D) < self.eps:
+                msg = "Iterations ended prematurely at step = %d < %d" % (k, self.rank)
+                warn(msg)
                 break
 
         self.active_set_ = I
