@@ -26,8 +26,7 @@ fname = os.path.join(out_dir, "results.csv")
 
 # Experiment parameters
 delta_range = (2, 5, 10)
-replicates = range(10)
-replicates = range(3)
+replicates = range(30)
 n_range = (100, 300, 1000)
 
 # Fixed
@@ -105,9 +104,12 @@ for n, repl in it.product(n_range, replicates):
             continue
 
         # Measure rate of progress
+        scores = dict([(m, np.round(np.mean(epath[m]), 3)) for m in models])
         for m in models:
-            ecs = np.round(np.mean(epath[m]), 3)
-            row = {"iter": repl, "model": m.upper(), "n": n, "delta": d, "rank": r, "evar": ecs}
+            ecs = scores[m]
+            ranking = sorted(scores.values(), reverse=True).index(ecs) + 1
+            row = {"iter": repl, "model": m.upper(), "n": n, "delta": d, "rank": r,
+                   "evar": ecs, "ranking": ranking}
             results.append(row)
 
 # Write to csv
