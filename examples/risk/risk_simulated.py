@@ -30,7 +30,7 @@ replicates = range(30)
 n_range = (100, 300, 1000)
 
 # Fixed
-rank = 50
+rank = 30
 noise = 0.03
 gamma = 0.0003
 p_tr = .8
@@ -53,8 +53,6 @@ for n, repl in it.product(n_range, replicates):
     y = mvn.rvs(mean=np.zeros(n,), cov=K[:, :] + noise * np.eye(n))
 
     # Fit model
-    d = 5
-    r = 30
     gfit = fit_gamma(X, y)
     K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": gfit})
 
@@ -73,16 +71,16 @@ for n, repl in it.product(n_range, replicates):
             # Fit path for each model
             try:
                 if m == "lars":
-                    Q, R, path, mu, act = lars_kernel(K_tr, y[tr], rank=r, delta=d)
+                    Q, R, path, mu, act = lars_kernel(K_tr, y[tr], rank=rank, delta=d)
                     Qt = lars_map_Q(X[te], K_tr, Q, R, act)
                     yp = Qt.dot(path.T)
                 elif m == "icd":
-                    icd = RidgeLowRank(lbd=lbd, rank=r, method="icd")
+                    icd = RidgeLowRank(lbd=lbd, rank=rank, method="icd")
                     icd.fit([K_tr], y[tr])
                     icd.path_compute([X[tr]], y[tr])
                     yp = icd.path_predict([X[te]])
                 elif m == "csi":
-                    csi = RidgeLowRank(lbd=lbd, rank=r, method="csi", method_init_args={"delta": d})
+                    csi = RidgeLowRank(lbd=lbd, rank=rank, method="csi", method_init_args={"delta": d})
                     csi.fit([K_tr], y[tr])
                     csi.path_compute([X[tr]], y[tr])
                     yp = csi.path_predict([X[te]])
@@ -108,7 +106,7 @@ for n, repl in it.product(n_range, replicates):
         for m in models:
             ecs = scores[m]
             ranking = sorted(scores.values(), reverse=True).index(ecs) + 1
-            row = {"iter": repl, "model": m.upper(), "n": n, "delta": d, "rank": r,
+            row = {"iter": repl, "model": m.upper(), "n": n, "delta": d, "rank": rank,
                    "evar": ecs, "ranking": ranking}
             results.append(row)
 
