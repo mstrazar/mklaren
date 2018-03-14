@@ -27,13 +27,13 @@ from examples.lars.risk import estimate_risk, estimate_sigma
 # Parameters
 out_dir = "/Users/martins/Dev/mklaren/examples/risk/output"
 N = 2000
-delta = 10
+delta = 5
 gamma = .1
 p_tr = .8
 lbd = 0.001
 
 # models = ("lars", "lars_ls", "icd", "csi", "KRR")
-models = ("lars", "icd", "KRR")
+models = ("lars", "lars_ls", "icd", "KRR", "csi")
 colors = {"lars": "orange", "lars_ls": "red", "icd": "blue", "lars_no": "yellow", "KRR": "black", "csi": "magenta"}
 
 
@@ -90,9 +90,10 @@ def process(dataset):
 
     # LARS only
     for i, r in enumerate(rank_range):
-        mu = Q.dot(path[r]).ravel()
-        yp = lars_kernel_predict(X=X[te], K=K_tr, act=act, Q=Q, R=R, beta=path[r])
-        Cp[i] = estimate_risk(Q[:, :r], y[tr], mu, sigma_est)
+        reff = min(r, path.shape[0]-1)
+        mu = Q.dot(path[reff]).ravel()
+        yp = lars_kernel_predict(X=X[te], K=K_tr, act=act, Q=Q, R=R, beta=path[reff])
+        Cp[i] = estimate_risk(Q[:, :reff], y[tr], mu, sigma_est)
         mse[i] = np.var(y[te] - yp).ravel()
 
     # Full KRR
@@ -101,13 +102,15 @@ def process(dataset):
     yp_krr = krr.predict(range(K.shape[0]))
 
     # Calculate evar training/test
-    for arr, inxs in zip((evar, evar_tr), (te, tr)):
+    for arr, inxs, Qte in zip((evar, evar_tr), (te, tr), (Qt, Q)):
         for m in models:
             for i, r in enumerate(rank_range):
                 if m == "lars":
-                    yp = lars_kernel_predict(X=X[inxs], K=K_tr, act=act, Q=Q, R=R, beta=path[r]).ravel()
+                    reff = min(r, path.shape[0]-1)
+                    yp = lars_kernel_predict(X=X[inxs], K=K_tr, act=act, Q=Q, R=R, beta=path[reff]).ravel()
                 elif m == "lars_ls":
-                    yp = Qt[:, :r].dot(Q[:, :r].T).dot(y[tr]).ravel()
+                    reff = min(r, path.shape[0]-1)
+                    yp = Qte[:, :reff].dot(Q[:, :reff].T).dot(y[tr]).ravel()
                 elif m == "lars_no":
                     beta = np.linalg.lstsq(K_tr[:, act[:r]], y[tr])[0]
                     yp = K_tr(X[inxs], X[tr])[:, act[:r]].dot(beta).ravel()
