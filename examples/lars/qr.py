@@ -12,13 +12,20 @@ def solve_R(R):
     return Rui[rs, :][:, rs]
 
 
-def reorder_first(G, Q, R, step, inxs):
-    """ In-place reorder of first step columns of G, Q and retin consistency.
+def qr_reorder(Q, R, step, inxs):
+    """ In-place reorder of first step columns of Q, R. R is in general no longer triangular.
         Must have max(inxs) < step. """
-    G[:, :step] = G[:, :step][:, inxs]
     Q[:, :step] = Q[:, :step][:, inxs]
     R[:step, :] = R[inxs, :]
     R[:, :step] = R[:, :step][:, inxs]
+    return
+
+
+def gqr_reorder(G, Q, R, step, inxs):
+    """ In-place reorder of first step columns of G, Q, R to retain consistency.
+        Must have max(inxs) < step. """
+    G[:, :step] = G[:, :step][:, inxs]
+    qr_reorder(Q, R, step, inxs)
     return
 
 
@@ -103,7 +110,7 @@ def test_reorder():
     # Reshuffle first few
     step = 3
     inxs = np.random.choice(range(step), size=step, replace=False)
-    reorder_first(G, Q, R, step=step, inxs=inxs)
+    gqr_reorder(G, Q, R, step=step, inxs=inxs)
     assert np.linalg.norm(G - Q.dot(R)) < 1e-5
 
 
@@ -115,7 +122,7 @@ def test_solve_R():
     Q, R = qr(G)
     step = 3
     inxs = np.random.choice(range(step), size=step, replace=False)
-    reorder_first(G, Q, R, step=step, inxs=inxs)
+    gqr_reorder(G, Q, R, step=step, inxs=inxs)
     assert np.linalg.norm(G - Q.dot(R)) < 1e-5
     Ri = np.linalg.inv(R)
     Rui = solve_R(R)
