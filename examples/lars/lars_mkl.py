@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import itertools as it
 from scipy.stats import multivariate_normal as mvn
 from examples.lars.cholesky import cholesky_steps
-from examples.lars.qr import qr_steps, qr_reorder
+from examples.lars.qr import qr_steps, qr_reorder, qr_orient
 from warnings import warn
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
@@ -111,6 +111,7 @@ def mkl_qr(Ks, y, rank, delta, f=f):
     for j in korder:
         porder.extend(list(np.where(np.array(P) == j)[0]))
     qr_reorder(Q, R, rank, porder)
+    qr_orient(Q, R, y)
     assert rank == len(porder)
 
     # Return reduced approximatrion
