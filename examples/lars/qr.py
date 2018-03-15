@@ -29,7 +29,7 @@ def gqr_reorder(G, Q, R, step, inxs):
     return
 
 
-def qr_steps(G, Q, R, max_steps=None, start=0):
+def qr_steps(G, Q, R, max_steps=None, start=0, qstart=None):
     """
     Perform an in-place QR decomposition in steps.
     G at index k. Order of newly added pivots may be specified.
@@ -40,21 +40,25 @@ def qr_steps(G, Q, R, max_steps=None, start=0):
     :param Q: Existing array.
     :param R: Existing array.
     :param start: Starting index.
+    :param qstart: Starting index if orders in G and Q, R are not synced.
     :param max_steps. Number of steps to take. The order is implied by the columns in G, which match columns in Q.
     :return: Updated Cholesky factors.
     """
     max_steps = G.shape[1] - start if max_steps is None else max_steps
     i = start
-    if i == 0:
-        Q[:, i] = G[:, i] / np.linalg.norm(G[:, i])
-        R[i, i] = np.linalg.norm(G[:, i])
+    j = qstart if qstart is not None else start
+    if j == 0:
+        Q[:, j] = G[:, i] / np.linalg.norm(G[:, i])
+        R[j, j] = np.linalg.norm(G[:, i])
         i += 1
+        j += 1
     while i < start + max_steps:
-        R[:i, i] = Q[:, :i].T.dot(G[:, i])
-        Q[:, i] = G[:, i] - (R[:i, i] * Q[:, :i]).sum(axis=1)
-        Q[:, i] /= np.linalg.norm(Q[:, i])
-        R[i, i] = Q[:, i].T.dot(G[:, i])
+        R[:j, j] = Q[:, :j].T.dot(G[:, i])
+        Q[:, j] = G[:, i] - (R[:j, j] * Q[:, :j]).sum(axis=1)
+        Q[:, j] /= np.linalg.norm(Q[:, j])
+        R[j, j] = Q[:, j].T.dot(G[:, i])
         i += 1
+        j += 1
 
 
 def qr(G):
@@ -127,3 +131,24 @@ def test_solve_R():
     Ri = np.linalg.inv(R)
     Rui = solve_R(R)
     assert np.linalg.norm(Ri - Rui) < 1e-5
+
+
+def test_qr_async():
+    """ Update the same QR decomposition for multiple matrices"""
+    n = 10
+    k = 5
+    G1 = np.random.rand(n, k)
+    G2 = np.random.rand(n, k)
+    Q = np.zeros((n, 2 * k))
+    R = np.zeros((2 * k, 2 * k))
+
+    # First k columns are from G1
+    qr_steps(G1, Q, R, start=0, qstart=0, max_steps=k)
+    assert np.linalg.norm(Q[:, :k].T.dot(Q[:, :k]) - np.eye(k)) < 1e-5
+    assert np.linalg.norm(G1 - Q[:, :k].dot(R[:k, :k])) < 1e-5
+
+    # Second k columns are from G2
+    qr_steps(G2, Q, R, start=0, qstart=k, max_steps=k)
+    assert np.linalg.norm(Q.T.dot(Q) - np.eye(2 * k)) < 1e-5
+    assert np.linalg.norm(G1 - Q[:, :k].dot(R[:k, :k])) < 1e-5
+    assert np.linalg.norm(G2 - Q.dot(R)[:, k:]) < 1e-5
