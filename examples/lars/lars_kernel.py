@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from warnings import warn
 from scipy.stats import multivariate_normal as mvn
 from examples.lars.cholesky import cholesky_steps
-from examples.lars.qr import qr_steps, reorder_first
+from examples.lars.qr import qr_steps, gqr_reorder
 from examples.lars.lars_beta import plot_path, plot_residuals
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
@@ -81,7 +81,7 @@ def lars_kernel(K, y, rank, delta):
         # Apply correct LARS order - optimize with inserting into sorted list
         inxs = np.argsort(-np.absolute(Q[:, :step+1].T.dot(y).ravel()))
         act = list(np.array(act)[inxs[:step+1]])
-        reorder_first(G, Q, R, step + 1, inxs)
+        gqr_reorder(G, Q, R, step + 1, inxs)
         C_path = np.absolute(Q[:, :step+1].T.dot(y)).ravel()
         assert np.linalg.norm(G - Q.dot(R)) < 1e-5
         assert step == 0 or np.max(C_path[:-1] - C_path[1:]) >= 0
