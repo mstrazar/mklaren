@@ -47,7 +47,7 @@ def lars_kernel(K, y, rank, delta):
             IL = (np.eye(n) - Q[:, :step].dot(Q[:, :step].T)).dot(L_delta)
             B = np.round(np.linalg.norm(IL, axis=0) ** 2, 5)
             C = np.absolute(y.T.dot(IL)) ** 2
-            gain = div(C, B)
+            gain = div(C, B).ravel()
             jnew = np.argmax(gain)
             if np.max(gain) == 0:
                 msg = "Iterations ended prematurely at step = %d < %d" % (step, rank)
