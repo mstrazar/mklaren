@@ -36,7 +36,7 @@ import matplotlib.pyplot as plt
 
 
 # New methods
-from examples.lars.lars_kernel import lars_kernel
+from examples.lars.lars_kernel import lars_kernel, lars_kernel_predict
 from examples.lars.risk import estimate_risk, estimate_sigma
 from examples.lars.lars_beta import plot_path, plot_residuals
 
@@ -105,7 +105,7 @@ def process():
 
     # Fit Kernel-LARS
     t1 = time()
-    Q, R, path, mu = lars_kernel(K[:, :], y, rank=rank, delta=delta)
+    Q, R, path, mu, act = lars_kernel(K, y, rank=rank, delta=delta)
     t1 = time() - t1
     print("LARS time: %f" % t1)
 
