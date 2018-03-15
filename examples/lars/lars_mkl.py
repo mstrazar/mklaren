@@ -126,11 +126,11 @@ def mkl_lars(Q, P, y):
     korder = list(set(P))
     pairs = zip(korder, korder[1:])
     path = np.zeros((len(korder) + 1, Q.shape[1]))
-
-    # Ensure same sign
     t = np.sum(P == pairs[0][0])
     r = y.ravel()
     mu = 0
+
+    # Compute steps
     for i, (k1, k2) in enumerate(pairs):
         c1 = np.linalg.norm(Q[:, P == k1].T.dot(r))
         c2 = np.linalg.norm(Q[:, P == k2].T.dot(r))
