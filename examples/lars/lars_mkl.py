@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import itertools as it
 from scipy.stats import multivariate_normal as mvn
+from examples.lars.lars_beta import plot_path, plot_residuals
 from examples.lars.cholesky import cholesky_steps
 from examples.lars.qr import qr_steps, qr_reorder, qr_orient
 from warnings import warn
@@ -102,7 +102,7 @@ def mkl_qr(Ks, y, rank, delta, f=f):
         assert np.linalg.norm(G[:, :k_num] - (Q.dot(R))[:, k_inx]) < 1e-5
 
         # Update current correlation
-        corr[kern] = np.linalg.norm(Q[:, k_inx].T.dot(y)) ** 2
+        corr[kern] = np.linalg.norm(Q[:, k_inx].T.dot(y))
 
     # Correct lars order is based on including groups ; Gs are no longer valid
     # del Gs
@@ -125,8 +125,8 @@ def mkl_lars(Q, P, y):
     """ Compute the group LARS path. """
     korder = list(set(P))
     pairs = zip(korder, korder[1:])
-    path = np.zeros((len(korder) + 1, Q.shape[1]))
-    t = np.sum(P == pairs[0][0])
+    path = np.zeros((len(korder), Q.shape[1]))
+    t = np.sum(P == korder[0])
     r = y.ravel()
     mu = 0
 
@@ -134,6 +134,7 @@ def mkl_lars(Q, P, y):
     for i, (k1, k2) in enumerate(pairs):
         c1 = np.linalg.norm(Q[:, P == k1].T.dot(r))
         c2 = np.linalg.norm(Q[:, P == k2].T.dot(r))
+        assert c2 <= c1
         alpha = 1 - (c2 / c1)
         path[i] = alpha * Q.T.dot(r).ravel()
         t += np.sum(P == k2)
@@ -144,7 +145,7 @@ def mkl_lars(Q, P, y):
     path[-1] = Q.T.dot(r).ravel()
     r = r - Q.dot(path[-1])
     mu = mu + Q.dot(path[-1])
-    assert np.linalg.norm(r) < 1e-3
+    assert np.linalg.norm(Q.T.dot(r)) < 1e-3
     return path, mu
 
 
@@ -163,10 +164,20 @@ def test_lars_mkl():
         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.6})[:, :], # short
         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1})[:, :], # long
         ]
-
     Kt = 1.0 + Ks[0] + 0.01 * Ks[1]
     y = mvn.rvs(mean=np.zeros(n,), cov=Kt).reshape((n, 1))
 
+    # Fit model
+    Q, R, P = mkl_qr(Ks, y, rank, delta)
+    path, mu = mkl_lars(Q, P, y)
+    assert np.all(np.sign(Q.T.dot(y)) >= 0)
+
+    # Plot fit
     plt.figure()
     plt.plot(y, ".")
+    plt.plot(mu)
     plt.show()
+
+    # Plot path
+    plot_path(path)
+    plot_residuals(Q, y, path)
