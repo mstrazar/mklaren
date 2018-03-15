@@ -29,6 +29,15 @@ def gqr_reorder(G, Q, R, step, inxs):
     return
 
 
+def qr_orient(Q, R, y):
+    """ Orient the columns of Q to point in the same direction as y. """
+    k = Q.shape[1]
+    s = np.sign(Q.T.dot(y))
+    Q[:, :] = Q * s.reshape((1, k))
+    R[:, :] = R * s.reshape((k, 1))
+    return
+
+
 def qr_steps(G, Q, R, max_steps=None, start=0, qstart=None):
     """
     Perform an in-place QR decomposition in steps.
@@ -152,3 +161,18 @@ def test_qr_async():
     assert np.linalg.norm(Q.T.dot(Q) - np.eye(2 * k)) < 1e-5
     assert np.linalg.norm(G1 - Q[:, :k].dot(R[:k, :k])) < 1e-5
     assert np.linalg.norm(G2 - Q.dot(R)[:, k:]) < 1e-5
+
+
+def test_qr_orient():
+    """ Test orientation of QR. """
+    n = 10
+    k = 5
+    G = np.random.rand(n, k)
+    w = np.ones((k, 1))
+    w[:k/2] = -1
+    Q, R = qr(G)
+    y = Q.dot(w)
+    assert np.linalg.norm(G - Q.dot(R)) < 1e-5
+    qr_orient(Q, R, y)
+    assert np.linalg.norm(G - Q.dot(R)) < 1e-5
+    assert np.all(np.sign(Q.T.dot(y)) >= 0)
