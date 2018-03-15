@@ -35,8 +35,6 @@ def lars_kernel(K, y, rank, delta):
     # Initial look-ahead setup
     if delta > 0:
         cholesky_steps(K, G, act=[], ina=range(n), max_steps=delta)
-        qr_steps(G, Q, R, max_steps=delta)
-        assert np.linalg.norm(G - Q.dot(R)) < 1e-5
 
     # Iterations to fill active set
     for step in range(rank):
