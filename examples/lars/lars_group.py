@@ -11,9 +11,9 @@ def p_sc(p):
     return 1.0 / p if p else 0
 
 
-def p_ri(p):
+def p_ri(p, c=1):
     """ Rich get richer penalty. """
-    return p / (1.0 + p)
+    return c * p / (1.0 + c * p)
 
 
 # Cost functions
