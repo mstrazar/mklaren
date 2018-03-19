@@ -6,8 +6,8 @@ from collections import Counter, defaultdict
 
 
 # Penalty functions
-def p_id(p):
-    """ Identity (unscaled) penalty. """
+def p_const(p):
+    """ Constant (unscaled) penalty. """
     return 1.0
 
 
