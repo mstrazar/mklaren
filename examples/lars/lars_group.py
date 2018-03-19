@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 # Penalty functions
 def p_id(p):
     """ Identity (unscaled) penalty. """
-    return 1
+    return 1.0
 
 
 def p_sc(p):
