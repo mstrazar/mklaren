@@ -6,6 +6,11 @@ from collections import Counter, defaultdict
 
 
 # Penalty functions
+def p_id(p):
+    """ Identity (unscaled) penalty. """
+    return 1
+
+
 def p_sc(p):
     """ Scaling penalty. """
     return 1.0 / p if p else 0
