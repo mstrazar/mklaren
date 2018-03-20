@@ -21,6 +21,22 @@ hlp = """
 """
 
 
+def zy2_app(G, Q, y, QTY):
+    """ Approximate |<z, y>|^2 for current approximations G, Q.
+        QTY is cached for all kernels. """
+    n = G.shape[0]
+    if G.shape[1] == 0:
+        return -np.inf * np.ones((n,))
+    GTY = G.T.dot(y)
+    GTQ = G.T.dot(Q)
+    A1 = GTY.dot(GTY.T) - GTQ.dot(QTY.dot(GTY.T))
+    C = np.array([G[i, :].T.dot(A1).dot(G[i, :]) for i in range(n)])
+    A2 = G.T.dot(G) - GTQ.dot(GTQ.T)
+    B = np.array([G[i, :].T.dot(A2).dot(G[i, :]) for i in range(n)])
+    B = np.round(B, 5)
+    return div(C, B)
+
+
 def mkl_qr(Ks, y, rank, delta, f=p_ri):
     """ LARS-MKL sampling algorithm with a penalty function. Produces a feature space. """
     if delta == 1:
@@ -39,10 +55,10 @@ def mkl_qr(Ks, y, rank, delta, f=p_ri):
     P = []
 
     # Current status and costs
-    corr = np.zeros((k, ))          # Current correlation per kernel || X.T y || (required for calculating gain)
-    cost = np.zeros((k, ))          # Current derived cost per kernel || X.T y || * f(p)
-    ncol = np.zeros((k,))           # Current number of columns per kernel (p)
-    gain = np.zeros((k, n))         # Individual column gains
+    corr = np.zeros((k,))  # Current correlation per kernel || X.T y || (required for calculating gain)
+    cost = np.zeros((k,))  # Current derived cost per kernel || X.T y || * f(p)
+    ncol = np.zeros((k,))  # Current number of columns per kernel (p)
+    gain = np.zeros((k, n))  # Individual column gains
 
     # Look-ahead phase
     for j in range(len(Ks)):
@@ -54,21 +70,21 @@ def mkl_qr(Ks, y, rank, delta, f=p_ri):
         if delta > 0:
             cholesky_steps(Ks[j], Gs[j], act=[], ina=range(n), max_steps=delta)
 
-    # Iterations to fill active set
+    # Iterations to fill the active set
     for step in range(rank):
+
+        # Compute gains
+        Qa = Q[:, :step]
+        QTY = Qa.T.dot(y)
         for j in range(k):
             if delta > 0:
-                G = Gs[j]
-                L_delta = G.dot(G.T) - G[:, :step].dot(G[:, :step].T)
-                IL = (np.eye(n) - Q[:, :step].dot(Q[:, :step].T)).dot(L_delta)
-                B = np.round(norm(IL, axis=0) ** 2, 5)
-                C = np.absolute(y.T.dot(IL)) ** 2
-                zy2 = div(C, B).ravel()  # |<z, y>|^2 approx.
+                Ga = Gs[j][:, step:step+delta]
+                zy2 = zy2_app(Ga, Qa, y, QTY)
                 gain[j, :] = zy2 * f(ncol[j] + 1) + (f(ncol[j] + 1) - f(ncol[j])) * corr[j]
+                gain[j, Acts[j]] = -np.inf
             else:
                 gain[j, :] = Ks[j].diagonal() - (Gs[j] ** 2).sum(axis=1).ravel()
-
-            gain[j, Acts[j]] = -np.inf
+                gain[j, Acts[j]] = -np.inf
 
         # Select optimal kernel and pivot
         kern, pivot = np.unravel_index(np.argmax(gain), gain.shape)
@@ -140,7 +156,6 @@ def mkl_lars(Q, P, y, f=p_ri):
         p2 = sum(P == k2)
         c1 = norm(Q[:, P == k1].T.dot(r))**2 * f(p1)
         c2 = norm(Q[:, P == k2].T.dot(r))**2 * f(p2)
-        print(c1, c2)
         assert c2 <= c1
         alpha = 1 - np.sqrt(c2 / c1)
         path[i] = alpha * Q.T.dot(r).ravel()
