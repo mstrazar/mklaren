@@ -158,8 +158,7 @@ class LarsMKL:
         self.Acts = [Acts[j] for j in korder]
         self.Q = Q[:, :rank]
         self.R = R[:rank, :rank]
-        # self.Ri = solve_R(self.R)
-        self.Ri = inv(self.R)
+        self.Ri = solve_R(self.R)
         self.P = np.array(P)[porder]
 
         # Compute transform for prediction with final matrices
