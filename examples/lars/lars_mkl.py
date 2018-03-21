@@ -26,7 +26,7 @@ class LarsMKL:
         self.rank = rank
         self.delta = delta
         self.Q = None
-        self.R = None
+        self.Qview = None
         self.Ri = None
         self.P = None
         self.Acts = None
@@ -34,7 +34,8 @@ class LarsMKL:
         self.path = None
         self.mu = None
         self.T = None
-        self.trained = False
+        self.korder = None
+        self.f = None
 
     @staticmethod
     def zy_app(G, Q, y, QTY):
@@ -143,76 +144,79 @@ class LarsMKL:
             corr[kern] = norm(Q[:, k_inx].T.dot(y)) ** 2
             cost[kern] = corr[kern] * f(ncol[kern])
 
-        # Correct lars order is based on including groups ; Gs are no longer valid
+        # Correct LARS order is based on including groups ; Gs are no longer valid
         del Gs
-        korder = np.argsort(-cost).astype(int)
-        porder = []
-        for j in korder:
-            porder.extend(list(np.where(np.array(P) == j)[0]))
+        d2 = np.atleast_2d
+        korder = np.array(filter(lambda j: j in set(P),
+                                 np.argsort(-cost).astype(int)))
+        porder = np.where(P == d2(korder).T)[1]  # darkside
         qr_reorder(Q, R, rank, porder)
         qr_orient(Q, R, y)
         assert rank == len(porder)
 
         # Use reduced approximation and store
+        self.f = f
         self.Ks = [Ks[j] for j in korder]
         self.Acts = [Acts[j] for j in korder]
         self.Q = Q[:, :rank]
-        self.R = R[:rank, :rank]
-        self.Ri = solve_R(self.R)
+        self.Ri = solve_R(R[:rank, :rank])
         self.P = np.array(P)[porder]
 
+        # Create a view to Q for simpler addressing
+        self.korder = korder
+        self.Qview = dict([(j, self.Q[:, P == j])
+                           for j in korder
+                           if np.sum(P == j) > 0])
+
         # Compute transform for prediction with final matrices
-        d2 = np.atleast_2d
         A = np.vstack([inv(d2(K[a, a])).dot(d2(K[a, :]))
                        for K, a in zip(self.Ks, self.Acts)
                        if len(a)])
         self.T = A.dot(self.Q).dot(self.Ri.T).dot(self.Ri)
-        self.trained = True
         return
 
-    def path(self, y, f=p_ri):
+    def fit_path(self, y):
         """ Compute the group LARS path. """
-        assert self.trained
-        Q, R, P = self.Q, self.R, self.P
-        korder = sorted(set(P), key=lambda p: np.argmax(P == p))
-        pairs = zip(korder, korder[1:])
-        path = np.zeros((len(korder), Q.shape[1]))
-        t = np.sum(P == korder[0])
+        assert self.Q is not None
+        pairs = zip(self.korder, self.korder[1:])
+        path = np.zeros((len(self.korder), self.Q.shape[1]))
         r = y.ravel()
         mu = 0
+        t = 0
 
         # Compute steps
-        for i, (k1, k2) in enumerate(pairs):
-            p1 = sum(P == k1)
-            p2 = sum(P == k2)
-            c1 = norm(Q[:, P == k1].T.dot(r))**2 * f(p1)
-            c2 = norm(Q[:, P == k2].T.dot(r))**2 * f(p2)
+        for i, (j1, j2) in enumerate(pairs):
+            Q1 = self.Qview[j1]
+            Q2 = self.Qview[j2]
+            c1 = norm(Q1.T.dot(r))**2 * self.f(Q1.shape[1])
+            c2 = norm(Q2.T.dot(r))**2 * self.f(Q2.shape[1])
             assert c2 <= c1
             alpha = 1 - np.sqrt(c2 / c1)
-            path[i] = alpha * Q.T.dot(r).ravel()
-            t += np.sum(P == k2)
-            r = r - Q[:, :t].dot(path[i])
-            mu = mu + Q[:, :t].dot(path[i])
+            t = t + Q1.shape[1]
+            path[i] = alpha * Q[:, :t].T.dot(r).ravel()
+            r = r - self.Q[:, :t].dot(path[i])
+            mu = mu + self.Q[:, :t].dot(path[i])
 
         # Jump to least-squares solution
-        path[-1] = Q.T.dot(r).ravel()
-        r = r - Q.dot(path[-1])
-        mu = mu + Q.dot(path[-1])
-        assert norm(Q.T.dot(r)) < 1e-3
+        path[-1] = self.Q.T.dot(r).ravel()
+        r = r - self.Q.dot(path[-1])
+        mu = mu + self.Q.dot(path[-1])
+        assert norm(self.Q.T.dot(r)) < 1e-3
         self.path = path
         self.mu = mu
         return
 
     def transform(self, Xs):
         """ Map samples in Xs to the Q-space. """
+        assert self.Ks is not None
+        Xks = [Xs[j] for j in self.korder]
         Ka = np.hstack([K(X, K.data[act, :])
-                        for X, K, act in zip(Xs, self.Ks, self.Acts)
+                        for X, K, act in zip(Xks, self.Ks, self.Acts)
                         if len(act)])
         return Ka.dot(self.T)
 
     def predict(self, Xs):
         """ Predict values for Xs for the points in the active sets. """
-        assert self.trained
         assert self.path is not None
         return self.transform(Xs).dot(self.path[-1]).ravel()
 
@@ -227,47 +231,29 @@ def test_transform():
         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1.0}),  # short
         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),  # long
     ]
-    Kt = 0.00 + Ks[0][:, :] + 1.0 * Ks[1][:, :]
+    Kt = 0.5 + Ks[0][:, :] + 0.5 * Ks[1][:, :]
     for i in range(1000):
         f = mvn.rvs(mean=np.zeros(n, ), cov=Kt).reshape((n, 1))
         y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
-        model = LarsMKL(rank=20, delta=5)
+        model = LarsMKL(rank=5, delta=5)
         model.fit(Ks, y, p_const)
         Qt = np.round(model.transform([X, X]), 5)
         Q = np.round(model.Q, 5)
         assert norm(Q-Qt) < 1e-3
 
 
-
-def compare_penalty():
+def test_penalty():
     """ Simple test for LARS-kernel. """
     noise = 0.04
     n = 100
     X = np.linspace(-10, 10, n).reshape((n, 1))
     Ks = [
-        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1.0})[:, :],    # short
-        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1})[:, :],    # long
+        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1.0}),    # short
+        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),    # long
         ]
-    Kt = 0.00 + Ks[0] + 1.0 * Ks[1]
+    Kt = 0.7 * Ks[0][:, :] + 0.03 * Ks[1][:, :]
     f = mvn.rvs(mean=np.zeros(n,), cov=Kt).reshape((n, 1))
     y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
-
-    # Fit models
-    # Q_ri, R_ri, P_ri = mkl_qr(Ks, y, rank, delta, f=p_ri)
-    # path_ri, mu_ri = mkl_lars(Q_ri, P_ri, y, p_ri)
-    #
-    # Q_co, R_co, P_co = mkl_qr(Ks, y, rank, delta, f=p_const)
-    # path_co, mu_co = mkl_lars(Q_co, P_co, y, p_const)
-    #
-    # Q_sc, R_sc, P_sc = mkl_qr(Ks, y, rank, delta, f=p_sc)
-    # path_sc, mu_sc = mkl_lars(Q_sc, P_sc, y, p_sc)
-    #
-    # plt.figure()
-    # plt.plot(y, ".")
-    # plt.plot(f, "--")
-    # plt.plot(mu_co, "-", label="unscaled", color="gray")
-    # plt.plot(mu_sc, "-", label="scaled", color="pink")
-    # plt.plot(mu_ri, "-", label="rich", color="green")
-    # plt.legend()
-
-
+    model = LarsMKL(rank=30, delta=10)
+    model.fit(Ks, y, f=p_const)
+    model.fit_path(y)
