@@ -11,8 +11,6 @@ from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel
 from time import time
 
-# TODO: debugging: maximum delta (changes at each step) should yield exact estimates
-
 hlp = """
     LARS with multiple kernels.
     Use a penalty function to influence the selection of new kernels.
@@ -146,7 +144,7 @@ class LarsMKL:
             cost[kern] = corr[kern] * f(ncol[kern])
 
         # Determine order of kernels by cost
-        self.korder = np.array(filter(lambda j: j in set(P),
+        self.korder = np.array(filter(lambda kj: kj in set(P),
                                       np.argsort(-cost).astype(int)))
 
         # Use reduced approximation and store
@@ -268,6 +266,29 @@ def test_path_consistency():
 
 
 # Time test
+def test_out_prediction():
+    """ Compare running times. """
+    np.random.seed(42)
+    noise = 1.0
+    n = 100
+    X = np.linspace(-10, 10, n).reshape((n, 1))
+    Ks = [
+        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1.0}),    # short
+        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),    # long
+        ]
+    Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
+    f = mvn.rvs(mean=np.zeros(n,), cov=Kt).reshape((n, 1))
+    y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
+    Xt = np.linspace(-20, 20, 2*n+1).reshape((2*n+1, 1))
+    model = LarsMKL(rank=10, delta=10, f=p_const)
+    model.fit(Ks, y)
+    model.fit_path(y)
+    yp = model.predict([Xt] * len(Ks))
+    assert norm(yp[:10]) < 1e-5
+    assert norm(yp[-10:]) < 1e-5
+
+
+# Time test
 def test_time():
     """ Compare running times. """
     np.random.seed(42)
@@ -313,7 +334,7 @@ def plot_convergence():
         model = LarsMKL(rank=10, delta=5, f=func)
         model.fit(Ks, y)
         model.fit_path(y)
-        ypath = model.predict_path([X for K in Ks])
+        ypath = model.predict_path([X] * len(Ks))
         rpath = np.hstack([y, y - ypath])
         results[label] = norm(rpath, axis=0)
 
@@ -324,6 +345,3 @@ def plot_convergence():
     plt.ylabel("$\|y - \mu(k)\|$")
     plt.grid()
     plt.show()
-
-
-
