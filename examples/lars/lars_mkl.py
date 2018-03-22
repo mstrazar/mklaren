@@ -2,17 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.linalg import norm, inv
 from scipy.stats import multivariate_normal as mvn
-from examples.lars.lars_beta import plot_path, plot_residuals
 from examples.lars.cholesky import cholesky_steps
-from examples.lars.qr import qr_steps, qr_reorder, qr_orient, solve_R
 from examples.lars.lars_group import p_ri, p_const, p_sc, colors
 from warnings import warn
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.kernel.kernel import exponential_kernel
+from time import time
 
 # TODO: debugging: maximum delta (changes at each step) should yield exact estimates
-# TODO: retain order of Ks in fit and Xs in predict
 
 hlp = """
     LARS with multiple kernels.
@@ -199,7 +197,7 @@ class LarsMKL:
         r = r - self.Q.dot(path[-1])
         mu = mu + self.Q.dot(path[-1])
         assert norm(self.Q.T.dot(r)) < 1e-3
-        self.path = path
+        self.path = np.cumsum(path, axis=0)
         self.mu = mu
         return
 
@@ -214,12 +212,12 @@ class LarsMKL:
     def predict(self, Xs):
         """ Predict values for Xs for the points in the active sets. """
         assert self.path is not None
-        return self.transform(Xs).dot(self.path.sum(axis=0)).ravel()
+        return self.transform(Xs).dot(self.path[-1]).ravel()
 
     def predict_path(self, Xs):
         """ Predict values for Xs for the points in the active sets across the whole regularization path. """
         assert self.path is not None
-        return np.cumsum(self.transform(Xs).dot(self.path.T), axis=1)
+        return self.transform(Xs).dot(self.path.T)
 
 
 # Unit tests
@@ -268,37 +266,63 @@ def test_path_consistency():
             assert (ri == 0) or norm(costs[:ri] - costs[0]) < 1e-5
 
 
-# # Plot behaviour for different penalty functions
-# def test_penalty():
-#     """ Simple test for LARS-kernel. """
-#     noise = 1.0
-#     n = 100
-#     X = np.linspace(-10, 10, n).reshape((n, 1))
-#     Ks = [
-#         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1.0}),    # short
-#         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),    # long
-#         ]
-#     Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
-#     f = mvn.rvs(mean=np.zeros(n,), cov=Kt).reshape((n, 1))
-#     y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
-#
-#     for pen, func in zip(("rich", "scaled", "unscaled"),
-#                       (p_ri, p_sc, p_const)):
-#
-#         model = LarsMKL(rank=30, delta=10, f=func)
-#         model.fit(Ks, y)
-#         model.fit_path(y)
-#         ypath = model.predict_path([X, X])
-#
-#
-#         plt.figure()
-#         plt.title(pen)
-#         plt.plot(y, ".")
-#         plt.plot(ypath, "-", color=colors[pen])
-#         for j in model.korder:
-#             plt.plot(model.Acts[j], [j] * len(model.Acts[j]), "^")
-#         plt.xlabel("x")
-#         plt.ylabel("y")
+# Time test
+def test_time():
+    """ Compare running times. """
+    np.random.seed(42)
+    sigma2 = 10
+    noise = 0.3
+    n_range = np.linspace(100, 1000, 10, dtype=int)
+    gamma_range = np.logspace(-2, 2, 10)
+    rank = 30
+    delta = 10
+    d = 100
+    results = []
+    for n in n_range:
+        X = sigma2 * np.random.randn(n, d)
+        Ks = [Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": g}) for g in gamma_range]
+        Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
+        f = mvn.rvs(mean=np.zeros(n,), cov=Kt).reshape((n, 1))
+        y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
+        model = LarsMKL(rank=rank, delta=delta, f=p_const)
+        t1 = time()
+        model.fit(Ks, y)
+        results.append(time() - t1)
 
-    
-    
+    print("\nLARS MKL times: (kernels=%d, rank=%d)" % (len(gamma_range), rank))
+    print("-------------------------------------")
+    for n, t in zip(n_range, results):
+        print("n=%d\tt=%.2f (s)" % (n, t))
+
+
+# Plots
+def plot_convergence():
+    """ How fast the least-squares solution is reached? """
+    noise = 0.3
+    n = 300
+    X = np.linspace(-10, 10, n).reshape((n, 1))
+    gamma_range = np.logspace(-2, 2, 5)
+    Ks = [Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": g}) for g in gamma_range]
+    Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
+    f = mvn.rvs(mean=np.zeros(n,), cov=Kt).reshape((n, 1))
+    y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
+    results = dict()
+    for label, func in zip(("rich", "unscaled", "scaled"),
+                           (p_ri, p_const, p_sc)):
+        model = LarsMKL(rank=10, delta=5, f=func)
+        model.fit(Ks, y)
+        model.fit_path(y)
+        ypath = model.predict_path([X for K in Ks])
+        rpath = np.hstack([y, y - ypath])
+        results[label] = norm(rpath, axis=0)
+
+    plt.figure()
+    for label in results.keys():
+        plt.plot(results[label], "-", color=colors[label], label=label)
+    plt.legend()
+    plt.ylabel("$\|y - \mu(k)\|$")
+    plt.grid()
+    plt.show()
+
+
+
