@@ -343,5 +343,6 @@ def plot_convergence():
         plt.plot(results[label], "-", color=colors[label], label=label)
     plt.legend()
     plt.ylabel("$\|y - \mu(k)\|$")
+    plt.xlabel("Number of groups (kernels)")
     plt.grid()
     plt.show()
