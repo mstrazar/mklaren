@@ -5,7 +5,7 @@ from scipy.stats import multivariate_normal as mvn
 from examples.lars.lars_beta import plot_path, plot_residuals
 from examples.lars.cholesky import cholesky_steps
 from examples.lars.qr import qr_steps, qr_reorder, qr_orient, solve_R
-from examples.lars.lars_group import p_ri, p_const, p_sc
+from examples.lars.lars_group import p_ri, p_const, p_sc, colors
 from warnings import warn
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
@@ -22,11 +22,13 @@ hlp = """
 
 class LarsMKL:
 
-    def __init__(self, rank, delta):
+    def __init__(self, rank, delta, f=p_ri):
         self.rank = rank
         self.delta = delta
+        self.f = f
         self.Q = None
         self.Qview = None
+        self.Qmap = None
         self.Ri = None
         self.P = None
         self.Acts = None
@@ -35,7 +37,6 @@ class LarsMKL:
         self.mu = None
         self.T = None
         self.korder = None
-        self.f = None
 
     @staticmethod
     def zy_app(G, Q, y, QTY):
@@ -53,11 +54,12 @@ class LarsMKL:
         B = np.round(B, 5)
         return div(C, B)
 
-    def fit(self, Ks, y, f=p_ri):
+    def fit(self, Ks, y):
         """ LARS-MKL sampling algorithm with a penalty function. Produces a feature space. """
         assert all([isinstance(K, Kinterface) for K in Ks])
         rank = self.rank
         delta = self.delta
+        f = self.f
 
         if delta == 1:
             raise ValueError("Unstable selection of delta. (delta = 1)")
@@ -144,47 +146,42 @@ class LarsMKL:
             corr[kern] = norm(Q[:, k_inx].T.dot(y)) ** 2
             cost[kern] = corr[kern] * f(ncol[kern])
 
-        # Correct LARS order is based on including groups ; Gs are no longer valid
-        del Gs
-        d2 = np.atleast_2d
-        korder = np.array(filter(lambda j: j in set(P),
-                                 np.argsort(-cost).astype(int)))
-        porder = np.where(P == d2(korder).T)[1]  # darkside
-        qr_reorder(Q, R, rank, porder)
-        qr_orient(Q, R, y)
-        assert rank == len(porder)
+        # Determine order of kernels by cost
+        self.korder = np.array(filter(lambda j: j in set(P),
+                                      np.argsort(-cost).astype(int)))
 
         # Use reduced approximation and store
-        self.f = f
-        self.Ks = [Ks[j] for j in korder]
-        self.Acts = [Acts[j] for j in korder]
+        self.Ks = Ks
+        self.Acts = Acts
+        self.P = np.array(P)
         self.Q = Q[:, :rank]
         self.Ri = solve_R(R[:rank, :rank])
-        self.P = np.array(P)[porder]
 
-        # Create a view to Q for simpler addressing
-        self.korder = korder
-        self.Qview = dict([(j, self.Q[:, P == j])
-                           for j in korder
-                           if np.sum(P == j) > 0])
+        # Create an column index map and view to Q
+        self.Qmap = dict([(j, np.where(P == j)[0]) for j in set(P)])
+        self.Qview = dict([(j, self.Q[:, self.Qmap[j]])
+                           for j in self.Qmap.keys()])
 
         # Compute transform for prediction with final matrices
-        A = np.vstack([inv(d2(K[a, a])).dot(d2(K[a, :]))
-                       for K, a in zip(self.Ks, self.Acts)
-                       if len(a)])
-        self.T = A.dot(self.Q).dot(self.Ri.T).dot(self.Ri)
+        d2 = np.atleast_2d
+        A = self.Q.dot(self.Ri.T).dot(self.Ri)
+        self.T = np.vstack([inv(d2(K[a, a])).dot(d2(K[a, :])).dot(A)
+                            for j, (K, a) in enumerate(zip(self.Ks, self.Acts))
+                            if len(a)])
         return
 
     def fit_path(self, y):
         """ Compute the group LARS path. """
         assert self.Q is not None
         pairs = zip(self.korder, self.korder[1:])
+
+        # Order of columns is consistent with order in Q
         path = np.zeros((len(self.korder), self.Q.shape[1]))
+        inxs = np.zeros((self.Q.shape[1],), dtype=bool)
         r = y.ravel()
         mu = 0
-        t = 0
 
-        # Compute steps
+        # Compute steps; active columns grow incrementally
         for i, (j1, j2) in enumerate(pairs):
             Q1 = self.Qview[j1]
             Q2 = self.Qview[j2]
@@ -192,10 +189,10 @@ class LarsMKL:
             c2 = norm(Q2.T.dot(r))**2 * self.f(Q2.shape[1])
             assert c2 <= c1
             alpha = 1 - np.sqrt(c2 / c1)
-            t = t + Q1.shape[1]
-            path[i] = alpha * Q[:, :t].T.dot(r).ravel()
-            r = r - self.Q[:, :t].dot(path[i])
-            mu = mu + self.Q[:, :t].dot(path[i])
+            inxs[self.Qmap[j1]] = True
+            path[i, inxs] = alpha * self.Q[:, inxs].T.dot(r).ravel()
+            r = r - self.Q.dot(path[i])
+            mu = mu + self.Q.dot(path[i])
 
         # Jump to least-squares solution
         path[-1] = self.Q.T.dot(r).ravel()
@@ -209,16 +206,20 @@ class LarsMKL:
     def transform(self, Xs):
         """ Map samples in Xs to the Q-space. """
         assert self.Ks is not None
-        Xks = [Xs[j] for j in self.korder]
-        Ka = np.hstack([K(X, K.data[act, :])
-                        for X, K, act in zip(Xks, self.Ks, self.Acts)
-                        if len(act)])
+        Ka = np.hstack([K(X, K.data[a, :])
+                        for j, (K, X, a) in enumerate(zip(self.Ks, Xs, self.Acts))
+                        if len(a)])
         return Ka.dot(self.T)
 
     def predict(self, Xs):
         """ Predict values for Xs for the points in the active sets. """
         assert self.path is not None
-        return self.transform(Xs).dot(self.path[-1]).ravel()
+        return self.transform(Xs).dot(self.path.sum(axis=0)).ravel()
+
+    def predict_path(self, Xs):
+        """ Predict values for Xs for the points in the active sets across the whole regularization path. """
+        assert self.path is not None
+        return np.cumsum(self.transform(Xs).dot(self.path.T), axis=1)
 
 
 # Unit tests
@@ -232,28 +233,72 @@ def test_transform():
         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),  # long
     ]
     Kt = 0.5 + Ks[0][:, :] + 0.5 * Ks[1][:, :]
-    for i in range(1000):
-        f = mvn.rvs(mean=np.zeros(n, ), cov=Kt).reshape((n, 1))
-        y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
-        model = LarsMKL(rank=5, delta=5)
-        model.fit(Ks, y, p_const)
-        Qt = np.round(model.transform([X, X]), 5)
-        Q = np.round(model.Q, 5)
-        assert norm(Q-Qt) < 1e-3
+    for func in (p_ri, p_const, p_sc):
+        for i in range(1000):
+            f = mvn.rvs(mean=np.zeros(n, ), cov=Kt).reshape((n, 1))
+            y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
+            model = LarsMKL(rank=5, delta=5, f=func)
+            model.fit(Ks, y)
+            Qt = np.round(model.transform([X, X]), 5)
+            Q = np.round(model.Q, 5)
+            assert norm(Q - Qt) < 1e-3
 
 
-def test_penalty():
-    """ Simple test for LARS-kernel. """
-    noise = 0.04
+def test_path_consistency():
+    """ Assert that the cost decreases in accordance with the penalty function. """
+    noise = 1.0
     n = 100
     X = np.linspace(-10, 10, n).reshape((n, 1))
     Ks = [
         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1.0}),    # short
         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),    # long
         ]
-    Kt = 0.7 * Ks[0][:, :] + 0.03 * Ks[1][:, :]
+    Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
     f = mvn.rvs(mean=np.zeros(n,), cov=Kt).reshape((n, 1))
     y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
-    model = LarsMKL(rank=30, delta=10)
-    model.fit(Ks, y, f=p_const)
-    model.fit_path(y)
+    for func in (p_ri, p_const, p_sc):
+        model = LarsMKL(rank=5, delta=5, f=func)
+        model.fit(Ks, y)
+        model.fit_path(y)
+        ypath = model.predict_path([X, X])
+        rpath = np.hstack([y, y - ypath])
+        for ri, r in enumerate(rpath.T):
+            costs = [norm(model.Qview[j].T.dot(r))**2 * func(model.Qview[j].shape[1])
+                     for j in model.korder]
+            assert (ri == 0) or norm(costs[:ri] - costs[0]) < 1e-5
+
+
+# # Plot behaviour for different penalty functions
+# def test_penalty():
+#     """ Simple test for LARS-kernel. """
+#     noise = 1.0
+#     n = 100
+#     X = np.linspace(-10, 10, n).reshape((n, 1))
+#     Ks = [
+#         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1.0}),    # short
+#         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),    # long
+#         ]
+#     Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
+#     f = mvn.rvs(mean=np.zeros(n,), cov=Kt).reshape((n, 1))
+#     y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
+#
+#     for pen, func in zip(("rich", "scaled", "unscaled"),
+#                       (p_ri, p_sc, p_const)):
+#
+#         model = LarsMKL(rank=30, delta=10, f=func)
+#         model.fit(Ks, y)
+#         model.fit_path(y)
+#         ypath = model.predict_path([X, X])
+#
+#
+#         plt.figure()
+#         plt.title(pen)
+#         plt.plot(y, ".")
+#         plt.plot(ypath, "-", color=colors[pen])
+#         for j in model.korder:
+#             plt.plot(model.Acts[j], [j] * len(model.Acts[j]), "^")
+#         plt.xlabel("x")
+#         plt.ylabel("y")
+
+    
+    
