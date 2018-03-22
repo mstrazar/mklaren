@@ -343,3 +343,26 @@ def plot_convergence():
     plt.xlabel("Number of groups (kernels)")
     plt.grid()
     plt.show()
+
+
+def profiling():
+    """ Profiling function. """
+    np.random.seed(42)
+    noise = 1.0
+    n = 1000
+    X = np.linspace(-10, 10, n).reshape((n, 1))
+    Ks = [
+        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1.0}),  # short
+        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),  # long
+    ]
+    Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
+    f = mvn.rvs(mean=np.zeros(n, ), cov=Kt).reshape((n, 1))
+    y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
+    model = LarsMKL(rank=10, delta=10, f=p_const)
+
+    import cProfile
+    pr = cProfile.Profile()
+    pr.enable()
+    model.fit(Ks, y)
+    pr.disable()
+    pr.print_stats(sort="cumtime")
