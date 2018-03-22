@@ -4,6 +4,7 @@ from numpy.linalg import norm, inv
 from scipy.stats import multivariate_normal as mvn
 from examples.lars.cholesky import cholesky_steps
 from examples.lars.lars_group import p_ri, p_const, p_sc, colors
+from examples.lars.qr import qr_steps, solve_R
 from warnings import warn
 from mklaren.util.la import safe_divide as div
 from mklaren.kernel.kinterface import Kinterface
