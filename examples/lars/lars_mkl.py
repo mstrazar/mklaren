@@ -57,6 +57,7 @@ class LarsMKL:
         rank = self.rank
         delta = self.delta
         f = self.f
+        y = y.reshape((len(y), 1))
 
         if delta == 1:
             raise ValueError("Unstable selection of delta. (delta = 1)")
@@ -162,11 +163,15 @@ class LarsMKL:
         self.T = np.vstack([inv(d2(K[a, a])).dot(d2(K[a, :])).dot(A)
                             for j, (K, a) in enumerate(zip(self.Ks, self.Acts))
                             if len(a)])
+
+        # Fit regularization path
+        self._fit_path(y)
         return
 
-    def fit_path(self, y):
+    def _fit_path(self, y):
         """ Compute the group LARS path. """
         assert self.Q is not None
+        y = y.reshape((len(y), 1))
         pairs = zip(self.korder, self.korder[1:])
 
         # Order of columns is consistent with order in Q
@@ -253,7 +258,6 @@ def test_path_consistency():
     for func in (p_ri, p_const, p_sc):
         model = LarsMKL(rank=5, delta=5, f=func)
         model.fit(Ks, y)
-        model.fit_path(y)
         ypath = model.predict_path([X, X])
         rpath = np.hstack([y, y - ypath])
         for ri, r in enumerate(rpath.T):
@@ -279,7 +283,6 @@ def test_out_prediction():
     Xt = np.linspace(-20, 20, 2*n+1).reshape((2*n+1, 1))
     model = LarsMKL(rank=10, delta=10, f=p_const)
     model.fit(Ks, y)
-    model.fit_path(y)
     yp = model.predict([Xt] * len(Ks))
     assert norm(yp[:10]) < 1e-5
     assert norm(yp[-10:]) < 1e-5
@@ -330,7 +333,6 @@ def plot_convergence():
                            (p_ri, p_const, p_sc)):
         model = LarsMKL(rank=10, delta=5, f=func)
         model.fit(Ks, y)
-        model.fit_path(y)
         ypath = model.predict_path([X] * len(Ks))
         rpath = np.hstack([y, y - ypath])
         results[label] = norm(rpath, axis=0)
