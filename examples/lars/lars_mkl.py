@@ -112,7 +112,6 @@ class LarsMKL:
                 warn(msg)
                 rank = step
                 break
-            assert pivot not in Acts[kern]
 
             # Select pivot and update Cholesky factors; try simplyfing
             G = Gs[kern]
@@ -126,7 +125,6 @@ class LarsMKL:
             G[:, k_start:] = 0
             cholesky_steps(K, G, start=k_start, act=Acts[kern], ina=Inas[kern], order=[pivot])
             qr_steps(G, Q, R, max_steps=1, start=k_start, qstart=step)
-            assert norm(G[:, :k_num] - (Q.dot(R))[:, k_inx]) < 1e-3
 
             # Clear invalid columns and update lookahead steps;
             # Copy act/ina
@@ -136,7 +134,6 @@ class LarsMKL:
                            ina=list(set(range(n)) - set(Acts[kern])),
                            start=k_num,
                            max_steps=max_steps)
-            assert norm(G[:, :k_num] - (Q.dot(R))[:, k_inx]) < 1e-3
 
             # Update current correlation and total cost
             ncol[kern] += 1
