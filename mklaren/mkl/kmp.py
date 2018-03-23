@@ -1,10 +1,10 @@
 import numpy as np
 from numpy.linalg import norm
 from warnings import warn
-from sklearn.linear_model.ridge import Ridge
 from ..kernel.kinterface import Kinterface
 
 
+# TODO: compute L2-regularized LS path at each step.
 class KMP:
     """
         General matching pursuit algorithm with lookahead, extended depending on the
@@ -16,11 +16,12 @@ class KMP:
         self.delta = delta
         self.Acts = []
         self.Ks = []
+        self.P = None
         self.sol_path = []
         self.tol = tol
         self.lbd = lbd
         self.ridge = None
-        self.trained = False
+        self.coef_path = None
 
     @staticmethod
     def gain(X, r):
@@ -41,6 +42,7 @@ class KMP:
         k = len(Ks)
         Acts = [list() for K in Ks]
         Inas = [range(n) for K in Ks]
+        P = []
 
         r = y.reshape((n, 1)) - np.mean(y)
         mu = np.zeros((n, 1))
@@ -66,25 +68,50 @@ class KMP:
             col = Ks[kern][:, pivot].reshape((n, 1))
             Acts[kern].append(pivot)
             Inas[kern].remove(pivot)
+            P.append(kern)
 
-            update = col * (col.T.dot(r)) / (norm(col) ** 2)
+            alpha = (col.T.dot(r)) / (norm(col) ** 2)
+            update = col * alpha
             r = r - update
             mu = mu + update
 
             assert norm(col.T.dot(r)) < 1e-5
             sol_path[step] = mu.ravel()
 
-        # Calculate
-        self.ridge = Ridge(alpha=self.lbd, fit_intercept=True)
-        self.ridge.fit(np.hstack([K[:, act] for K, act in zip(Ks, Acts) if len(act)]), y)
+        # Calculate least-squares fit
         self.Acts = Acts
         self.Ks = Ks
+        self.P = np.array(P, dtype=int)
         self.sol_path = sol_path
-        self.trained = True
+        self._fit_path(y)
+
+    def transform(self, Xs):
+        """ Project test data into the subsampled space.
+            Permute the columns w.r.t the selection order. """
+        d2 = np.atleast_2d
+        A = np.zeros((Xs[0].shape[0], self.rank))
+        current = dict()
+        for pi, p in enumerate(self.P):
+            a = self.Acts[p][current.get(p, 0)]
+            A[:, pi] = self.Ks[p](d2(Xs[p]), d2(self.Ks[p].data[a])).ravel()
+            current[p] = current.get(p, 0) + 1
+        return A
+
+    def _fit_path(self, y):
+        """ Compute least squares path for each column in the sequence.
+            Note that columns are not decorellated in the selection (fit step). """
+        coef_path = np.zeros((self.rank, self.rank))
+        A = self.transform([K.data for K in self.Ks])
+        for pi, p in enumerate(self.P):
+            coef_path[pi, :pi+1] = np.linalg.lstsq(A[:, :pi+1], y)[0].ravel()
+        self.coef_path = coef_path
 
     def predict(self, Xs):
         """ Predict values in Xs for stored kernels"""
-        assert self.trained
-        G = np.hstack([K(X, K.data[act, :]) for X, K, act in zip(Xs, self.Ks, self.Acts)
-                       if len(act)])
-        return self.ridge.predict(G)
+        A = self.transform(Xs)
+        return A.dot(self.coef_path[-1])
+
+    def predict_path(self, Xs):
+        """ Predict whole regularization path."""
+        A = self.transform(Xs)
+        return A.dot(self.coef_path.T)
