@@ -21,6 +21,7 @@ class KMP:
         self.tol = tol
         self.lbd = lbd
         self.ridge = None
+        self.bias = None
         self.coef_path = None
 
     @staticmethod
@@ -32,6 +33,8 @@ class KMP:
 
     def fit(self, Ks, y):
         assert all([isinstance(K, Kinterface) for K in Ks])
+        self.bias = y.mean()
+        y = y - self.bias
 
         n = Ks[0].shape[0]
         if self.rank > n:
@@ -109,9 +112,9 @@ class KMP:
     def predict(self, Xs):
         """ Predict values in Xs for stored kernels"""
         A = self.transform(Xs)
-        return A.dot(self.coef_path[-1])
+        return self.bias + A.dot(self.coef_path[-1])
 
     def predict_path(self, Xs):
         """ Predict whole regularization path."""
         A = self.transform(Xs)
-        return A.dot(self.coef_path.T)
+        return self.bias + A.dot(self.coef_path.T)
