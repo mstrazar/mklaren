@@ -220,6 +220,21 @@ class LarsMKL:
         assert self.path is not None
         return self.transform(Xs).dot(self.path.T)
 
+    def predict_path_extend(self, Xs):
+        """ Predict extended path as if each column was added at a time. """
+        assert self.path is not None
+        pth = self.transform(Xs).dot(self.path.T)
+        n = Xs[0].shape[0]
+        A = np.zeros((n, self.Q.shape[1]))
+        curr = 0
+        for ki, k in enumerate(self.korder):
+            kj = self.Qview[k].shape[1]
+            for i in range(kj):
+                A[:, curr + i] = pth[:, ki]
+            curr += kj
+        return A
+
+
 
 # Unit tests
 def test_transform():
