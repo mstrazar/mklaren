@@ -13,6 +13,9 @@ os.environ["OCTAVE_EXECUTABLE"] = "/usr/local/bin/octave"
 # Kernels
 from mklaren.kernel.kernel import exponential_kernel
 from mklaren.kernel.kinterface import Kinterface
+from mklaren.regression.ridge import RidgeLowRank
+from mklaren.mkl.kmp import KMP
+from mklaren.regression.ridge import RidgeMKL
 
 # Datasets
 from datasets.keel import load_keel, KEEL_DATASETS
@@ -23,20 +26,30 @@ import matplotlib.pyplot as plt
 # New methods
 from examples.lars.lars_mkl import LarsMKL
 from examples.lars.lars_group import p_ri, p_const, p_sc, colors
-from mklaren.mkl.kmp import KMP
 
 
 # Parameters
-out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output"
+out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output/"
 N = 2000
 delta = 5
 gamma = .1
 p_tr = .8
-lbd = 0.001
+lbd = 0.000
 rank = 30
 
-models = ("lars-ri", "lars-co", "lars-sc", "kmp")
-colors = {"lars-ri": "green", "lars-sc": "pink", "lars-co": "gray", "kmp": "red"}
+formats = {"lars-ri": "gv-",
+           "lars-ri-fast": "rv-",
+           "lars-sc": "bv-",
+           "lars-co": "cv-",
+           "kmp": "c--",
+           "icd": "b--",
+           "nystrom": "m--",
+           "csi": "r--",
+           "L2KRR": "k-"}
+
+
+def p_ri_fast(p):
+    return p_ri(p, c=10)
 
 
 def process(dataset):
@@ -53,6 +66,7 @@ def process(dataset):
 
     # Training/test
     n = len(X)
+    np.random.seed(42)
     tr = np.random.choice(range(n), size=int(p_tr * n), replace=False)
     te = np.array(list(set(range(n)) - set(tr)))
     tr = tr[np.argsort(y[tr].ravel())]
@@ -63,12 +77,20 @@ def process(dataset):
                         kernel=exponential_kernel,
                         kernel_args={"gamma": gamma})
              for gamma in gamma_range]
+    Ks = [Kinterface(data=X,
+                     kernel=exponential_kernel,
+                     kernel_args={"gamma": gamma})
+             for gamma in gamma_range]
 
     # Collect test error paths
     results = dict()
-    for m in models:
+    for m in formats.keys():
         if m == "lars-ri":
             model = LarsMKL(delta=delta, rank=rank, f=p_ri)
+            model.fit(Ks_tr, y[tr])
+            ypath = model.predict_path_extend([X[te]] * len(Ks_tr))
+        elif m == "lars-ri-fast":
+            model = LarsMKL(delta=delta, rank=rank, f=p_ri_fast)
             model.fit(Ks_tr, y[tr])
             ypath = model.predict_path_extend([X[te]] * len(Ks_tr))
         elif m == "lars-sc":
@@ -83,19 +105,43 @@ def process(dataset):
             model = KMP(rank=rank, delta=delta, lbd=0)
             model.fit(Ks_tr, y[tr])
             ypath = model.predict_path([X[te]] * len(Ks_tr))
+        elif m == "icd":
+            model = RidgeLowRank(method="icd",
+                                 rank=int(rank / len(Ks_tr)), lbd=0)
+            model.fit(Ks_tr, y[tr])
+            ypath = model.predict_path([X[te]] * len(Ks_tr))
+        elif m == "nystrom":
+            model = RidgeLowRank(method="nystrom",
+                                 rank=int(rank / len(Ks_tr)), lbd=0)
+            model.fit(Ks_tr, y[tr])
+            ypath = model.predict_path([X[te]] * len(Ks_tr))
+        elif m == "csi":
+            model = RidgeLowRank(method="csi", rank=int(rank / len(Ks_tr)),
+                                 lbd=0, method_init_args={"delta": delta})
+            model.fit(Ks_tr, y[tr])
+            ypath = model.predict_path([X[te]] * len(Ks_tr))
+        elif m == "L2KRR":
+            model = RidgeMKL(method="l2krr", lbd=0)
+            model.fit(Ks=Ks, y=y, holdout=te)
+            ypath = np.vstack([model.predict(te)] * rank).T
         else:
             raise ValueError(m)
-        errs = np.linalg.norm(ypath - y[te].reshape((len(te), 1)), axis=0)
+
+        # Compute explained variance
+        errs = np.zeros(ypath.shape[1])
+        for j in range(ypath.shape[1]):
+            errs[j] = (np.var(y[te]) - np.var(ypath[:, j] - y[te])) / np.var(y[te])
         results[m] = errs
 
     # Plot
     fname = os.path.join(out_dir, "test_mse_%s.pdf" % dataset)
     plt.figure()
     plt.title(dataset)
-    for m in models:
-        plt.plot(results[m], label=m, color = colors[m])
+    for m in formats.keys():
+        plt.plot(results[m], formats[m], label=m)
     plt.xlabel("Model capacity")
     plt.ylabel("Test MSE")
+    plt.ylim((0, 1))
     plt.legend()
     plt.grid()
     plt.savefig(fname)
