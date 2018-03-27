@@ -3,8 +3,6 @@ hlp = """
     and KMP greedy algorithm.
 """
 
-#
-
 import scipy.stats as st
 import numpy as np
 import os
@@ -25,11 +23,11 @@ import matplotlib.pyplot as plt
 
 # New methods
 from examples.lars.lars_mkl import LarsMKL
-from examples.lars.lars_group import p_ri, p_const, p_sc, colors
+from examples.lars.lars_group import p_ri, p_const, p_sc
 
 
 # Parameters
-out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output/"
+out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output/mkl_keel"
 N = 2000
 delta = 5
 gamma = .1
@@ -133,7 +131,7 @@ def process(dataset):
     fname = os.path.join(out_dir, "test_mse_%s.pdf" % dataset)
     plt.figure()
     plt.title(dataset)
-    for m in formats.keys():
+    for m in sorted(formats.keys()):
         plt.plot(results[m], formats[m], label=m)
     plt.xlabel("Model capacity")
     plt.ylabel("Test MSE")
@@ -146,6 +144,9 @@ def process(dataset):
 
 
 if __name__ == "__main__":
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+        print("Makedir %s" % out_dir)
     for dset in KEEL_DATASETS:
         try:
             process(dset)
