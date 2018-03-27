@@ -273,7 +273,8 @@ class RidgeLowRank:
         for ki in range(len(self.mu)):
             self.mu[ki] = norm(self.Gs[ki].dot(self.beta[se[ki][0]:se[ki][1]]))
 
-        self.trained = True
+        # Fit regularization path
+        self.fit_path(Xs=None, y=y, Ks=Ks)
 
     def transform(self, Xs, Ks=None):
         """Transform inputs to low-rank feature space.
@@ -284,7 +285,6 @@ class RidgeLowRank:
 
         :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
-        assert self.trained
         Gs = []
         XT = None
         if Ks is None:
@@ -312,7 +312,7 @@ class RidgeLowRank:
         XT = self.transform(Xs, Ks)
         return self.reg_model.predict(X=XT).ravel()
 
-    def path_compute(self, Xs, y, Ks=None):
+    def fit_path(self, Xs, y, Ks=None):
         """ Compute regularized least-squares regularization path (weights).
 
         :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
@@ -331,7 +331,7 @@ class RidgeLowRank:
         self.model_path = models
         return
 
-    def path_predict(self, Xs, Ks=None):
+    def predict_path(self, Xs, Ks=None):
         """ Predict values for all possible weights on the regularization path.
 
         :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
