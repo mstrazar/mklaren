@@ -111,7 +111,7 @@ class LarsMKL:
             if gain[kern, pivot] <= 0:
                 msg = "Iterations ended prematurely at step = %d < %d" % (step, rank)
                 warn(msg)
-                rank = step
+                rank = self.rank = step
                 break
 
             # Select pivot and update Cholesky factors; try simplyfing
@@ -234,6 +234,13 @@ class LarsMKL:
             curr += kj
         return A
 
+    def predict_path_ls(self, Xs):
+        """ Predict extended path as if each column was added at a time,
+            use least-squares estimate. """
+        assert self.path is not None
+        A = self.transform(Xs)
+        pth = np.tri(self.rank, self.rank) * self.path[-1]
+        return A.dot(pth.T)
 
 
 # Unit tests
@@ -279,6 +286,27 @@ def test_path_consistency():
             costs = [norm(model.Qview[j].T.dot(r))**2 * func(model.Qview[j].shape[1])
                      for j in model.korder]
             assert (ri == 0) or norm(costs[:ri] - costs[0]) < 1e-5
+
+
+def test_ls_path_consistency():
+    """ Assert that the cost decreases in accordance with the penalty function. """
+    noise = 1.0
+    n = 100
+    X = np.linspace(-10, 10, n).reshape((n, 1))
+    Ks = [
+        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 1.0}),  # short
+        Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),  # long
+    ]
+    Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
+    f = mvn.rvs(mean=np.zeros(n, ), cov=Kt).reshape((n, 1))
+    y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
+    for func in (p_ri, p_const, p_sc):
+        model = LarsMKL(rank=5, delta=5, f=func)
+        model.fit(Ks, y)
+        ypath = model.predict_path_ls([X, X])
+        rpath = y - ypath
+        for ri, r in enumerate(rpath.T):
+            assert norm(model.Q[:, :ri+1].T.dot(r)) < 1e-5
 
 
 # Time test
