@@ -89,10 +89,6 @@ def process(dataset):
             model = LarsMKL(delta=delta, rank=rank, f=p_ri)
             model.fit(Ks_tr, y[tr])
             ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
-        elif m == "lars-ri-fast":
-            model = LarsMKL(delta=delta, rank=rank, f=p_ri_fast)
-            model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
         elif m == "lars-sc":
             model = LarsMKL(delta=delta, rank=rank, f=p_sc)
             model.fit(Ks_tr, y[tr])
