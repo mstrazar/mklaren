@@ -11,7 +11,7 @@ import os
 os.environ["OCTAVE_EXECUTABLE"] = "/usr/local/bin/octave"
 
 # Kernels
-from mklaren.kernel.kernel import exponential_kernel
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.regression.ridge import RidgeLowRank
 from mklaren.mkl.kmp import KMP
@@ -38,7 +38,6 @@ lbd = 0.000
 rank = 30
 
 formats = {"lars-ri": "gv-",
-           "lars-ri-fast": "rv-",
            "lars-sc": "bv-",
            "lars-co": "cv-",
            "kmp": "c--",
@@ -46,10 +45,6 @@ formats = {"lars-ri": "gv-",
            "nystrom": "m--",
            "csi": "r--",
            "L2KRR": "k-"}
-
-
-def p_ri_fast(p):
-    return p_ri(p, c=10)
 
 
 def process(dataset):
@@ -82,44 +77,49 @@ def process(dataset):
                      kernel_args={"gamma": gamma})
              for gamma in gamma_range]
 
+    Ksum_tr = Kinterface(data=X[tr],
+                      kernel=kernel_sum,
+                      kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
+                                   "kernels_args": [{"gamma": gam} for gam in gamma_range]})
+
     # Collect test error paths
     results = dict()
     for m in formats.keys():
         if m == "lars-ri":
             model = LarsMKL(delta=delta, rank=rank, f=p_ri)
             model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path_extend([X[te]] * len(Ks_tr))
+            ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
         elif m == "lars-ri-fast":
             model = LarsMKL(delta=delta, rank=rank, f=p_ri_fast)
             model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path_extend([X[te]] * len(Ks_tr))
+            ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
         elif m == "lars-sc":
             model = LarsMKL(delta=delta, rank=rank, f=p_sc)
             model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path_extend([X[te]] * len(Ks_tr))
+            ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
         elif m == "lars-co":
             model = LarsMKL(delta=delta, rank=rank, f=p_const)
             model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path_extend([X[te]] * len(Ks_tr))
+            ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
         elif m == "kmp":
             model = KMP(rank=rank, delta=delta, lbd=0)
             model.fit(Ks_tr, y[tr])
             ypath = model.predict_path([X[te]] * len(Ks_tr))
         elif m == "icd":
             model = RidgeLowRank(method="icd",
-                                 rank=int(rank / len(Ks_tr)), lbd=0)
-            model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path([X[te]] * len(Ks_tr))
+                                 rank=rank, lbd=0)
+            model.fit([Ksum_tr], y[tr])
+            ypath = model.predict_path([X[te]])
         elif m == "nystrom":
             model = RidgeLowRank(method="nystrom",
-                                 rank=int(rank / len(Ks_tr)), lbd=0)
-            model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path([X[te]] * len(Ks_tr))
+                                 rank=rank, lbd=0)
+            model.fit([Ksum_tr], y[tr])
+            ypath = model.predict_path([X[te]])
         elif m == "csi":
-            model = RidgeLowRank(method="csi", rank=int(rank / len(Ks_tr)),
+            model = RidgeLowRank(method="csi", rank=rank,
                                  lbd=0, method_init_args={"delta": delta})
-            model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path([X[te]] * len(Ks_tr))
+            model.fit([Ksum_tr], y[tr])
+            ypath = model.predict_path([X[te]])
         elif m == "L2KRR":
             model = RidgeMKL(method="l2krr", lbd=0)
             model.fit(Ks=Ks, y=y, holdout=te)
