@@ -106,7 +106,7 @@ class KMP:
         coef_path = np.zeros((self.rank, self.rank))
         A = self.transform([K.data for K in self.Ks])
         for pi, p in enumerate(self.P):
-            coef_path[pi, :pi+1] = np.linalg.lstsq(A[:, :pi+1], y)[0].ravel()
+            coef_path[pi, :pi+1] = np.linalg.lstsq(A[:, :pi+1], y, rcond=None)[0].ravel()
         self.coef_path = coef_path
 
     def predict(self, Xs):
