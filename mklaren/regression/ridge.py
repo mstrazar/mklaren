@@ -130,7 +130,6 @@ class RidgeMKL:
             self.ridge.fit(inxs, y[inxs])
             self.trained = True
 
-
     def predict(self, inxs):
         """
         Predict values for data on indices inxs (transcductive setting).
@@ -156,6 +155,7 @@ class RidgeLowRank:
     """
 
     # Static list of methods and their types
+    METHODS = ["csi", "icd", "nystrom"]
     CHOLESKY = "chol"
     NYSTROM  = "nystrom"
     methods  = {
