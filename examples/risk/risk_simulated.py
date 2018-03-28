@@ -77,13 +77,13 @@ for n, repl in it.product(n_range, replicates):
                 elif m == "icd":
                     icd = RidgeLowRank(lbd=lbd, rank=rank, method="icd")
                     icd.fit([K_tr], y[tr])
-                    icd.path_compute([X[tr]], y[tr])
-                    yp = icd.path_predict([X[te]])
+                    icd.fit_path([X[tr]], y[tr])
+                    yp = icd.predict_path([X[te]])
                 elif m == "csi":
                     csi = RidgeLowRank(lbd=lbd, rank=rank, method="csi", method_init_args={"delta": d})
                     csi.fit([K_tr], y[tr])
-                    csi.path_compute([X[tr]], y[tr])
-                    yp = csi.path_predict([X[te]])
+                    csi.fit_path([X[tr]], y[tr])
+                    yp = csi.predict_path([X[te]])
                 else:
                     raise ValueError(m)
             except Exception as e:
