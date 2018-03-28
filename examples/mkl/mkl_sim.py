@@ -16,79 +16,70 @@ from mklaren.regression.ridge import RidgeLowRank
 from mklaren.mkl.kmp import KMP
 from mklaren.regression.ridge import RidgeMKL
 
-# Datasets
-from datasets.keel import load_keel, KEEL_DATASETS
-
-# Utils
-import matplotlib.pyplot as plt
-
 # New methods
 from examples.lars.lars_mkl import LarsMKL
-from examples.lars.lars_group import p_ri, p_const, p_sc, colors
+from examples.lars.lars_group import p_ri, p_const, p_sc
 from scipy.stats import multivariate_normal as mvn
 
 # Parameters
 out_dir = "/Users/martins/Dev/mklaren/examples/mkl/results/mkl_sim"
 N = 200
 delta = 5
-gamma = .1
 p_tr = .8
 lbd = 0.000
-rank = 30
+rank = 10
 
 formats = {"lars-ri": "gv-",
-           "lars-sc": "bv-",
+           # "lars-sc": "bv-",
            "lars-co": "cv-",
            "kmp": "c--",
-           "icd": "b--",
-           "nystrom": "m--",
-           "csi": "r--",
+           # "icd": "b--",
+           # "nystrom": "m--",
+           # "csi": "r--",
            "L2KRR": "k-"}
 
 
-header = ["repl", "method", "N", "keff", "gamma", "noise", "evar", "ranking"]
+header = ["repl", "method", "N", "keff", "sigma", "noise", "snr", "evar", "ranking"]
 
 
 def process():
     # Load data
     np.random.seed(42)
     noise_range = np.logspace(-5, 2, 8)
-    gamma_range = np.logspace(-5, 5, 11)
+    sigma_range = np.linspace(0.1, 1.0, 10) * N
     replicates = 30
-
+    
     # Ground truth kernels
     X = np.linspace(-N, N, N).reshape((N, 1))
     Ks = [Kinterface(data=X,
                      kernel=exponential_kernel,
-                     kernel_args={"gamma": gamma})
-          for gamma in gamma_range]
+                     kernel_args={"sigma": sigma})
+          for sigma in sigma_range]
 
     rows = list()
     count = 0
     for repl, noise in it.product(range(replicates), noise_range):
 
         # Simulate data from one kernel
-        # keff = np.random.randint(0, len(Ks))
-        keff = 2
-        C = Ks[keff][:, :] + noise * np.eye(N)
-        y = mvn.rvs(mean=np.zeros((N, )), cov=C)
+        keff = 5
+        f = mvn.rvs(mean=np.zeros((N,)), cov=Ks[keff][:, :])
+        y = mvn.rvs(mean=f, cov=noise * np.eye(N))
+        snr = np.round(np.var(f) / noise, 3)
 
         # Training/test
-        tr = np.random.choice(range(N), size=int(p_tr * N), replace=False)
-        te = np.array(list(set(range(N)) - set(tr)))
-        tr = tr[np.argsort(y[tr].ravel())]
-        te = te[np.argsort(y[te].ravel())]
+        tr = np.sort(np.random.choice(range(N), size=int(p_tr * N), replace=False))
+        te = np.sort(np.array(list(set(range(N)) - set(tr))))
 
         # Training kernels
         Ks_tr = [Kinterface(data=X[tr],
                             kernel=exponential_kernel,
-                            kernel_args={"gamma": gamma})
-                 for gamma in gamma_range]
+                            kernel_args={"sigma": sigma})
+                 for sigma in sigma_range]
 
         Ksum_tr = Kinterface(data=X[tr],
-                          kernel=kernel_sum,
-                          kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
-                                       "kernels_args": [{"gamma": gam} for gam in gamma_range]})
+                             kernel=kernel_sum,
+                             kernel_args={"kernels": [exponential_kernel] * len(sigma_range),
+                                          "kernels_args": [{"sigma": sig} for sig in sigma_range]})
 
         # Collect test error paths
         results = dict()
@@ -144,10 +135,10 @@ def process():
         scores = dict([(m, np.mean(ev)) for m, ev in results.items()])
         scale = np.array(sorted(scores.values(), reverse=True)).ravel()
         for m in results.keys():
-            ranking = np.where(scale == scores[m])[0][0]
+            ranking = 1 + np.where(scale == scores[m])[0][0]
             row = {"repl": repl, "method": m, "noise": noise, "N": N,
-                   "keff": keff, "gamma": gamma_range[keff],
-                   "evar": scores[m], "ranking": ranking}
+                   "keff": keff, "sigma": sigma_range[keff],
+                   "evar": scores[m], "ranking": ranking, "snr": snr}
             rows.append(row)
 
         # Write to .csv
