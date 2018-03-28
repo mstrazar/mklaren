@@ -27,7 +27,7 @@ N = 200
 delta = 5
 p_tr = .8
 lbd = 0.000
-rank = 10
+rank = 5
 
 formats = {"lars-ri": "gv-",
            # "lars-sc": "bv-",
@@ -128,11 +128,16 @@ def process():
                 for j in range(ypath.shape[1]):
                     evars[j] = (np.var(y[te]) - np.var(ypath[:, j] - y[te])) / np.var(y[te])
                 results[m] = evars
+
         except AssertionError:
+            continue
+        except ValueError as ve:
+            print(str(ve) + " Noise: %s" % noise)
             continue
 
         # Compute ranking
-        scores = dict([(m, np.mean(ev)) for m, ev in results.items()])
+        # scores = dict([(m, np.mean(ev)) for m, ev in results.items()])
+        scores = dict([(m, ev[-1]) for m, ev in results.items()])
         scale = np.array(sorted(scores.values(), reverse=True)).ravel()
         for m in results.keys():
             ranking = 1 + np.where(scale == scores[m])[0][0]
