@@ -48,7 +48,7 @@ class LarsMKL:
         C = np.array([G[i, :].T.dot(A1).dot(G[i, :]) for i in range(n)])
         A2 = G.T.dot(G) - GTQ.dot(GTQ.T)
         B = np.array([G[i, :].T.dot(A2).dot(G[i, :]) for i in range(n)])
-        B = np.round(B, 5)
+        B = np.round(B, 9)
         return div(C, B)
 
     def fit(self, Ks, y):
@@ -108,11 +108,10 @@ class LarsMKL:
 
             # Select optimal kernel and pivot
             kern, pivot = np.unravel_index(np.argmax(gain), gain.shape)
-            if gain[kern, pivot] <= 0:
-                msg = "Iterations ended prematurely at step = %d < %d" % (step, rank)
-                warn(msg)
+            if gain[kern, pivot] == 0:
+                msg = "Iterations ended prematurely (%s) at step = %d < %d" % (str(f.__name__), step, rank)
                 rank = self.rank = step
-                break
+                raise ValueError(msg)
 
             # Select pivot and update Cholesky factors; try simplyfing
             G = Gs[kern]
