@@ -26,10 +26,11 @@ def estimate_variance_cv(Ks, y, n_splits=10, n_lbd=13, lbd_min=-10, lbd_max=2):
     ss = ShuffleSplit(n_splits=n_splits)
     lbd_range = np.logspace(lbd_min, lbd_max, n_lbd)
 
+    Kse = [K[:, :] for K in Ks]
     for si, (tr, te) in enumerate(ss.split(X=Ks[0].data, y=y)):
         for li, lbd in enumerate(lbd_range):
             model = RidgeMKL(method="l2krr", lbd=lbd)
-            model.fit(Ks, y, holdout=te)
+            model.fit(Kse, y, holdout=te)
             yp_tr = model.predict(tr)
             yp_te = model.predict(te)
 
@@ -39,11 +40,11 @@ def estimate_variance_cv(Ks, y, n_splits=10, n_lbd=13, lbd_min=-10, lbd_max=2):
     s1 = S_tr.mean(axis=0)
     s2 = S_te.mean(axis=0)
 
-    i = np.argmin(np.absolute(s1 - s2))
+    i = np.argmin(s2)
     if i == 0 or i == len(s1) - 1:
         raise ValueError("Sigma estimate is outside the set lambda boundaires (i=%d)!" % i)
 
-    est = np.mean([s1[i], s2[i]])
+    est = s1[i]
     return S_tr, S_te, est
 
 
