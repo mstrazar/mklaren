@@ -40,23 +40,35 @@ def estimate_variance_cv(Ks, y, n_splits=10, n_lbd=13, lbd_min=-10, lbd_max=2):
     s2 = S_te.mean(axis=0)
 
     i = np.argmin(np.absolute(s1 - s2))
+    if i == 0 or i == len(s1) - 1:
+        raise ValueError("Sigma estimate is outside the set lambda boundaires (i=%d)!" % i)
+
     est = np.mean([s1[i], s2[i]])
     return S_tr, S_te, est
 
 
-def plot_variance_cv(S_tr, S_te):
+def plot_variance_cv(S_tr, S_te, log=False):
     """ Plot relation between training and test estimates. """
+
     n = S_tr.shape[1]
-    s1m = np.log10(S_tr).mean(axis=0)
-    s2m = np.log10(S_te).mean(axis=0)
-    s1e = np.log10(S_tr).std(axis=0)
-    s2e = np.log10(S_te).std(axis=0)
+    if log:
+        f = "log10 "
+        s1m = np.log10(S_tr).mean(axis=0)
+        s2m = np.log10(S_te).mean(axis=0)
+        s1e = np.log10(S_tr).std(axis=0)
+        s2e = np.log10(S_te).std(axis=0)
+    else:
+        f = ""
+        s1m = S_tr.mean(axis=0)
+        s2m = S_te.mean(axis=0)
+        s1e = S_tr.std(axis=0)
+        s2e = S_te.std(axis=0)
 
     plt.figure()
     plt.errorbar(np.arange(n), s1m, yerr=s1e, label="Training")
     plt.errorbar(np.arange(n), s2m, yerr=s2e, label="Test")
     plt.xlabel("log10 $\\lambda$")
-    plt.ylabel("log10 $\\sigma_{est}$")
+    plt.ylabel("%s$\\sigma_{est}$" % f)
     plt.legend()
     plt.grid()
 
