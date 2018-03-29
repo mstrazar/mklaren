@@ -21,10 +21,10 @@ def estimate_variance_cv(Ks, y, n_splits=10, n_lbd=13, lbd_min=-10, lbd_max=2):
         Find the point where the training and test variance are most
         similar and return their mean. """
 
-    S_tr = np.zeros((n_splits, n_lbd))
-    S_te = np.zeros((n_splits, n_lbd))
+    S_tr = np.zeros((n_splits, n_lbd + 1))
+    S_te = np.zeros((n_splits, n_lbd + 1))
     ss = ShuffleSplit(n_splits=n_splits)
-    lbd_range = np.logspace(lbd_min, lbd_max, n_lbd)
+    lbd_range = [0] + list(np.logspace(lbd_min, lbd_max, n_lbd))
 
     Kse = [K[:, :] for K in Ks]
     for si, (tr, te) in enumerate(ss.split(X=Ks[0].data, y=y)):
@@ -41,7 +41,7 @@ def estimate_variance_cv(Ks, y, n_splits=10, n_lbd=13, lbd_min=-10, lbd_max=2):
     s2 = S_te.mean(axis=0)
 
     i = np.argmin(s2)
-    if i == 0 or i == len(s1) - 1:
+    if i == len(s1) - 1:
         raise ValueError("Sigma estimate is outside the set lambda boundaires (i=%d)!" % i)
 
     est = s1[i]
