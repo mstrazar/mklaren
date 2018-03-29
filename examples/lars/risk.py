@@ -43,7 +43,7 @@ def estimate_sigma(X, y, lbd=1e-5):
 
 
 def estimate_risk(X, y, mu, sigma):
-    """ Cheap risk estimate for certain linear models. """
+    """ Cheap risk estimate for unregularized linear models. """
     n, df = X.shape
     mse = np.linalg.norm(y.ravel() - mu.ravel())**2 / sigma
     return mse - n + 2 * df
