@@ -70,8 +70,16 @@ def process(dataset):
 
 
     # Variance vs. sigma estimate
-    fname = os.path.join(out_dir, "variance_%s_lin.pdf" % dataset)
+    fname = os.path.join(out_dir, "var_%s_lin.pdf" % dataset)
     plot_variance_cv(S_tr, S_te, log=False)
+    plt.title(dataset)
+    plt.savefig(fname)
+    plt.close()
+    print("Written %s" % fname)
+
+    # Variance vs. sigma estimate
+    fname = os.path.join(out_dir, "logvar_%s_log.pdf" % dataset)
+    plot_variance_cv(S_tr, S_te, log=True)
     plt.title(dataset)
     plt.savefig(fname)
     plt.close()
@@ -106,23 +114,26 @@ if __name__ == "__main__":
             print("Makedir %s" % d)
 
     # Open output stream
-    header = ["dataset", "N", "var", "snr"]
+    header = ["replicate", "dataset", "N", "var", "snr"]
     fname = os.path.join(res_dir, "results.csv")
     fp = open(fname, "w", buffering=0)
     writer = csv.DictWriter(fp, fieldnames=header)
     writer.writeheader()
     count = 0
+    replicates = 10
 
     # Process
-    for dset in KEEL_DATASETS:
-        try:
-            row = process(dset)
-            if row is not None:
-                count += 1
-                writer.writerow(row)
-                print("Written %d rows to %s" % (count, fname))
-        except Exception as e:
-            print("Exception with %s: %s" % (dset, e.message))
+    for repl in range(replicates):
+        for dset in KEEL_DATASETS:
+            try:
+                row = process(dset)
+                if row is not None:
+                    count += 1
+                    row["replicate"] = repl
+                    writer.writerow(row)
+                    print("Written %d rows to %s" % (count, fname))
+            except Exception as e:
+                print("Exception with %s: %s" % (dset, e.message))
 
     fp.close()
     print("End")
