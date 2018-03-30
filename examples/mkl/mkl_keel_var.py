@@ -25,7 +25,7 @@ hlp = """
 # Paths
 out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output/mkl_keel_var"
 res_dir = "/Users/martins/Dev/mklaren/examples/mkl/results/mkl_keel_var"
-N = 200
+N = 1000
 
 
 # TODO: add to general tools
@@ -68,14 +68,8 @@ def process(dataset):
     f_var = np.var(y) - var_est
     snr = f_var / var_est
 
-    # Draw variance
-    fname = os.path.join(out_dir, "variance_%s_log.pdf" % dataset)
-    plot_variance_cv(S_tr, S_te, log=True)
-    plt.title(dataset)
-    plt.savefig(fname)
-    plt.close()
-    print("Written %s" % fname)
 
+    # Variance vs. sigma estimate
     fname = os.path.join(out_dir, "variance_%s_lin.pdf" % dataset)
     plot_variance_cv(S_tr, S_te, log=False)
     plt.title(dataset)
