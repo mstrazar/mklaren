@@ -50,6 +50,18 @@ def estimate_variance_cv(Ks, y, n_splits=10, n_lbd=13, lbd_min=-10, lbd_max=2):
     return S_tr, S_te, est
 
 
+def estimate_sigma_dist(X, q=10):
+    """ Estimate distribution of lengthscales in the dataset.
+        Used for setting the parameters of the exponential kernel.
+        Return lengthscales such that they cover the distribution of distances in the dataset
+        (using q percentiles).
+    """
+    n = X.shape[0]
+    D = cdist(X, X) * np.tri(n)
+    d = D[np.where(D)]
+    return np.percentile(d, q=np.linspace(0, 100, q))
+
+
 def plot_variance_cv(S_tr, S_te, log=False):
     """ Plot relation between training and test estimates. """
 

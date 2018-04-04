@@ -16,7 +16,7 @@ from datasets.keel import load_keel, KEEL_DATASETS
 import matplotlib.pyplot as plt
 
 # New methods
-from examples.mkl.mkl_est_var import estimate_variance_cv, plot_variance_cv
+from examples.mkl.mkl_est_var import estimate_variance_cv, plot_variance_cv, estimate_sigma_dist
 
 hlp = """
     Estimate the variance and lengthscale for KEEL regression datasets. 
@@ -26,18 +26,6 @@ hlp = """
 out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output/mkl_keel_var"
 res_dir = "/Users/martins/Dev/mklaren/examples/mkl/results/mkl_keel_var"
 N = 1000
-
-
-# TODO: add to general tools
-def estimate_sigma_dist(X, q=10):
-    """ Estimate distribution of lengthscales in the dataset.
-        Return lengthscales such that they cover the distribution of distances in the dataset
-        (using q percentiles).
-    """
-    n = X.shape[0]
-    D = cdist(X, X) * np.tri(n)
-    d = D[np.where(D)]
-    return np.percentile(d, q=np.linspace(0, 100, q))
 
 
 def process(dataset):
