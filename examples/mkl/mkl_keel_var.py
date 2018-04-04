@@ -5,7 +5,6 @@ import csv
 os.environ["OCTAVE_EXECUTABLE"] = "/usr/local/bin/octave"
 
 # Kernels
-from scipy.spatial.distance import cdist
 from mklaren.kernel.kernel import exponential_kernel
 from mklaren.kernel.kinterface import Kinterface
 

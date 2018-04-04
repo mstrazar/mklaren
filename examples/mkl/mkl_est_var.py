@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from mklaren.kernel.kernel import exponential_kernel
 from mklaren.kernel.kinterface import Kinterface
 from scipy.stats import multivariate_normal as mvn
+from scipy.spatial.distance import cdist
 from sklearn.model_selection import ShuffleSplit
 from sklearn.linear_model.ridge import Ridge
 

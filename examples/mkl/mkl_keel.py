@@ -6,6 +6,7 @@ hlp = """
 import scipy.stats as st
 import numpy as np
 import os
+import csv
 os.environ["OCTAVE_EXECUTABLE"] = "/usr/local/bin/octave"
 
 # Kernels
@@ -24,19 +25,22 @@ import matplotlib.pyplot as plt
 # New methods
 from examples.lars.lars_mkl import LarsMKL
 from examples.lars.lars_group import p_ri, p_const, p_sc
+from examples.mkl.mkl_est_var import estimate_sigma_dist
 
 
 # Parameters
+res_dir = "/Users/martins/Dev/mklaren/examples/mkl/results/mkl_keel"
 out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output/mkl_keel"
-N = 2000
-delta = 5
-gamma = .1
+N = 1000
+replicates = 10
+no_kernels = 10
+delta = 10
 p_tr = .8
 lbd = 0.000
 rank = 30
 
 formats = {"lars-ri": "gv-",
-           "lars-sc": "bv-",
+           # "lars-sc": "bv-",
            "lars-co": "cv-",
            "kmp": "c--",
            "icd": "b--",
@@ -44,11 +48,12 @@ formats = {"lars-ri": "gv-",
            "csi": "r--",
            "L2KRR": "k-"}
 
+header = ["replicate", "dataset", "method", "N", "rank", "delta", "evar"]
 
-def process(dataset):
+
+def process(dataset, repl=0):
     # Load data
     data = load_keel(n=N, name=dataset)
-    gamma_range = np.logspace(-5, 5, 10)
 
     # Load data and normalize columns
     X = st.zscore(data["data"], axis=0)
@@ -59,26 +64,28 @@ def process(dataset):
 
     # Training/test
     n = len(X)
-    np.random.seed(42)
     tr = np.random.choice(range(n), size=int(p_tr * n), replace=False)
     te = np.array(list(set(range(n)) - set(tr)))
     tr = tr[np.argsort(y[tr].ravel())]
     te = te[np.argsort(y[te].ravel())]
 
+    # Estimate sigma range
+    sigma_range = estimate_sigma_dist(X=X[tr], q=no_kernels)
+
     # Training kernels
     Ks_tr = [Kinterface(data=X[tr],
                         kernel=exponential_kernel,
-                        kernel_args={"gamma": gamma})
-             for gamma in gamma_range]
+                        kernel_args={"sigma": sigma})
+             for sigma in sigma_range]
     Ks = [Kinterface(data=X,
                      kernel=exponential_kernel,
-                     kernel_args={"gamma": gamma})
-             for gamma in gamma_range]
+                     kernel_args={"sigma": sigma})
+          for sigma in sigma_range]
 
     Ksum_tr = Kinterface(data=X[tr],
-                      kernel=kernel_sum,
-                      kernel_args={"kernels": [exponential_kernel] * len(gamma_range),
-                                   "kernels_args": [{"gamma": gam} for gam in gamma_range]})
+                         kernel=kernel_sum,
+                         kernel_args={"kernels": [exponential_kernel] * len(sigma_range),
+                                      "kernels_args": [{"sigma": sigma} for sigma in sigma_range]})
 
     # Collect test error paths
     results = dict()
@@ -128,7 +135,7 @@ def process(dataset):
         results[m] = errs
 
     # Plot
-    fname = os.path.join(out_dir, "test_mse_%s.pdf" % dataset)
+    fname = os.path.join(out_dir, "test_mse_%s_%d.pdf" % (dataset, repl))
     plt.figure()
     plt.title(dataset)
     for m in sorted(formats.keys()):
@@ -142,13 +149,51 @@ def process(dataset):
     plt.close()
     print("Written %s" % fname)
 
+    # Generate row
+    rows = list()
+    for m, errs in results.items():
+        rows.append({"replicate": repl,
+                     "dataset": dataset,
+                     "method": m,
+                     "N": len(X),
+                     "rank": rank,
+                     "delta": delta,
+                     "evar": np.mean(errs)})
+
+    return rows
+
+
+def main():
+    # Seed
+    np.random.seed(42)
+
+    # Mkdir
+    for dr in (out_dir, res_dir):
+        if not os.path.exists(dr):
+            os.makedirs(dr)
+            print("Makedir %s" % dr)
+
+    # Open output stream
+    fname = os.path.join(res_dir, "results.csv")
+    fp = open(fname, "w", buffering=0)
+    writer = csv.DictWriter(fp, fieldnames=header)
+    writer.writeheader()
+    count = 0
+
+    # Process
+    for repl in range(replicates):
+        for dset in KEEL_DATASETS:
+            try:
+                rows = process(dset, repl)
+                if rows is not None:
+                    count += 1
+                    writer.writerows(rows)
+                    print("Written %d rows to %s" % (count, fname))
+            except Exception as e:
+                print("Exception with %s: %s" % (dset, e.message))
+    fp.close()
+    print("End")
+
 
 if __name__ == "__main__":
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-        print("Makedir %s" % out_dir)
-    for dset in KEEL_DATASETS:
-        try:
-            process(dset)
-        except Exception as e:
-            print("Exception with %s: %s" % (dset, e.message))
+    main()
