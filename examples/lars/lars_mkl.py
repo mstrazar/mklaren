@@ -98,7 +98,7 @@ class LarsMKL:
             QTY = Qa.T.dot(y)
             for j in range(k):
                 if delta > 0:
-                    Ga = Gs[j][:, step:step+delta]
+                    Ga = Gs[j][:, step:step+delta]  # TODO: this is wrong; individual step must be used;
                     zy2 = self.zy_app(Ga, Qa, y, QTY)
                     gain[j, :] = (zy2 > 0) * (zy2 * f(ncol[j] + 1) + (f(ncol[j] + 1) - f(ncol[j])) * corr[j])
                     gain[j, Acts[j]] = -np.inf
@@ -204,7 +204,7 @@ class LarsMKL:
     def transform(self, Xs):
         """ Map samples in Xs to the Q-space. """
         assert self.Ks is not None
-        Ka = np.hstack([K(X, K.data[a, :])
+        Ka = np.hstack([K(X, K.data[a])
                         for j, (K, X, a) in enumerate(zip(self.Ks, Xs, self.Acts))
                         if len(a)])
         return Ka.dot(self.T)
