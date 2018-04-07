@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.linalg import norm, inv
+from collections import defaultdict
 from scipy.stats import multivariate_normal as mvn
 from examples.lars.cholesky import cholesky_steps
 from examples.lars.lars_group import p_ri, p_const, p_sc, colors
@@ -44,10 +45,11 @@ class LarsMKL:
             return -np.inf * np.ones((n,))
         GTY = G.T.dot(y)
         GTQ = G.T.dot(Q)
-        A1 = GTY.dot(GTY.T) - GTQ.dot(QTY.dot(GTY.T))
-        C = np.array([G[i, :].T.dot(A1).dot(G[i, :]) for i in range(n)])
-        A2 = G.T.dot(G) - GTQ.dot(GTQ.T)
-        B = np.array([G[i, :].T.dot(A2).dot(G[i, :]) for i in range(n)])
+        A1 = GTY - GTQ.dot(QTY)
+        A2 = A1.dot(A1.T)
+        C = np.array([G[i, :].T.dot(A2).dot(G[i, :]) for i in range(n)])
+        A3 = G.T.dot(G) - GTQ.dot(GTQ.T)
+        B = np.array([G[i, :].T.dot(A3).dot(G[i, :]) for i in range(n)])
         B = np.round(B, 9)
         return div(C, B)
 
@@ -72,7 +74,8 @@ class LarsMKL:
         # Master QR decomposition and index of kernels and Permutation
         Q = np.zeros((n, rank + k * delta))
         R = np.zeros((rank + k * delta, rank + k * delta))
-        P = []
+        Pagg = defaultdict(int)     # Number of pivots per kernel
+        P = []                      # Order of kernels per selected pivot
 
         # Current status and costs
         corr = np.zeros((k,))  # Current correlation per kernel || X.T y || (required for calculating gain)
@@ -98,7 +101,8 @@ class LarsMKL:
             QTY = Qa.T.dot(y)
             for j in range(k):
                 if delta > 0:
-                    Ga = Gs[j][:, step:step+delta]  # TODO: this is wrong; individual step must be used;
+                    Ga = Gs[j][:, Pagg[j]:Pagg[j]+delta]
+                    assert norm(Ga) > 0
                     zy2 = self.zy_app(Ga, Qa, y, QTY)
                     gain[j, :] = (zy2 > 0) * (zy2 * f(ncol[j] + 1) + (f(ncol[j] + 1) - f(ncol[j])) * corr[j])
                     gain[j, Acts[j]] = -np.inf
@@ -110,15 +114,16 @@ class LarsMKL:
             kern, pivot = np.unravel_index(np.argmax(gain), gain.shape)
             if gain[kern, pivot] == 0:
                 msg = "Iterations ended prematurely (%s) at step = %d < %d" % (str(f.__name__), step, rank)
-                rank = self.rank = step
+                self.rank = step
                 raise ValueError(msg)
 
             # Select pivot and update Cholesky factors; try simplyfing
             G = Gs[kern]
             K = Ks[kern]
             P.append(kern)
+            Pagg[kern] = Pagg[kern] + 1
+            k_num = Pagg[kern]
             k_inx = np.where(np.array(P) == kern)[0]
-            k_num = len(k_inx)
             k_start = k_num - 1
 
             # Update Cholesky
