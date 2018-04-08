@@ -23,7 +23,7 @@ hlp = """
 
 # Parameters
 out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output/mkl_keel_prog"
-N = 300
+N = 1000
 delta = 5
 rank = 20
 nk = 10
@@ -63,7 +63,7 @@ def process():
                 model = LarsMKL(rank=rank, delta=delta, f=func)
                 model.fit(Ks, y)
                 Ps[repl] = model.P
-        except ValueError as ve:
+        except Exception as ve:
             print(ve)
             continue
 
