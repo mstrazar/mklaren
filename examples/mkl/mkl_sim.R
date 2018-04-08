@@ -21,7 +21,7 @@ qplot(data=data, x=as.factor(noise), y=evar, fill=method, geom="boxplot",
 ggsave(fname)
 
 # Plot signal to noise - below 0 the signals are not relevant 
-fname = file.path(outdir, sprintf("snr.pdf", nam))
+fname = file.path(outdir, sprintf("snr.pdf"))
 pdf(fname, width = 5, height = 3)
 plot(data$noise, log(data$snr), xlab="Noise", ylab="log SNR")
 lines(c(min(data$noise), max(data$noise)), c(0, 0), col="gray")
