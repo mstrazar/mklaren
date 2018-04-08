@@ -37,10 +37,10 @@ formats = {"lars-ri": "gv-",
            "lars-co": "cv-"}
 
 
-def plot_progressions(Ps, pmax=None, title=""):
+def plot_progressions(Ps, nk=None, title=""):
     """ Plot progression as summary of multiple runs"""
-    pmax = Ps.max() if pmax is None else pmax
-    C = np.zeros((pmax + 1, Ps.shape[1]))
+    nk = Ps.max() + 1 if nk is None else nk
+    C = np.zeros((nk, Ps.shape[1]))
     for P in Ps:
         C[P.astype(int), np.arange(len(P))] += 1
     D = C / C.sum(axis=0)
@@ -77,7 +77,7 @@ def process():
 
             # Plot
             fname = os.path.join(out_dir, "prog_%s_noise_%s.pdf" % (func.__name__, nmark))
-            plot_progressions(Ps, nk-1, title="%s | log(noise) = %d" % (func.__name__, np.log10(noise)))
+            plot_progressions(Ps, nk, title="%s | log(noise) = %d" % (func.__name__, np.log10(noise)))
             plt.savefig(fname)
             plt.close()
             print("Written %s" % fname)
