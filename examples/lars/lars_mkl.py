@@ -394,6 +394,23 @@ def plot_convergence():
     plt.show()
 
 
+def plot_progression(P, pmax=None, pmin=None):
+    """ Plot progression of selection of kernels, given path P. """
+    pmax = P.max() if pmax is None else pmax
+    pmin = P.min() if pmin is None else pmin
+    height = pmax - pmin + 1
+    C = np.zeros((height, len(P)))
+    C[P, np.arange(len(P))] = 1
+    D = np.cumsum(C, axis=1)
+    E = D / (1 + D.max()) + np.tile(np.arange(0, height).reshape(height, 1), len(P))
+    plt.figure()
+    plt.plot(E.T, "-")
+    plt.plot(E[P, np.arange(len(P))], "k.")
+    plt.grid()
+    plt.xlabel("Step")
+    plt.ylabel("Kernel")
+
+
 def profiling():
     """ Profiling function. """
     np.random.seed(42)
