@@ -29,8 +29,17 @@ rank = 20
 nk = 10
 replicates = 30
 
+
+def p_rfast(p):
+    return p_ri(p, c=10)
+
+
+def p_rslow(p):
+    return p_ri(p, c=0.1)
+
+
 # Variables
-functions = [p_ri, p_sc, p_const]
+functions = [p_ri, p_sc, p_const, p_rfast, p_rslow]
 
 # Auxillary
 formats = {"lars-ri": "gv-",
