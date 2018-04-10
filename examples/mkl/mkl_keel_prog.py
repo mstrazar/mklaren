@@ -9,7 +9,7 @@ from mklaren.kernel.kinterface import Kinterface
 
 # New methods
 from examples.lars.lars_mkl import LarsMKL
-from examples.lars.lars_group import p_ri, p_const, p_sc
+from examples.lars.lars_group import p_ri, p_const, p_sc, p_act, p_sig
 from examples.mkl.mkl_est_var import estimate_sigma_dist
 from examples.mkl.mkl_progression import plot_progressions
 
@@ -25,7 +25,7 @@ hlp = """
 out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output/mkl_keel_prog"
 N = 1000
 delta = 5
-rank = 20
+rank = 30
 nk = 10
 replicates = 30
 
@@ -39,12 +39,7 @@ def p_rslow(p):
 
 
 # Variables
-functions = [p_ri, p_sc, p_const, p_rfast, p_rslow]
-
-# Auxillary
-formats = {"lars-ri": "gv-",
-           "lars-sc": "bv-",
-           "lars-co": "cv-"}
+functions = [p_ri, p_sc, p_const, p_act, p_sig]
 
 
 def load_data_sample(dataset, Nmax, nk=10, p_tr=0.6):
