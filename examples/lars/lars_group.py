@@ -27,9 +27,8 @@ def p_act(p, t=10):
 
 
 def p_sig(p, t=10):
-    """ Shifted sigmoid function. 
-        At t the function value is 0.5 and the gradient changes direction. """
-    return np.exp(p-t) / (np.exp(p-t) + 1)
+    """ Shifted sigmoid function squeezed between (0.5, 1). """
+    return (1 + np.exp(p-t) / (np.exp(p-t) + 1)) / 2
 
 
 # Explicit defitinions included for debug reasons -- start #
