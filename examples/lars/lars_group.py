@@ -23,7 +23,7 @@ def p_ri(p, c=1):
 
 def p_act(p, t=10):
     """ Activation function. """
-    return max(0, p-t)
+    return max(1, p-t)
 
 
 def p_sig(p, t=10):
