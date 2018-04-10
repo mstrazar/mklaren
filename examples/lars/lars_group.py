@@ -12,7 +12,7 @@ def p_const(p):
 
 
 def p_sc(p):
-    """ Scaling penalty. """
+    """ Scaling / diversity penalty. """
     return 1.0 / p if p else 0
 
 
@@ -21,6 +21,18 @@ def p_ri(p, c=1):
     return c * p / (1.0 + c * p)
 
 
+def p_act(p, t=10):
+    """ Activation function. """
+    return max(0, p-t)
+
+
+def p_sig(p, t=10):
+    """ Shifted sigmoid function. 
+        At t the function value is 0.5 and the gradient changes direction. """
+    return np.exp(p-t) / (np.exp(p-t) + 1)
+
+
+# Explicit defitinions included for debug reasons -- start #
 # Cost functions
 COSTS = {
     "unscaled": lambda X, y: norm(X.T.dot(y))**2,
@@ -35,6 +47,8 @@ GAINS = dict(unscaled=lambda X, y, z: norm(z.T.dot(y)) ** 2,
                                      p_sc(X.shape[1]+1) * norm(z.T.dot(y)) ** 2,
              rich=lambda X, y, z:   (p_ri(X.shape[1]+1) - p_ri(X.shape[1])) * norm(X.T.dot(y)) ** 2 +
                                      p_ri(X.shape[1]+1) * norm(z.T.dot(y)) ** 2)
+
+# -- end #
 
 # Signatures
 SIGNATURES = {
