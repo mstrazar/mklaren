@@ -24,29 +24,39 @@ import matplotlib.pyplot as plt
 
 # New methods
 from examples.lars.lars_mkl import LarsMKL
-from examples.lars.lars_group import p_ri, p_const, p_sc
+from examples.lars.lars_group import p_ri, p_const, p_sc, p_sig, p_act
 from examples.mkl.mkl_est_var import estimate_sigma_dist
 
 
 # Parameters
 res_dir = "/Users/martins/Dev/mklaren/examples/mkl/results/mkl_keel"
 out_dir = "/Users/martins/Dev/mklaren/examples/mkl/output/mkl_keel"
-N = 1000
+N = 2000
 replicates = 10
 no_kernels = 10
 delta = 10
-p_tr = .8
+p_tr = .5
 lbd = 0.000
-rank = 30
+rank = 100
 
 formats = {"lars-ri": "gv-",
-           # "lars-sc": "bv-",
+           # "lars-sc": "rv-",
            "lars-co": "cv-",
-           "kmp": "c--",
-           "icd": "b--",
-           "nystrom": "m--",
-           "csi": "r--",
+           "lars-sig": "bv-",
+           "lars-act": "yv-",
+           # "kmp": "c--",
+           # "icd": "b--",
+           # "nystrom": "m--",
+           # "csi": "r--",
            "L2KRR": "k-"}
+
+penalty = {
+    "lars-ri": p_ri,
+    "lars-sc": p_sc,
+    "lars-co": p_const,
+    "lars-sig": p_sig,
+    "lars-act": p_act,
+    }
 
 header = ["replicate", "dataset", "method", "N", "rank", "delta", "evar"]
 
@@ -90,16 +100,8 @@ def process(dataset, repl=0):
     # Collect test error paths
     results = dict()
     for m in formats.keys():
-        if m == "lars-ri":
-            model = LarsMKL(delta=delta, rank=rank, f=p_ri)
-            model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
-        elif m == "lars-sc":
-            model = LarsMKL(delta=delta, rank=rank, f=p_sc)
-            model.fit(Ks_tr, y[tr])
-            ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
-        elif m == "lars-co":
-            model = LarsMKL(delta=delta, rank=rank, f=p_const)
+        if m.startswith("lars-"):
+            model = LarsMKL(delta=delta, rank=rank, f=penalty[m])
             model.fit(Ks_tr, y[tr])
             ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
         elif m == "kmp":
