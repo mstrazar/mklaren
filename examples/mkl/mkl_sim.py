@@ -58,20 +58,21 @@ def process():
     # Load data
     np.random.seed(42)
     noise_range = np.logspace(-5, 2, 8)
+    d_range = [1, 10, 100]
     replicates = 30
-
-    # Ground truth kernels
-    X = np.linspace(-N, N, N).reshape((N, 1))
-    sigma_range = estimate_sigma_dist(X, 10)
-
-    Ks = [Kinterface(data=X,
-                     kernel=exponential_kernel,
-                     kernel_args={"sigma": sigma})
-          for sigma in sigma_range]
 
     rows = list()
     count = 0
-    for repl, noise in it.product(range(replicates), noise_range):
+    for repl, noise, d in it.product(range(replicates), noise_range, d_range):
+
+        # Ground truth kernels
+        X = np.random.randn(N, d)
+        sigma_range = estimate_sigma_dist(X, 10)
+
+        Ks = [Kinterface(data=X,
+                         kernel=exponential_kernel,
+                         kernel_args={"sigma": sigma})
+              for sigma in sigma_range]
 
         # Simulate data from one kernel
         keff = 5
