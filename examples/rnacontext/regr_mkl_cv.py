@@ -115,7 +115,7 @@ def process(dataset=RNA_DATASETS[0], repl=0):
     for m in results.keys():
         ranking = 1 + np.where(scale == scores[m])[0][0]
         row = {"dataset": dataset, "repl": repl, "method": m,
-               "N_tr": len(tr), "N_va": len(te), "N_te": len(te),
+               "N_tr": len(tr), "N_va": len(va), "N_te": len(te),
                "evar": scores[m], "ranking": ranking}
         rows.append(row)
 
