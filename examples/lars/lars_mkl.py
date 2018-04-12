@@ -102,7 +102,7 @@ class LarsMKL:
             for j in range(k):
                 if delta > 0:
                     Ga = Gs[j][:, Pagg[j]:Pagg[j]+delta]
-                    assert norm(Ga) > 0
+                    # assert norm(Ga) > 0
                     zy2 = self.zy_app(Ga, Qa, y, QTY)
                     gain[j, :] = (zy2 > 0) * (zy2 * f(ncol[j] + 1) + (f(ncol[j] + 1) - f(ncol[j])) * corr[j])
                     gain[j, Acts[j]] = -np.inf
