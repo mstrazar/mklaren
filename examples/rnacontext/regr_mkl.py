@@ -43,13 +43,24 @@ rank = 5
 replicates = 30
 
 formats = {"lars-ri": "gv-",
-           # "lars-sc": "bv-",
+           "lars-sc": "rv-",
            "lars-co": "cv-",
-           "kmp": "c--",
+           "lars-sig": "bv-",
+           "lars-act": "yv-",
+           # "kmp": "c--",
            # "icd": "b--",
            # "nystrom": "m--",
            # "csi": "r--",
-           "L2KRR": "k-"}
+           # "L2KRR": "k-"
+           }
+
+penalty = {
+    "lars-ri": p_ri,
+    "lars-sc": p_sc,
+    "lars-co": p_const,
+    "lars-sig": p_sig,
+    "lars-act": p_act,
+    }
 
 header = ["repl", "method", "N", "keff", "sigma", "noise", "snr", "evar", "ranking"]
 
@@ -94,16 +105,8 @@ def process(dataset=RNA_DATASETS[0], repl=0):
     results = dict()
     try:
         for m in formats.keys():
-            if m == "lars-ri":
-                model = LarsMKL(delta=delta, rank=rank, f=p_ri)
-                model.fit(Ks_tr, y[tr])
-                ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
-            elif m == "lars-sc":
-                model = LarsMKL(delta=delta, rank=rank, f=p_sc)
-                model.fit(Ks_tr, y[tr])
-                ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
-            elif m == "lars-co":
-                model = LarsMKL(delta=delta, rank=rank, f=p_const)
+            if m.startswith("lars-"):
+                model = LarsMKL(delta=delta, rank=rank, f=penalty[m])
                 model.fit(Ks_tr, y[tr])
                 ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
             elif m == "kmp":
