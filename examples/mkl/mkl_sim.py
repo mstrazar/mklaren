@@ -28,13 +28,13 @@ N = 1000
 delta = 5
 p_tr = .8
 lbd = 0.000
-rank = 5
+rank = 30
 
 formats = {"lars-ri": "gv-",
-           "lars-sc": "rv-",
            "lars-co": "cv-",
            "lars-sig": "bv-",
            "lars-act": "yv-",
+           # "lars-sc": "rv-",
            # "kmp": "c--",
            # "icd": "b--",
            # "nystrom": "m--",
