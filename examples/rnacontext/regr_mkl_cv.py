@@ -3,6 +3,7 @@ hlp = """
     and KMP greedy algorithm.
 """
 import numpy as np
+import datetime
 import pickle
 import gzip
 import csv
@@ -22,7 +23,7 @@ from datasets.rnacontext import load_rna, RNA_OPTIMAL_K, dataset2spectrum, RNA_D
 
 # Parameters
 out_dir = "/Users/martins/Dev/mklaren/examples/rnacontext/results/regr_mkl_cv"
-N = 300
+N = 3000
 delta = 5
 p_tr = .6
 lbd = 0.000
@@ -30,10 +31,10 @@ rank = 100
 replicates = 30
 
 formats = {"lars-ri": "gv-",
-           "lars-sc": "rv-",
            "lars-co": "cv-",
            "lars-sig": "bv-",
-           "lars-act": "yv-",
+           # "lars-act": "yv-",
+           # "lars-sc": "rv-",
            # "kmp": "c--",
            # "icd": "b--",
            # "nystrom": "m--",
@@ -54,6 +55,8 @@ header = ["repl", "dataset", "method", "N_tr", "N_va", "N_te", "evar", "ranking"
 
 def process(dataset=RNA_DATASETS[0], repl=0):
     """ Process one iteration of a dataset. """
+    dat = datetime.datetime.now()
+    print("\t%s\tdataset=%s cv=%d rank=%d" % (dat, dataset, repl, rank))
 
     # Load data
     np.random.seed(repl)
@@ -103,6 +106,7 @@ def process(dataset=RNA_DATASETS[0], repl=0):
         results[m] = np.round(scores_te[t], 3)
 
     # Compute ranking
+    rows = list()
     scores = dict([(m, ev) for m, ev in results.items()])
     scale = np.array(sorted(scores.values(), reverse=True)).ravel()
     for m in results.keys():
