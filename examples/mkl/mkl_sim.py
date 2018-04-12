@@ -18,39 +18,52 @@ from mklaren.regression.ridge import RidgeMKL
 
 # New methods
 from examples.lars.lars_mkl import LarsMKL
-from examples.lars.lars_group import p_ri, p_const, p_sc
+from examples.lars.lars_group import p_ri, p_const, p_sc, p_sig, p_act
+from examples.mkl.mkl_est_var import estimate_sigma_dist
 from scipy.stats import multivariate_normal as mvn
 
 # Parameters
 out_dir = "/Users/martins/Dev/mklaren/examples/mkl/results/mkl_sim"
-N = 200
+N = 1000
 delta = 5
 p_tr = .8
 lbd = 0.000
 rank = 5
 
 formats = {"lars-ri": "gv-",
-           # "lars-sc": "bv-",
+           "lars-sc": "rv-",
            "lars-co": "cv-",
-           "kmp": "c--",
+           "lars-sig": "bv-",
+           "lars-act": "yv-",
+           # "kmp": "c--",
            # "icd": "b--",
            # "nystrom": "m--",
            # "csi": "r--",
-           "L2KRR": "k-"}
+           # "L2KRR": "k-"
+           }
 
 
 header = ["repl", "method", "N", "keff", "sigma", "noise", "snr", "evar", "ranking"]
+
+penalty = {
+    "lars-ri": p_ri,
+    "lars-sc": p_sc,
+    "lars-co": p_const,
+    "lars-sig": p_sig,
+    "lars-act": p_act,
+    }
 
 
 def process():
     # Load data
     np.random.seed(42)
     noise_range = np.logspace(-5, 2, 8)
-    sigma_range = np.linspace(0.1, 1.0, 10) * N
     replicates = 30
-    
+
     # Ground truth kernels
     X = np.linspace(-N, N, N).reshape((N, 1))
+    sigma_range = estimate_sigma_dist(X, 10)
+
     Ks = [Kinterface(data=X,
                      kernel=exponential_kernel,
                      kernel_args={"sigma": sigma})
@@ -85,16 +98,8 @@ def process():
         results = dict()
         try:
             for m in formats.keys():
-                if m == "lars-ri":
-                    model = LarsMKL(delta=delta, rank=rank, f=p_ri)
-                    model.fit(Ks_tr, y[tr])
-                    ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
-                elif m == "lars-sc":
-                    model = LarsMKL(delta=delta, rank=rank, f=p_sc)
-                    model.fit(Ks_tr, y[tr])
-                    ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
-                elif m == "lars-co":
-                    model = LarsMKL(delta=delta, rank=rank, f=p_const)
+                if m.startswith("lars-"):
+                    model = LarsMKL(delta=delta, rank=rank, f=penalty[m])
                     model.fit(Ks_tr, y[tr])
                     ypath = model.predict_path_ls([X[te]] * len(Ks_tr))
                 elif m == "kmp":
