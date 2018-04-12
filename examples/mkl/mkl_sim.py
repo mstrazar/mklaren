@@ -43,7 +43,7 @@ formats = {"lars-ri": "gv-",
            }
 
 
-header = ["repl", "method", "N", "keff", "sigma", "noise", "snr", "evar", "ranking"]
+header = ["repl", "method", "N", "d", "keff", "sigma", "noise", "snr", "evar", "ranking"]
 
 penalty = {
     "lars-ri": p_ri,
@@ -148,7 +148,7 @@ def process():
         for m in results.keys():
             ranking = 1 + np.where(scale == scores[m])[0][0]
             row = {"repl": repl, "method": m, "noise": noise, "N": N,
-                   "keff": keff, "sigma": sigma_range[keff],
+                   "keff": keff, "sigma": sigma_range[keff], "d": d,
                    "evar": scores[m], "ranking": ranking, "snr": snr}
             rows.append(row)
 
