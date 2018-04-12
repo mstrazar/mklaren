@@ -387,3 +387,12 @@ Fri 25 Aug 2017
 ===============
 ../output/snr/timings/2017-8-25/results_0.csv
 Repeating due to errors.
+
+
+----------------------------------- Re-run revision 2
+
+Thu 12 Apr 2018
+===============
+d4: [detached from 348589.mklaren]
+OUT=results/regr_mkl_cv_d4/
+$PY regr_mkl_cv.py $OUT
