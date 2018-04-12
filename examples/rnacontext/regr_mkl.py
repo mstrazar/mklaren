@@ -19,7 +19,7 @@ from mklaren.regression.ridge import RidgeMKL
 
 # New methods
 from examples.lars.lars_mkl import LarsMKL
-from examples.lars.lars_group import p_ri, p_const, p_sc
+from examples.lars.lars_group import p_ri, p_const, p_sc, p_act, p_sig
 from scipy.stats import multivariate_normal as mvn
 
 import scipy.stats as st
@@ -34,12 +34,12 @@ from examples.strings.string_utils import generic_function_plot
 import matplotlib.pyplot as plt
 
 # Parameters
-out_dir = "/Users/martins/Dev/mklaren/examples/rnacontext/output/regr_mkl"
+out_dir = "/Users/martins/Dev/mklaren/examples/rnacontext/results/regr_mkl"
 N = 1000
 delta = 5
 p_tr = .8
 lbd = 0.000
-rank = 5
+rank = 100
 replicates = 30
 
 formats = {"lars-ri": "gv-",
@@ -62,7 +62,7 @@ penalty = {
     "lars-act": p_act,
     }
 
-header = ["repl", "method", "N", "keff", "sigma", "noise", "snr", "evar", "ranking"]
+header = ["repl", "dataset", "method", "N", "keff", "sigma", "noise", "snr", "evar", "ranking"]
 
 
 def process(dataset=RNA_DATASETS[0], repl=0):
@@ -80,9 +80,10 @@ def process(dataset=RNA_DATASETS[0], repl=0):
     X = data["data"][inxs]
     y = st.zscore(data["target"])[inxs]
 
-    # Ground truth kernels
+    # Ground truth kernels;
     Ks = [Kinterface(data=X,
                      kernel=string_kernel,
+                     row_normalize=True,
                      kernel_args={"mode": "1spectrum", "K": k})
           for k in k_range]
 
@@ -93,11 +94,13 @@ def process(dataset=RNA_DATASETS[0], repl=0):
     # Training kernels
     Ks_tr = [Kinterface(data=X[tr],
                         kernel=string_kernel,
-                        kernel_args={"mode": "1spectrum", "K": k})
+                        kernel_args={"mode": "1spectrum", "K": k},
+                        row_normalize=True)
              for k in k_range]
 
     Ksum_tr = Kinterface(data=X[tr],
                          kernel=kernel_sum,
+                         row_normalize=True,
                          kernel_args={"kernels": [string_kernel] * len(k_range),
                                       "kernels_args": [{"K": k, "mode": "1spectrum"} for k in k_range]})
 
@@ -150,7 +153,7 @@ def process(dataset=RNA_DATASETS[0], repl=0):
     scale = np.array(sorted(scores.values(), reverse=True)).ravel()
     for m in results.keys():
         ranking = 1 + np.where(scale == scores[m])[0][0]
-        row = {"repl": repl, "method": m, "N": N,
+        row = {"dataset": dataset, "repl": repl, "method": m, "N": N,
                "evar": scores[m], "ranking": ranking, "snr": snr}
         rows.append(row)
 
@@ -164,10 +167,9 @@ if __name__ == "__main__":
 
     # Write to .csv
     fname = os.path.join(out_dir, "results.csv")
-    fp = open(fname, "w")
+    fp = open(fname, "w", buffering=0)
     writer = csv.DictWriter(fp, fieldnames=header)
     writer.writeheader()
-    fp.close()
 
     # Process and write to file
     count = 0
@@ -177,3 +179,5 @@ if __name__ == "__main__":
             writer.writerows(rows)
             count += len(rows)
             print("Written %s (%d)" % (fname, count))
+
+    fp.close()
