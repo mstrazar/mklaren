@@ -75,7 +75,10 @@ def process(dataset=RNA_DATASETS[0], repl=0):
                  np.sort(sample[b:])
 
     # Load feature spaces
-    Ys = [pickle.load(gzip.open(dataset2spectrum(dataset, K))) for K in K_range]
+    try:
+        Ys = [pickle.load(gzip.open(dataset2spectrum(dataset, K))) for K in K_range]
+    except IOError:
+        return None
 
     # Training kernels
     Ks_tr = [Kinterface(data=Y[tr],
@@ -140,8 +143,9 @@ if __name__ == "__main__":
     for repl in range(replicates):
         for dset in RNA_DATASETS:
             rows = process(dset, repl)
-            writer.writerows(rows)
-            count += len(rows)
-            print("Written %s (%d)" % (fname, count))
+            if rows is not None:
+                writer.writerows(rows)
+                count += len(rows)
+                print("Written %s (%d)" % (fname, count))
 
     fp.close()
