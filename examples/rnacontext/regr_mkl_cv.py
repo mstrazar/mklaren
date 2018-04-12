@@ -7,6 +7,7 @@ import pickle
 import gzip
 import csv
 import os
+import sys
 
 os.environ["OCTAVE_EXECUTABLE"] = "/usr/local/bin/octave"
 
@@ -20,13 +21,12 @@ from mklaren.kernel.kinterface import Kinterface
 from datasets.rnacontext import load_rna, RNA_OPTIMAL_K, dataset2spectrum, RNA_DATASETS
 
 # Parameters
-out_dir = "/Users/martins/Dev/mklaren/examples/rnacontext/results/regr_mkl"
-N = 1000
+out_dir = "/Users/martins/Dev/mklaren/examples/rnacontext/results/regr_mkl_cv"
+N = 300
 delta = 5
 p_tr = .6
-p_va = .2
 lbd = 0.000
-rank = 60
+rank = 100
 replicates = 30
 
 formats = {"lars-ri": "gv-",
@@ -49,7 +49,7 @@ penalty = {
     "lars-act": p_act,
     }
 
-header = ["repl", "dataset", "method", "N", "keff", "sigma", "noise", "snr", "evar", "ranking"]
+header = ["repl", "dataset", "method", "N_tr", "N_va", "N_te", "evar", "ranking"]
 
 
 def process(dataset=RNA_DATASETS[0], repl=0):
@@ -64,9 +64,9 @@ def process(dataset=RNA_DATASETS[0], repl=0):
     inxs = np.argsort(st.zscore(data["target"]))
     y = st.zscore(data["target"])[inxs]
 
-    # Training/test
-    sample = np.random.choice(inxs, size=int(N), replace=False)
-    a, b = int(N * p_tr), int(N * (p_tr + p_va))
+    # Training/test; return a shuffled list
+    sample = np.random.choice(inxs, size=len(inxs), replace=False)
+    a, b = int(N * p_tr), int(N)
     tr, va, te = np.sort(sample[:a]), \
                  np.sort(sample[a:b]), \
                  np.sort(sample[b:])
@@ -107,7 +107,8 @@ def process(dataset=RNA_DATASETS[0], repl=0):
     scale = np.array(sorted(scores.values(), reverse=True)).ravel()
     for m in results.keys():
         ranking = 1 + np.where(scale == scores[m])[0][0]
-        row = {"dataset": dataset, "repl": repl, "method": m, "N": N,
+        row = {"dataset": dataset, "repl": repl, "method": m,
+               "N_tr": len(tr), "N_va": len(te), "N_te": len(te),
                "evar": scores[m], "ranking": ranking}
         rows.append(row)
 
@@ -115,6 +116,11 @@ def process(dataset=RNA_DATASETS[0], repl=0):
 
 
 if __name__ == "__main__":
+
+    # Try to read out dir from input
+    out_dir = sys.argv[1] if len(sys.argv) > 1 else out_dir
+    print("Writing to %s" % out_dir)
+
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
         print("Makedir %s" % out_dir)
