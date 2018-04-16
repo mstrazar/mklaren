@@ -143,6 +143,77 @@ def group_lars_sampling_example():
     As, P = group_lars_sampling(Xs, y, rank=10, ky="rich")
 
 
+def plot_gain():
+    """ Compare differences in estimated vs. true gain. """
+    from examples.lars.cholesky import cholesky_steps
+    from examples.lars.qr import qr_steps
+    from examples.lars.lars_mkl import LarsMKL
+
+    # Hyperparameters
+    noise = 0.3
+    n = 100
+    a = 5
+    b = 3
+    t = np.linspace(-10, 10, n).reshape((n, 1))
+    K = exponential_kernel(t, t, gamma=0.1)
+
+    # A noise-less function
+    y = K.dot(np.random.randn(n, 1)) + np.random.randn(n, 1) * noise
+
+    # Determine a random sequence of base and look-ahead pivots
+    inxs = np.random.choice(range(n), size=n, replace=False)
+    base, delta, rest = list(inxs[:a]), list(inxs[a:a+b]), list(inxs[a+b:])
+
+    # Cholesky and QR steps
+    act = []
+    ina = range(n)
+    G = np.zeros((n, n))
+    Q = np.zeros((n, n))
+    R = np.zeros((n, n))
+    cholesky_steps(K, G, act=act, ina=ina, order=list(base + delta), start=0)
+    qr_steps(G, Q, R, max_steps=a+b, start=0)
+    assert sum(np.linalg.norm(G, axis=0) > 0) == a + b
+    assert sum(np.linalg.norm(Q, axis=0) > 0) == a + b
+
+    # Model
+    mu = Q[:, :a].dot(Q[:, :a].T).dot(y)
+
+    # Approximate gain - estimate with look-ahead
+    gain_est = LarsMKL.zy_app(G[:, a:a+b], Q[:, :a], y, Q[:, :a].T.dot(y))
+    gain_est[base] = np.nan
+
+    # True gain - go one by one
+    gain_tru = np.zeros((n,)) * np.nan  # Post-hoc gain
+    Rc = R.copy(); Rc[:, a:] = 0; Rc[a:, :] = 0;
+    for i in delta + rest:
+        act = list(base)
+        ina = list(delta + rest)
+        Gc = G.copy(); Gc[:, a:] = 0
+        Qc = Q.copy(); Qc[:, a:] = 0
+        cholesky_steps(K, Gc, act=act, ina=ina, order=[i], start=a)
+        qr_steps(Gc, Qc, Rc, max_steps=1, start=a)
+        gain_tru[i] = np.linalg.norm(Qc[:, a].T.dot(y))**2
+
+
+    # Plots
+    f, ax = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=False)
+    ax[0].plot(y, ".", label="Data")
+    ax[0].plot(mu, "-", label="Model")
+    ax[0].plot(base, y[base], "r^", label="Active")
+    ax[0].legend()
+
+    ax[1].plot(gain_tru, label="True")
+    ax[1].plot(gain_est, label="Est")
+    ax[1].plot(base, [0] * a, "r^", label="Active")
+    ax[1].plot(delta, gain_est[delta], "g^", label="Look-ahead")
+    ax[1].plot(np.argmax(gain_tru == np.nanmax(gain_tru)), np.nanmax(gain_tru), "b*")
+    ax[1].plot(np.argmax(gain_est == np.nanmax(gain_est)), np.nanmax(gain_est), "g*")
+    ax[1].legend()
+    ax[1].set_xlabel("Pivot index")
+    ax[1].set_ylabel("Gain")
+    f.tight_layout()
+
+
 def plot_fingerprint(ky="unscaled"):
     """ Plot the order in which kernels are selected for multiple random samples of the data"""
 
