@@ -30,19 +30,26 @@ message(sprintf("Written %s", fname))
 
 # Plot CDs
 noises = unique(data$noise)
+ns = unique(data$N)
+ds = unique(data$d)
 names(noises) = letters[1:length(noises)]
-for(nam in names(noises) ){
-  df = data[data$noise == noises[nam], c("method", "repl", "ranking", "evar")]
-  dfm = dcast(data=df, formula=method~repl, fun.aggregate=mean, value.var="evar") 
-  dfx = as.matrix(dfm[,2:ncol(dfm)])
-  row.names(dfx) = dfm$method
-  
-  fname = file.path(outdir, sprintf("CD_noise_%s.pdf", nam))
-  pdf(fname)
-  plotCD(t(dfx), alpha=alpha)
-  title(sprintf("Log10 noise: %d (p<%.2f)", noises[nam], alpha))
-  dev.off()
-  message(sprintf("Written %s", fname))
+for(nam in names(noises)){
+  for (d in ds){
+    for(N in ns){
+    df = data[data$noise == noises[nam] & data$d == d & data$N == N, c("method", "repl", "ranking", "evar")]
+    if(nrow(df) == 0) next;
+    dfm = dcast(data=df, formula=method~repl, fun.aggregate=mean, value.var="evar") 
+    dfx = as.matrix(dfm[,2:ncol(dfm)])
+    row.names(dfx) = dfm$method
+    
+    fname = file.path(outdir, sprintf("CD_N-%03d_d-%03d_noise-%s.pdf", N, d, nam))
+    pdf(fname)
+    plotCD(t(dfx), alpha=alpha)
+    title(sprintf("Log10 noise: %d (p<%.2f)", noises[nam], alpha))
+    dev.off()
+    message(sprintf("Written %s", fname))
+    }
+  }
 }
 
 # Aggregate rankings
