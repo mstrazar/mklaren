@@ -28,6 +28,7 @@ class LarsMKL:
         self.Qview = None
         self.Qmap = None
         self.Ri = None
+        self.R = None
         self.P = None
         self.Pi = None
         self.Acts = None
@@ -154,6 +155,7 @@ class LarsMKL:
         self.Ks = Ks
         self.Acts = Acts
         self.Q = Q[:, :rank]
+        self.R = R[:rank, :rank]
         self.Ri = solve_R(R[:rank, :rank])
 
         # Permutations
