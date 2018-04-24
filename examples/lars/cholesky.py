@@ -58,6 +58,15 @@ def cholesky(K, rank=None):
     return G
 
 
+def cholesky_transform(K, G, act=None):
+    """ Infer a mapping that maps from active basis functions to the Cholesky matrix. """
+    if act is None:
+        act = np.argmax(G, axis=0)  # Implicit definition of the active set
+    assert len(act) == G.shape[1]
+    W = np.linalg.lstsq(K[:, act], G, rcond=None)[0]
+    return W
+
+
 def test_cholesky():
     """ Simple test for complete Cholesky. """
     n = 10
@@ -106,3 +115,35 @@ def test_cholesky_steps_lookahead():
     assert np.linalg.norm(K[:, :]-G.dot(G.T)) < 1e-5
 
 
+def test_cholesky_transform():
+    """ Infer an linear transform tham maps to Cholesky space. """
+    n = 100
+    X = np.linspace(0, n-1, n).reshape((n, 1))
+    K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": .001})
+    G = cholesky(K, rank=20)
+    W = cholesky_transform(K, G)
+    act = G.argmax(axis=0)
+    assert np.linalg.norm(K[:, act].dot(W) - G) < 1e-5
+
+
+def test_cholesky_transform_out_of_sample():
+    """ Test out of sample mapping for Cholesky transform. """
+    n = 100
+    k = 10
+
+    # Training data
+    X = np.linspace(0, n-1, n).reshape((n, 1))
+    K = Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": .001})
+    G = np.zeros((n, k))
+    act = list(np.random.choice(np.arange(n), size=k, replace=False))
+    cholesky_steps(K, G, act=[], ina=range(n), order=act)
+    W = cholesky_transform(K, G, act)
+
+    # Test data (double resolution)
+    n1 = 2 * n - 1
+    X1 = np.linspace(0, n - 1, n1).reshape((n1, 1))
+    act1 = np.argmin(np.absolute(X[act] - X1.ravel()), axis=1)
+    K1 = Kinterface(data=X1, kernel=exponential_kernel, kernel_args={"gamma": .001})
+    G1 = np.zeros((n1, k))
+    cholesky_steps(K1, G1, act=[], ina=range(n1), order=act1)
+    assert np.linalg.norm(K1[:, act1].dot(W) - G1) < 1e-5
