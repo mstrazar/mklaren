@@ -60,10 +60,11 @@ def cholesky(K, rank=None):
 
 def cholesky_transform(K, G, act=None):
     """ Infer a mapping that maps from active basis functions to the Cholesky matrix. """
+    n = K.shape[0]
     if act is None:
         act = np.argmax(G, axis=0)  # Implicit definition of the active set
     assert len(act) == G.shape[1]
-    W = np.linalg.lstsq(K[:, act], G, rcond=None)[0]
+    W = np.linalg.lstsq(K[:, act].reshape((n, len(act))), G, rcond=None)[0]
     return W
 
 
