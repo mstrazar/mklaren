@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from numpy.linalg import norm, inv
 from collections import defaultdict
 from scipy.stats import multivariate_normal as mvn
-from examples.lars.cholesky import cholesky_steps
+from examples.lars.cholesky import cholesky_steps, cholesky_transform
 from examples.lars.lars_group import p_ri, p_const, p_sc, colors
 from examples.lars.qr import qr_steps, solve_R
 from warnings import warn
@@ -29,11 +29,12 @@ class LarsMKL:
         self.Qmap = None
         self.Ri = None
         self.P = None
+        self.Pi = None
         self.Acts = None
         self.Ks = None
         self.path = None
         self.mu = None
-        self.T = None
+        self.Ws = None
         self.korder = None
 
     @staticmethod
@@ -152,21 +153,21 @@ class LarsMKL:
         # Use reduced approximation and store
         self.Ks = Ks
         self.Acts = Acts
-        self.P = np.array(P)
         self.Q = Q[:, :rank]
         self.Ri = solve_R(R[:rank, :rank])
+
+        # Permutations
+        self.P = np.array(P)
+        self.Pi = self.perm()
 
         # Create an column index map and view to Q
         self.Qmap = dict([(j, np.where(P == j)[0]) for j in set(P)])
         self.Qview = dict([(j, self.Q[:, self.Qmap[j]])
                            for j in self.Qmap.keys()])
 
-        # Compute transform for prediction with final matrices
-        d2 = np.atleast_2d
-        A = self.Q.dot(self.Ri.T).dot(self.Ri)
-        self.T = np.vstack([inv(d2(K[a, a])).dot(d2(K[a, :])).dot(A)
-                            for j, (K, a) in enumerate(zip(self.Ks, self.Acts))
-                            if len(a)])
+        # Compute Cholesky transforms
+        self.Ws = [cholesky_transform(K=Ks[j], G=Gs[j][:, :len(Acts[j])], act=Acts[j])
+                   if len(Acts[j]) else None for j in range(k)]
 
         # Fit regularization path
         self._fit_path(y)
@@ -206,13 +207,21 @@ class LarsMKL:
         self.mu = mu
         return
 
+    def perm(self):
+        """ Return a permutation of matrices stacked versus inferred in Q. """
+        A = np.arange(len(self.Acts))
+        T = A.reshape((len(A), 1)) == self.P
+        Pi = np.zeros((len(self.P),), dtype=int)
+        Pi[np.nonzero(T)[1]] = np.arange(len(self.P))
+        return Pi
+
     def transform(self, Xs):
         """ Map samples in Xs to the Q-space. """
         assert self.Ks is not None
-        Ka = np.hstack([K(X, K.data[a])
-                        for j, (K, X, a) in enumerate(zip(self.Ks, Xs, self.Acts))
+        KaW = np.hstack([K(X, K.data[a]).dot(W)
+                        for j, (K, X, W, a) in enumerate(zip(self.Ks, Xs, self.Ws, self.Acts))
                         if len(a)])
-        return Ka.dot(self.T)
+        return KaW[:, self.Pi].dot(self.Ri)
 
     def predict(self, Xs):
         """ Predict values for Xs for the points in the active sets. """
@@ -258,15 +267,15 @@ def test_transform():
         Kinterface(data=X, kernel=exponential_kernel, kernel_args={"gamma": 0.1}),  # long
     ]
     Kt = 0.5 + Ks[0][:, :] + 0.5 * Ks[1][:, :]
-    for func in (p_ri, p_const, p_sc):
-        for i in range(1000):
+    for func in (p_ri, p_const):
+        for i in range(100):
             f = mvn.rvs(mean=np.zeros(n, ), cov=Kt).reshape((n, 1))
             y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
             model = LarsMKL(rank=5, delta=5, f=func)
             model.fit(Ks, y)
-            Qt = np.round(model.transform([X, X]), 5)
-            Q = np.round(model.Q, 5)
-            assert norm(Q - Qt) < 1e-3
+            Qt = model.transform([X, X])
+            Q = model.Q
+            assert norm(Q - Qt) < 1e-8
 
 
 def test_path_consistency():
@@ -281,7 +290,7 @@ def test_path_consistency():
     Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
     f = mvn.rvs(mean=np.zeros(n,), cov=Kt).reshape((n, 1))
     y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
-    for func in (p_ri, p_const, p_sc):
+    for func in (p_ri, p_const):
         model = LarsMKL(rank=5, delta=5, f=func)
         model.fit(Ks, y)
         ypath = model.predict_path([X, X])
@@ -304,7 +313,7 @@ def test_ls_path_consistency():
     Kt = 0.7 * Ks[0][:, :] + 0.3 * Ks[1][:, :]
     f = mvn.rvs(mean=np.zeros(n, ), cov=Kt).reshape((n, 1))
     y = mvn.rvs(mean=f.ravel(), cov=noise * np.eye(n)).reshape((n, 1))
-    for func in (p_ri, p_const, p_sc):
+    for func in (p_ri, p_const):
         model = LarsMKL(rank=5, delta=5, f=func)
         model.fit(Ks, y)
         ypath = model.predict_path_ls([X, X])
