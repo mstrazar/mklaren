@@ -57,8 +57,9 @@ def process():
     # Load data
     np.random.seed(42)
     noise_range = np.logspace(-5, 2, 8)
-    d_range = [1, 10, 100]
-    N_range = [100, 300, 1000]
+    d_range = [1, 10]
+    # N_range = [100, 300, 1000]
+    N_range = [300,]
     replicates = 30
 
     rows = list()
@@ -67,7 +68,7 @@ def process():
 
         # Ground truth kernels
         X = np.random.randn(N, d)
-        sigma_range = estimate_sigma_dist(X, 10)
+        sigma_range = estimate_sigma_dist(X, 10)[:5]
 
         Ks = [Kinterface(data=X,
                          kernel=exponential_kernel,
@@ -75,7 +76,7 @@ def process():
               for sigma in sigma_range]
 
         # Simulate data from one kernel
-        keff = 5
+        keff = 3
         f = mvn.rvs(mean=np.zeros((N,)), cov=Ks[keff][:, :])
         y = mvn.rvs(mean=f, cov=noise * np.eye(N))
         snr = np.round(np.var(f) / noise, 3)
