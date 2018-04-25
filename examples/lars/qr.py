@@ -38,6 +38,7 @@ def qr_orient(Q, R, y):
     return
 
 
+# TODO: fails if G is a singular matrix; the ill-conditioning must be detectable in R;
 def qr_steps(G, Q, R, max_steps=None, start=0, qstart=None):
     """
     Perform an in-place QR decomposition in steps.
@@ -86,6 +87,19 @@ def test_qr():
     Q, R = qr(G)
     assert np.linalg.norm(G - Q.dot(R)) < 1e-5
     assert np.linalg.norm(Q.T.dot(Q) - np.eye(k)) < 1e-5
+
+
+# TODO: must pass
+def test_qr_singular():
+    n = 10
+    k = 5
+    G = np.random.rand(n, k)
+    H = G.dot(G.T)
+    Q, R = qr(H)
+    assert np.linalg.norm(H - Q.dot(R)) < 1e-5
+    assert np.linalg.norm(Q.T.dot(Q) - np.eye(n)) < 1e-5
+    assert np.absolute(np.linalg.cond(Q) - 1) < 1e-5
+    assert np.linalg.cond(R) > 1e5
 
 
 def test_qr_lookahead():
