@@ -101,7 +101,7 @@ def process():
             try:
                 model.fit(Ks_tr, y[tr])
             except Exception as e:
-                print("%s: %s" % (m, str(e)))
+                print("%s: %s %s" % (m, e.message, type(e)))
                 continue
 
             y_va = y[va].reshape((len(va), 1))
