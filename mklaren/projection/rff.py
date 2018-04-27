@@ -81,8 +81,8 @@ class RFF_NS:
         n, d = X.shape
         A = X.dot(self.W1.T)
         B = X.dot(self.W2.T)
-        j_cos = int(ceil(self.rank / 2))
-        j_sin = int(floor(self.rank / 2))
+        j_cos = int(ceil(self.rank / 2.0))
+        j_sin = int(floor(self.rank / 2.0))
         assert j_cos + j_sin == self.rank
         return sqrt(1.0 / (2 * self.rank)) * hstack((cos(A[:, :j_cos]) + cos(B[:, :j_cos]),
                                                      sin(A[:, :j_sin]) + sin(B[:, :j_sin]))).reshape((n, self.rank))
