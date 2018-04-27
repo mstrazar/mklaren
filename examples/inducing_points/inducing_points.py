@@ -27,7 +27,7 @@ from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
 from mklaren.regression.fitc import FITC
-from mklaren.projection.rff import RFF
+from mklaren.projection.rff import RFF_KMP, RFF_TYP_NS, RFF_TYP_STAT
 from mklaren.regression.ridge import RidgeMKL
 import matplotlib.pyplot as plt
 import pickle, gzip
@@ -42,15 +42,16 @@ pc          = 0.1               # Pseudocount; prevents inf in KL-divergence.
 repeats     = 500               # Sampling repeats to compare distributions
 
 # Method print ordering
-meth_order = ["M    klaren", "CSI", "ICD", "Nystrom", "RFF", "FITC", "True"]
+meth_order = ["Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP", "True"]
 
 # Color mappings
 meth2color = {"Mklaren": "green",
               "CSI": "red",
               "ICD": "blue",
               "Nystrom": "pink",
-              "FITC": "orange",
+              "SPGP": "orange",
               "RFF": "magenta",
+              "RFF-NS": "purple",
               "True": "black",
               "l2krr": "green",
               "align": "pink",
@@ -277,7 +278,7 @@ def plot_signal_subplots(X, Xp, y, f, models=None, f_out=None):
 
 
 def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
-         methods=("Mklaren", "ICD", "CSI", "Nystrom", "FITC")):
+         methods=("Mklaren", "ICD", "CSI", "Nystrom", "SPGP")):
     """
     Sample data from a Gaussian process and compare fits with the sum of kernels
     versus list of kernels.
@@ -357,10 +358,10 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
                 "model": csi,
                 "color": meth2color["CSI"]}
 
-    # Fit RFF
+    # Fit RFF_KMP
     if "RFF" in methods:
         gamma_range = map(lambda k: k.kernel_args["gamma"], Klist)
-        rff = RFF(delta=delta, rank=rank, lbd=lbd, gamma_range=gamma_range)
+        rff = RFF_KMP(delta=delta, rank=rank, lbd=lbd, gamma_range=gamma_range, typ=RFF_TYP_STAT)
         t1 = time.time()
         rff.fit(X, y)
         t2 = time.time() - t1
@@ -381,8 +382,30 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
             "model": rff,
             "color": meth2color["RFF"]}
 
+    # Fit RFF_KMP
+    if "RFF-NS" in methods:
+        gamma_range = map(lambda k: k.kernel_args["gamma"], Klist)
+        rff = RFF_KMP(delta=delta, rank=rank, lbd=lbd, gamma_range=gamma_range, typ=RFF_TYP_NS)
+        t1 = time.time()
+        rff.fit(X, y)
+        t2 = time.time() - t1
+        y_rff = rff.predict(X)
+        yp_rff = rff.predict(Xp)
+        try:
+            rho_rff, _ = pearsonr(y_rff, f)
+        except Exception as e:
+            rho_rff = 0
+        evar = (np.var(y) - np.var(y - y_rff)) / np.var(y)
+        results["RFF-NS"] = {
+            "rho": rho_rff,
+            "time": t2,
+            "yp": yp_rff,
+            "evar": evar,
+            "model": rff,
+            "color": meth2color["RFF-NS"]}
+
     # Fit FITC
-    if "FITC" in methods:
+    if "SPGP" in methods:
         fitc = FITC(rank=rank)
         t1 = time.time()
         fitc.fit(Klist, y, optimize=True, fix_kernel=False)
@@ -400,7 +423,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
         anchors = fitc.anchors_
         actives = [[np.argmin(np.sum((a - X)**2, axis=1)) for a in anchors]]
 
-        results["FITC"] = {
+        results["SPGP"] = {
             "rho": rho_fitc,
             "active": actives,
             "anchors": anchors,
@@ -408,7 +431,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
             "yp": yp_fitc,
             "evar": evar,
             "model": fitc,
-            "color": meth2color["FITC"]}
+            "color": meth2color["SPGP"]}
 
 
 
@@ -653,7 +676,7 @@ def process(outdir):
 
     noise_models = ("fixed", "increasing")
     sampling_models = ("uniform", "biased")
-    methods = ("Mklaren", "CSI", "ICD", "Nystrom", "FITC")
+    methods = ("Mklaren", "CSI", "ICD", "Nystrom", "SPGP")
 
     # Create output directory
     subdname = os.path.join(outdir, "_details")

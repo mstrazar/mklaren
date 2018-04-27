@@ -1,6 +1,6 @@
 hlp = """
     Test prediction with low-rank approximations on the energy dataset with matern, exponential and
-    periodic kernels. Tested methods are Mklaren, ICD, CSI, Nystrom, FITC, RFF.
+    periodic kernels. Tested methods are Mklaren, ICD, CSI, Nystrom, FITC, RFF_KMP.
 
 """
 
@@ -42,12 +42,12 @@ def process(dataset, kernel, outdir):
     if kernel == "exponential":
         kernel_function = exponential_kernel
         pars = {"gamma": np.logspace(-4, 4, 5),}
-        methods = ("Mklaren", "ICD", "CSI", "Nystrom", "FITC", "RFF")
+        methods = ("Mklaren", "ICD", "CSI", "Nystrom", "SPGP", "RFF", "RFF-NS")
 
     elif kernel == "matern":
         kernel_function = matern32_gpy
         pars = {"lengthscale": np.logspace(-4, 4, 5)}
-        methods = ("Mklaren", "ICD", "CSI", "Nystrom", "FITC")
+        methods = ("Mklaren", "ICD", "CSI", "Nystrom", "SPGP")
 
     elif kernel == "periodic":
         kernel_function = periodic_kernel
