@@ -1,5 +1,5 @@
 from sklearn.kernel_approximation import RBFSampler
-from numpy import ndarray, zeros, isnan, isinf, where, absolute, eye, sqrt, cos, sin, hstack
+from numpy import ndarray, zeros, isnan, isinf, where, absolute, eye, sqrt, cos, sin, hstack, ceil, floor
 from numpy.linalg import norm
 from numpy.random import seed
 from scipy.stats import multivariate_normal as mvn
@@ -20,7 +20,6 @@ class RFF:
     def __init__(self, d, n_components=10, density=exponential_density, random_state=None, **kwargs):
         self.d = d
         self.rank = n_components
-        self.rank_eff = n_components / 2
         self.W = None
         self.b = None
         self.density = density
@@ -30,24 +29,26 @@ class RFF:
 
     def fit(self):
         """ Sample random directions for a given kernel. """
-        self.W = self.density(self.rank_eff, self.d, **self.kwargs)
-        # self.b = np.random.rand(self.rank, 1) * np.pi * 2
+        self.W = self.density(self.rank, self.d, **self.kwargs)
 
     def transform(self, X):
         """ Map X to approximation of the kernel. """
         # Rahimi & Recht 2007 - real part only (rank)
         # Ton et. al 2018 - real + complex (2k)
+        n, d = X.shape
         A = X.dot(self.W.T)
-        return 1.0 / sqrt(self.rank_eff) * hstack((cos(A), sin(A)))
+        j_cos = int(ceil(self.rank/2.0))
+        j_sin = int(floor(self.rank/2.0))
+        assert j_cos + j_sin == self.rank
+        return sqrt(2.0 / self.rank) * hstack((cos(A[:, :j_cos]), sin(A[:, :j_sin]))).reshape((n, self.rank))
 
     def fit_transform(self, X):
         """ Map X to approximation of the kernel. """
         # Rahimi & Recht 2007 - real part only (rank)
         # Ton et. al 2018 - real + complex (2k)
-        self.d = X.shape[1]
+        n, self.d = X.shape
         self.fit()
-        A = X.dot(self.W.T)
-        return 1.0 / sqrt(self.rank_eff) * hstack((cos(A), sin(A)))
+        return self.transform(X)
 
 
 class RFF_NS:
@@ -60,7 +61,6 @@ class RFF_NS:
                  density2=exponential_density, kwargs2={}):
         self.d = d
         self.rank = n_components
-        self.rank_eff = n_components/2
         self.W1 = None
         self.W2 = None
         self.density1 = density1
@@ -72,32 +72,34 @@ class RFF_NS:
 
     def fit(self):
         """ Sample random directions for a given kernel. """
-        self.W1 = self.density1(self.rank_eff, self.d, **self.kwargs1)
-        self.W2 = self.density2(self.rank_eff, self.d, **self.kwargs2)
+        self.W1 = self.density1(self.rank, self.d, **self.kwargs1)
+        self.W2 = self.density2(self.rank, self.d, **self.kwargs2)
 
     def transform(self, X):
         """ Map X to approximation of the kernel. """
         # Ton et. al 2018 - real + complex (2k)
+        n, d = X.shape
         A = X.dot(self.W1.T)
         B = X.dot(self.W2.T)
-        return sqrt(1.0 / (4.0 * self.rank_eff)) * hstack((cos(A) + cos(B),
-                                                           sin(A) + sin(B)))
+        j_cos = int(ceil(self.rank / 2))
+        j_sin = int(floor(self.rank / 2))
+        assert j_cos + j_sin == self.rank
+        return sqrt(1.0 / (2 * self.rank)) * hstack((cos(A[:, :j_cos]) + cos(B[:, :j_cos]),
+                                                     sin(A[:, :j_sin]) + sin(B[:, :j_sin]))).reshape((n, self.rank))
 
     def fit_transform(self, X):
         """ Map X to approximation of the kernel. """
         # Ton et. al 2018 - real + complex (2k)
-        self.d = X.shape[1]
+        n, self.d = X.shape
         self.fit()
-        A = X.dot(self.W1.T)
-        B = X.dot(self.W2.T)
-        return sqrt(1.0 / (4.0 * self.rank_eff)) * hstack((cos(A) + cos(B),
-                                                           sin(A) + sin(B)))
+        return self.transform(X)
 
 
 # Constants
 RFF_TYP_STAT = "rff"
 RFF_TYP_NS = "rff_nonstat"
 RFF_TYPES = (RFF_TYP_STAT, RFF_TYP_NS)
+
 
 class RFF_KMP:
     """

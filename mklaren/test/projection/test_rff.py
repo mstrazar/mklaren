@@ -105,8 +105,8 @@ class TestRFF(unittest.TestCase):
             model.fit()
             G = model.transform(X)
             L = G.dot(G.T)
-            assert np.linalg.norm(L - K) < 10
             assert G.shape == (n, rank)
+            assert np.linalg.norm(L - K) < 10
 
     def testNonstat(self):
         """ Test non-stationary model. """
