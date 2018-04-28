@@ -295,7 +295,7 @@ class RidgeLowRank:
             XT = hstack(Gs)
         else:
             for Kt, Trn, active in zip(Ks, self.Ts, self.As):
-                G = Kt[:, active].dot(Trn.T)
+                G = Kt[:, active].reshape(Ks[0].shape[0], len(active)).dot(Trn.T)
                 Gs.append(G.reshape(Kt.shape[0], self.rank))
             XT = hstack(Gs)
         return XT
