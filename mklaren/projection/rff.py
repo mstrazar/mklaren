@@ -126,7 +126,7 @@ class RFF_KMP:
             (NIPS) (2009), vol. 1, pp. 1177-1184.
     """
 
-    def __init__(self, rank, delta, lbd=0, gamma_range=(1.0,), random_state=None, normalize=True,
+    def __init__(self, rank, delta, lbd=0, gamma_range=(1.0,), random_state=None, normalize=False,
                  typ=RFF_TYP_STAT):
         """
         :param rank:
