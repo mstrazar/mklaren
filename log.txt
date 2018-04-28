@@ -173,7 +173,7 @@ Repeat Delve regression with varying number of kernels 5-100.
 
 Sun 2 Jul 2017
 ==============
-delve_regression2: Fix issues with CSI, add RFF, add two more datasets.
+delve_regression2: Fix issues with CSI, add RFF_KMP, add two more datasets.
 2017-7-2/results_0.csv
 ...
 2017-7-2/results_7.csv
@@ -275,7 +275,7 @@ results 0-8.csv
 
 Merge results into one file depending on kernel used:
     # Running periodic kernels for ICD, CSI, Nystrom, Mklaren
-    (not implemented for FITC (no support in GPy, not our fault!), RFF)
+    (not implemented for FITC (no support in GPy, not our fault!), RFF_KMP)
     [detached from 4407.mklaren_periodic]
 
     # Additional tests for Matern due to a different hyperparameter range.
