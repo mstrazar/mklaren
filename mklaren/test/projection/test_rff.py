@@ -8,8 +8,8 @@ class TestRFF(unittest.TestCase):
 
     def setUp(self):
         self.n = 100
-        self.p = 100
-        self.rank_range = [10, 30, 50, 90]
+        self.p = 10
+        self.rank_range = [3, 100]
         self.X = np.random.rand(self.n, self.p)
         self.gamma_range = np.logspace(-3, -1, 5)
         self.lbd_range = np.logspace(-2, 2, 5)
@@ -79,8 +79,7 @@ class TestRFF(unittest.TestCase):
             y = K.dot(np.ones((self.n, 1)))
 
             model = RFF_KMP(delta=0, rank=100,
-                            gamma_range=[g], random_state=42, lbd=0.0,
-                            normalize=False)
+                            gamma_range=[g], random_state=42, lbd=0.0, normalize=False)
             model.fit(self.X, y)
 
             errors = np.zeros((len(self.rank_range),))
@@ -101,7 +100,7 @@ class TestRFF(unittest.TestCase):
         rank = 3000
         for gam in gamma_range:
             K = exponential_kernel(X, X, gamma=gam)
-            model = RFF(d=d, n_components=rank, gamma=gam)
+            model = RFF(d=d, n_components=rank, gamma=gam, random_state=42)
             model.fit()
             G = model.transform(X)
             L = G.dot(G.T)

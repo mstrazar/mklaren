@@ -175,14 +175,17 @@ class RFF_KMP:
         p = self.rank + self.delta
 
         # Initialize samples
-        self.samplers = [RBFSampler(gamma=g,
-                                    random_state=self.random_state,
-                                    n_components=self.delta + self.rank)
-                            if self.typ == RFF_TYP_STAT
-                            else RFF_NS(d=d, n_components=self.delta + self.rank,
-                                        random_state=self.random_state,
-                                        kwargs1={"gamma": g}, kwargs2={"gamma": g})
-                            for g in self.gamma_range]
+        self.samplers = [RFF(d=d,
+                             n_components=self.delta + self.rank,
+                             random_state=self.random_state,
+                             gamma = g)
+                         if self.typ == RFF_TYP_STAT
+                         else RFF_NS(d=d,
+                                     n_components=self.delta + self.rank,
+                                     random_state=self.random_state,
+                                     kwargs1={"gamma": g},
+                                     kwargs2={"gamma": g})
+                         for g in self.gamma_range]
 
         # Target signal
         self.bias = y.mean()
