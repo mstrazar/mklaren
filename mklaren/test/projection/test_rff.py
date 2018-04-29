@@ -123,3 +123,5 @@ class TestRFF(unittest.TestCase):
         G = model.transform(X)
         assert G.shape == (n, rank)
 
+if __name__ == "__main__":
+    unittest.main()
