@@ -404,3 +404,9 @@ Sun 29 Apr 2018
 d5:[detached from 307585.env]
 OUT=./results-rffns/
 /home/martins/Dev/py2/bin/python low_rank.py ANACALT ./results-rffns/ANACALT/
+
+
+# Repeat experiments with time series
+d5: [detached from 371696.B-env]
+OUT=./results-matern
+/home/martins/Dev/py2/bin/python energy.py T1 matern results-matern
