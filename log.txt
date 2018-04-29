@@ -396,3 +396,11 @@ Thu 12 Apr 2018
 d4: [detached from 348589.mklaren]
 OUT=results/regr_mkl_cv_d4/
 $PY regr_mkl_cv.py $OUT
+
+
+Sun 29 Apr 2018
+===============
+# Repeating low-rank experiments including RFF non-stationary kernels.
+d5:[detached from 307585.env]
+OUT=./results-rffns/
+/home/martins/Dev/py2/bin/python low_rank.py ANACALT ./results-rffns/ANACALT/
