@@ -30,7 +30,7 @@ d_range    = [100]                            # Varying input dimension
 limit      = 3600                             # Time limit (in seconds)for each subprocess; Recommended: 60 minutes
 
 # Global method list
-METHODS = list(RidgeMKL.mkls.keys()) + ["Mklaren", "ICD", "Nystrom", "RFF", "FITC", "CSI"]
+METHODS = list(RidgeMKL.mkls.keys()) + ["Mklaren", "ICD", "Nystrom", "RFF", "SPGP", "CSI"]
 
 # Settings related to CSI only ; Must be run in a child process
 TMP_DIR = "temp"
