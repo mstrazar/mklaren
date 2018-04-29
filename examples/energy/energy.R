@@ -65,6 +65,16 @@ for (r in unique(data$rank)){
   for (i in 1:nrow(agg.m)) M[agg.m[i,"method"], agg.m[i,"dataset"]] = agg.m[i, "x"]
   for (i in 1:nrow(agg.s)) S[agg.s[i,"method"], agg.s[i,"dataset"]] = agg.s[i, "x"]
   
+  # Ranks 
+  fname = file.path(out_dir, sprintf("cd_kernel-%s_rank-%02d.pdf", k, r))
+  pdf(fname)
+  plotCD(t(-M), alpha=.05)
+  message(sprintf("Written %s", fname))
+  
+  # Friedman test on ranks
+  message("Friedman test on ranks:")
+  print(friedman.test(-M))
+  
   # Text matrix 
   R = matrix("", ncol=length(signals), nrow=length(methods))
   row.names(R) = methods
