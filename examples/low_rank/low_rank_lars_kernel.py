@@ -16,7 +16,7 @@ import numpy as np
 from mklaren.regression.ridge import RidgeLowRank
 from mklaren.regression.ridge import RidgeMKL
 from mklaren.regression.fitc import FITC
-from mklaren.projection.rff import RFF
+from mklaren.projection.rff import RFF_KMP
 from mklaren.mkl.mklaren import Mklaren
 
 # Kernels
@@ -61,8 +61,8 @@ methods = {
     "ICD*" :       (RidgeLowRank, {"method": "icd"}),
     "Nystrom*":    (RidgeLowRank, {"method": "nystrom"}),
     "Mklaren":     (Mklaren,      {"delta": delta}),
-    "RFF":         (RFF,          {"delta": delta}),
-    "FITC":        (FITC,         {}),
+    "RFF_KMP":     (RFF_KMP, {"delta": delta}),
+    "SPGP":        (FITC,         {}),
     "uniform":     (RidgeMKL,     {"method": "uniform"}),
     "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
 }
