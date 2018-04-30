@@ -417,3 +417,9 @@ Mon 30 Apr 2018
 d5: [detached from 371696.B-env]
 OUT=./results-matern-scales
 /home/martins/Dev/py2/bin/python energy.py T1 matern results-matern-scales
+
+
+# Repeating low-rank experiments only with RFF non-stationary kernels.
+d5:[detached from 307585.env]
+OUT=./results-rff/
+/home/martins/Dev/py2/bin/python low_rank.py ANACALT ./results-rff/ANACALT/
