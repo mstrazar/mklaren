@@ -47,8 +47,8 @@ def process(dataset, kernel, outdir):
 
     elif kernel == "matern":
         kernel_function = matern32_gpy
-        pars = {"lengthscale": np.logspace(-4, 4, 5)}
-        # pars = {"lengthscale": SPGP.gamma2lengthscale(np.logspace(-4, 4, 5))}
+        # pars = {"lengthscale": np.logspace(-4, 4, 5)}
+        pars = {"lengthscale": SPGP.gamma2lengthscale(np.logspace(-4, 4, 5))}
         methods = ("Mklaren", "ICD", "CSI", "Nystrom", "SPGP")
 
     elif kernel == "periodic":
