@@ -7,7 +7,7 @@ from mklaren.kernel.kinterface import Kinterface
 from scipy.stats import multivariate_normal as mvn
 
 
-class TestFITC(unittest.TestCase):
+class TestSPGP(unittest.TestCase):
 
     def setUp(self):
         self.n = 100
@@ -25,7 +25,7 @@ class TestFITC(unittest.TestCase):
             self.assertAlmostEqual(np.linalg.norm(K-Ki[:, :]), 0, places=3)
 
 
-    def testFITCfit(self):
+    def testSPGPfit(self):
         n = self.n
         X = self.X
         noise = 1.0
