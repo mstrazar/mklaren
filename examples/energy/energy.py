@@ -15,6 +15,7 @@ import numpy as np
 import itertools as it
 from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern32_gpy, periodic_kernel
 from mklaren.kernel.kinterface import Kinterface
+from mklaren.regression.spgp import SPGP
 from sklearn.metrics import mean_squared_error as mse
 from datasets.energy import load_energy
 from examples.inducing_points.inducing_points import plot_signal_subplots, test
@@ -41,12 +42,13 @@ def process(dataset, kernel, outdir):
     # Experiment parameters
     if kernel == "exponential":
         kernel_function = exponential_kernel
-        pars = {"gamma": np.logspace(-4, 4, 5),}
+        pars = {"gamma": np.logspace(-4, 4, 5)}
         methods = ("Mklaren", "ICD", "CSI", "Nystrom", "SPGP", "RFF", "RFF-NS")
 
     elif kernel == "matern":
         kernel_function = matern32_gpy
         pars = {"lengthscale": np.logspace(-4, 4, 5)}
+        # pars = {"lengthscale": SPGP.gamma2lengthscale(np.logspace(-4, 4, 5))}
         methods = ("Mklaren", "ICD", "CSI", "Nystrom", "SPGP")
 
     elif kernel == "periodic":
