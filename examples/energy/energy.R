@@ -17,8 +17,9 @@ out_dir = opt$output
 dir.create(out_dir, showWarnings = FALSE)
 
 # Selection of methods
-methods = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP")
 alldata = read.csv(in_file, header = TRUE, stringsAsFactors = FALSE) 
+methods = unique(alldata$method)
+
 
 # Select scores via cross-validation
 alldata$name = sprintf("%s.%s.%s.%s", alldata$method, alldata$tsi, 
