@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import GPy
-from mklaren.regression.fitc import FITC
+from mklaren.regression.spgp import SPGP
 from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern52_gpy, matern32_gpy, periodic_gpy
 from mklaren.kernel.kinterface import Kinterface
 from scipy.stats import multivariate_normal as mvn
@@ -17,7 +17,7 @@ class TestFITC(unittest.TestCase):
 
     def testKernGamma(self):
         for gamma in [0.1, 1.0, 2.0, 10.0]:
-            k = GPy.kern.RBF(1, variance=1, lengthscale=FITC.gamma2lengthscale(gamma))
+            k = GPy.kern.RBF(1, variance=1, lengthscale=SPGP.gamma2lengthscale(gamma))
             K = k.K(self.X, self.X)
             Ki = Kinterface(data=self.X,
                             kernel=exponential_kernel,
@@ -45,7 +45,7 @@ class TestFITC(unittest.TestCase):
             y = y.reshape((n, 1))
 
             # Fit a model
-            model = FITC()
+            model = SPGP()
             model.fit(Ks, y, optimize=False, fix_kernel=False)
 
             # Compare kernels
@@ -58,7 +58,7 @@ class TestFITC(unittest.TestCase):
             self.assertTrue(v2 < v1)
 
             # Fixed model
-            model_fix = FITC()
+            model_fix = SPGP()
             model_fix.fit(Ks, y, optimize=False, fix_kernel=True)
             ypf = model_fix.predict([X])
             v3 = np.var((y - ypf).ravel())
@@ -76,7 +76,7 @@ class TestFITC(unittest.TestCase):
               ]
         Km = sum([K[:, :] for K in Ks])
 
-        kern = GPy.kern.RBF(1, lengthscale=FITC.gamma2lengthscale(0.1)) \
+        kern = GPy.kern.RBF(1, lengthscale=SPGP.gamma2lengthscale(0.1)) \
                + GPy.kern.Matern32(1, lengthscale=3) \
                + GPy.kern.Matern52(1, lengthscale=5)
                # + GPy.kern.PeriodicExponential(1, lengthscale=5, period=4)
@@ -84,7 +84,7 @@ class TestFITC(unittest.TestCase):
         Ky = kern.K(X, X)
         self.assertAlmostEqual(np.linalg.norm(Ky - Km[:, :]), 0, places=3)
 
-        model = FITC()
+        model = SPGP()
         model.fit(Ks, y, optimize=True, fix_kernel=True)
         yp = model.predict([X])
         v1 = np.var(y.ravel())

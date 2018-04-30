@@ -1,2 +1,2 @@
-from .fitc import *
+from .spgp import *
 from .ridge import *

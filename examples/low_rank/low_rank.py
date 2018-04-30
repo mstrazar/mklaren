@@ -14,7 +14,7 @@ import argparse
 # Low-rank approximation methods
 from mklaren.regression.ridge import RidgeLowRank
 from mklaren.regression.ridge import RidgeMKL
-from mklaren.regression.fitc import FITC
+from mklaren.regression.spgp import SPGP
 from mklaren.projection.rff import RFF_KMP, RFF_TYP_STAT, RFF_TYP_NS
 from mklaren.mkl.mklaren import Mklaren
 
@@ -53,7 +53,7 @@ methods = {
     "Mklaren":     (Mklaren,      {"delta": delta}),
     "RFF":         (RFF_KMP, {"delta": delta, "typ": RFF_TYP_STAT}),
     "RFF-NS":      (RFF_KMP, {"delta": delta, "typ": RFF_TYP_NS}),
-    "SPGP":        (FITC,         {}),
+    "SPGP":        (SPGP, {}),
     "uniform":     (RidgeMKL,     {"method": "uniform"}),
     "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
 }

@@ -15,7 +15,7 @@ import numpy as np
 # Low-rank approximation methods
 from mklaren.regression.ridge import RidgeLowRank
 from mklaren.regression.ridge import RidgeMKL
-from mklaren.regression.fitc import FITC
+from mklaren.regression.spgp import SPGP
 from mklaren.projection.rff import RFF_KMP
 from mklaren.mkl.mklaren import Mklaren
 
@@ -62,7 +62,7 @@ methods = {
     "Nystrom*":    (RidgeLowRank, {"method": "nystrom"}),
     "Mklaren":     (Mklaren,      {"delta": delta}),
     "RFF_KMP":     (RFF_KMP, {"delta": delta}),
-    "SPGP":        (FITC,         {}),
+    "SPGP":        (SPGP, {}),
     "uniform":     (RidgeMKL,     {"method": "uniform"}),
     "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
 }

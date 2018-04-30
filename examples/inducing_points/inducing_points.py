@@ -26,7 +26,7 @@ from mklaren.kernel.kernel import exponential_kernel, kernel_sum
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.mkl.mklaren import Mklaren
 from mklaren.regression.ridge import RidgeLowRank
-from mklaren.regression.fitc import FITC
+from mklaren.regression.spgp import SPGP
 from mklaren.projection.rff import RFF_KMP, RFF_TYP_NS, RFF_TYP_STAT
 from mklaren.regression.ridge import RidgeMKL
 import matplotlib.pyplot as plt
@@ -91,7 +91,7 @@ def generate_data(n, rank,
         Xp = np.array(zip(*[m.ravel() for m in Mp]))
     elif data == "random":
         # Ensure data is separated at proper lengthscales
-        ls = FITC.gamma2lengthscale(min(gamma_range)) / np.sqrt(input_dim)
+        ls = SPGP.gamma2lengthscale(min(gamma_range)) / np.sqrt(input_dim)
         a, b = -n * ls / 2.0,  n * ls / 2.0
         X = a + 2 * b * np.random.rand(n, input_dim)
         N = X.shape[0]
@@ -406,7 +406,7 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
 
     # Fit FITC
     if "SPGP" in methods:
-        fitc = FITC(rank=rank)
+        fitc = SPGP(rank=rank)
         t1 = time.time()
         fitc.fit(Klist, y, optimize=True, fix_kernel=False)
         t2 = time.time() - t1
