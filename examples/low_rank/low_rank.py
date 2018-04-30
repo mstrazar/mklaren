@@ -44,18 +44,18 @@ test_size       = 0.2                             # Test set (for reporting scor
 
 # Method classes and fixed hyperparameters
 methods = {
-    "CSI" :        (RidgeLowRank, {"method": "csi", "method_init_args": {"delta": delta}}),
-    "ICD" :        (RidgeLowRank, {"method": "icd"}),
-    "Nystrom":     (RidgeLowRank, {"method": "nystrom"}),
-    "CSI*" :       (RidgeLowRank, {"method": "csi", "method_init_args": {"delta": delta}}),
-    "ICD*" :       (RidgeLowRank, {"method": "icd"}),
-    "Nystrom*":    (RidgeLowRank, {"method": "nystrom"}),
-    "Mklaren":     (Mklaren,      {"delta": delta}),
+    # "CSI" :        (RidgeLowRank, {"method": "csi", "method_init_args": {"delta": delta}}),
+    # "ICD" :        (RidgeLowRank, {"method": "icd"}),
+    # "Nystrom":     (RidgeLowRank, {"method": "nystrom"}),
+    # "CSI*" :       (RidgeLowRank, {"method": "csi", "method_init_args": {"delta": delta}}),
+    # "ICD*" :       (RidgeLowRank, {"method": "icd"}),
+    # "Nystrom*":    (RidgeLowRank, {"method": "nystrom"}),
+    # "Mklaren":     (Mklaren,      {"delta": delta}),
     "RFF":         (RFF_KMP, {"delta": delta, "typ": RFF_TYP_STAT}),
     "RFF-NS":      (RFF_KMP, {"delta": delta, "typ": RFF_TYP_NS}),
-    "SPGP":        (SPGP, {}),
-    "uniform":     (RidgeMKL,     {"method": "uniform"}),
-    "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
+    # "SPGP":        (SPGP, {}),
+    # "uniform":     (RidgeMKL,     {"method": "uniform"}),
+    # "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
 }
 
 
@@ -137,7 +137,7 @@ def process(dataset, outdir):
                             yptr = model.predict(X_tr).ravel()
                             ypva = model.predict(X_val).ravel()
                             ypte = model.predict(X_te).ravel()
-                        elif mname == "FITC":
+                        elif mname == "SPGP":
                             effective_rank = rank
                             model = Mclass(rank=rank, **kwargs)
                             model.fit(Ks, y_tr)
@@ -188,10 +188,10 @@ def process(dataset, outdir):
                            "gmin": min(gam_range), "gmax": max(gam_range), "p": len(gam_range)}
                     writer.writerow(row)
 
-                    # Break for FITC / no lambda
-                    if mname == "FITC": break
+                    # Break for SPGP / no lambda
+                    if mname == "SPGP": break
 
-                # Break for FITC / no rank
+                # Break for SPGP / no rank
                 if mname in ("uniform", "L2KRR"): break
 
 
