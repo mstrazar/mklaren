@@ -410,3 +410,10 @@ OUT=./results-rffns/
 d5: [detached from 371696.B-env]
 OUT=./results-matern
 /home/martins/Dev/py2/bin/python energy.py T1 matern results-matern
+
+Mon 30 Apr 2018
+===============
+# Repeat by fixing the lengthscales
+d5: [detached from 371696.B-env]
+OUT=./results-matern-scales
+/home/martins/Dev/py2/bin/python energy.py T1 matern results-matern-scales
