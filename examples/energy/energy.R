@@ -5,6 +5,9 @@ require(ggplot2)
 require(scmamp)
 require(xtable)
 
+# Defined order of methods
+row.order = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP")
+
 # Parse input arguments
 option_list = list(
   make_option(c("-i", "--input"), type="character", help="Results file (.csv)"),
@@ -77,8 +80,8 @@ for (r in unique(data$rank)){
   print(friedman.test(-M))
   
   # Text matrix 
-  R = matrix("", ncol=length(signals), nrow=length(methods))
-  row.names(R) = methods
+  R = matrix("-", ncol=length(signals), nrow=length(row.order))
+  row.names(R) = row.order
   colnames(R) = signals
   for(j in 1:ncol(M)){
     R[names(M[,j]), colnames(M)[j]] = sprintf("%.2f$\\pm$%.2f", M[,j], S[,j])
