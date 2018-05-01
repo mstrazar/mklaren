@@ -44,18 +44,18 @@ test_size       = 0.2                             # Test set (for reporting scor
 
 # Method classes and fixed hyperparameters
 methods = {
-    # "CSI" :        (RidgeLowRank, {"method": "csi", "method_init_args": {"delta": delta}}),
-    # "ICD" :        (RidgeLowRank, {"method": "icd"}),
-    # "Nystrom":     (RidgeLowRank, {"method": "nystrom"}),
-    # "CSI*" :       (RidgeLowRank, {"method": "csi", "method_init_args": {"delta": delta}}),
-    # "ICD*" :       (RidgeLowRank, {"method": "icd"}),
-    # "Nystrom*":    (RidgeLowRank, {"method": "nystrom"}),
-    # "Mklaren":     (Mklaren,      {"delta": delta}),
+    "CSI" :        (RidgeLowRank, {"method": "csi", "method_init_args": {"delta": delta}}),
+    "ICD" :        (RidgeLowRank, {"method": "icd"}),
+    "Nystrom":     (RidgeLowRank, {"method": "nystrom"}),
+    "CSI*" :       (RidgeLowRank, {"method": "csi", "method_init_args": {"delta": delta}}),
+    "ICD*" :       (RidgeLowRank, {"method": "icd"}),
+    "Nystrom*":    (RidgeLowRank, {"method": "nystrom"}),
+    "Mklaren":     (Mklaren,      {"delta": delta}),
     "RFF":         (RFF_KMP, {"delta": delta, "typ": RFF_TYP_STAT}),
     "RFF-NS":      (RFF_KMP, {"delta": delta, "typ": RFF_TYP_NS}),
-    # "SPGP":        (SPGP, {}),
-    # "uniform":     (RidgeMKL,     {"method": "uniform"}),
-    # "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
+    "SPGP":        (SPGP, {}),
+    "uniform":     (RidgeMKL,     {"method": "uniform"}),
+    "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
 }
 
 
