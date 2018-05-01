@@ -71,7 +71,7 @@ for (r in unique(data$rank)){
   
   # Ranks 
   fname = file.path(out_dir, sprintf("cd_kernel-%s_rank-%02d.pdf", k, r))
-  pdf(fname)
+  pdf(fname, width=8, height=5)
   plotCD(t(-M), alpha=.05)
   message(sprintf("Written %s", fname))
   
