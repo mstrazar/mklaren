@@ -19,7 +19,7 @@ out_dir = opt$output
 target = "L2KRR" 
 
 # Low rank approximations
-lowranks = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*", "RFF", "FITC")
+lowranks = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*", "RFF", "RFF-NS", "SPGP")
 matrices = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*")
 fullranks = c("L2KRR", "uniform", "Mklaren2")
 
@@ -136,7 +136,7 @@ for (i in 1:nrow(Rn)){
 fname = file.path(out_dir, "ranks.tex")
 tab = xtable(Rt)
 align(tab) = c("r", "l", "|", "|", "l", "l", "l", "l", "|", 
-               "l", "l", "l", "|", "l", "|", "l")
+               "l", "l", "l", "|", "l", "l", "|", "l")
 sink(fname)
 print(tab, sanitize.text.function = identity)
 sink()
