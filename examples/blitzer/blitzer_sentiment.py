@@ -12,7 +12,7 @@ from mklaren.kernel.kernel import linear_kernel, center_kernel_low_rank
 from mklaren.kernel.kinterface import Kinterface
 from datasets.blitzer import load_books, load_dvd,\
     load_electronics, load_kitchen
-from numpy import logspace, array, vstack, argsort, var, absolute
+from numpy import logspace, array, vstack, argsort, var, absolute, ravel
 from random import shuffle, seed
 
 # Experiment parameters
@@ -132,7 +132,7 @@ def process(dataset, outdir):
                             kwargs["method_init_args"] = {"lbd": lbd, "lbd2": lbd}
                         holdout = tval + te
                         model.fit(Vs, y, holdout=holdout)
-                        kernel_order = argsort(absolute(model.mu))[::-1]
+                        kernel_order = argsort(absolute(model.mu.ravel())[::-1])
                         Vs_subset = [Vs[kernel_order[i]] for i in range(rank)]
                         model.fit(Vs_subset, y, holdout=holdout)
                         yp    = model.predict(tval).ravel()
