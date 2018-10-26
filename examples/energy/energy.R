@@ -6,7 +6,7 @@ require(scmamp)
 require(xtable)
 
 # Defined order of methods
-row.order = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP")
+row.order = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP", "Arima")
 
 # Parse input arguments
 option_list = list(
@@ -66,7 +66,8 @@ for (r in unique(data$rank)){
   colnames(M) = signals
   row.names(S) = methods
   colnames(S) = signals
-  for (i in 1:nrow(agg.m)) M[agg.m[i,"method"], agg.m[i,"dataset"]] = agg.m[i, "x"]
+  for
+  (i in 1:nrow(agg.m)) M[agg.m[i,"method"], agg.m[i,"dataset"]] = agg.m[i, "x"]
   for (i in 1:nrow(agg.s)) S[agg.s[i,"method"], agg.s[i,"dataset"]] = agg.s[i, "x"]
   
   # Ranks 
