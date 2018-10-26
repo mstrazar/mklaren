@@ -26,7 +26,7 @@ training_size   = 0.8                           # Training set proportion
 validation_size = 0.2                           # Validation set (selecting hyperparameters)
 
 # Set rank range
-rank_range = [10, 20, 40, 80, 160, 320]
+rank_range = [10, 20, 40, 80, 160, ]
 
 
 # Methods and order
