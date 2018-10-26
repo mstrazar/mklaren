@@ -29,6 +29,7 @@ from mklaren.regression.ridge import RidgeLowRank
 from mklaren.regression.spgp import SPGP
 from mklaren.projection.rff import RFF_KMP, RFF_TYP_NS, RFF_TYP_STAT
 from mklaren.regression.ridge import RidgeMKL
+from arima import Arima
 import matplotlib.pyplot as plt
 import pickle, gzip
 
@@ -42,7 +43,7 @@ pc          = 0.1               # Pseudocount; prevents inf in KL-divergence.
 repeats     = 500               # Sampling repeats to compare distributions
 
 # Method print ordering
-meth_order = ["Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP", "True"]
+meth_order = ["Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "Arima", "SPGP", "True"]
 
 # Color mappings
 meth2color = {"Mklaren": "green",
@@ -52,6 +53,7 @@ meth2color = {"Mklaren": "green",
               "SPGP": "orange",
               "RFF": "magenta",
               "RFF-NS": "purple",
+              "Arima": "black",
               "True": "black",
               "l2krr": "green",
               "align": "pink",
@@ -433,7 +435,28 @@ def test(Ksum, Klist, inxs, X, Xp, y, f, delta=10, lbd=0.1, kappa=0.99,
             "model": fitc,
             "color": meth2color["SPGP"]}
 
+    # Relevat excerpt.
+    if "Arima" in methods:
+        arima = Arima(rank=rank, alpha=lbd)
+        t1 = time.time()
+        arima.fit(X, y)
+        t2 = time.time() - t1
+        y_arima = arima.predict(X).ravel()
+        yp_arima = arima.predict(Xp).ravel()
+        try:
+            rho_arima, _ = pearsonr(np.round(y_arima, 4), f)
+        except Exception as e:
+            sys.stderr.write("Arima exception: %s\n" % e)
+            rho_arima = 0
+        evar = (np.var(y) - np.var(y - y_arima)) / np.var(y)
 
+        results["Arima"] = {
+            "rho": rho_arima,
+            "time": t2,
+            "yp": yp_arima,
+            "evar": evar,
+            "model": arima,
+            "color": meth2color["Arima"]}
 
     # Fit ICD
     if "ICD" in methods:
