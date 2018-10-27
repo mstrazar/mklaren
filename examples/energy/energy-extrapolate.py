@@ -70,7 +70,7 @@ def process(dataset, kernel, outdir):
         os.makedirs(subdname)
 
     header = ["experiment", "signal",  "tsi", "method",
-              "mse_val", "mse_f", "mse_y", "rank", "lbd", "n", "time"]
+              "mse_f", "mse_y", "rank", "lbd", "n", "time"]
     writer = csv.DictWriter(open(fname, "w", buffering=0), fieldnames=header)
     writer.writeheader()
 
@@ -88,16 +88,14 @@ def process(dataset, kernel, outdir):
     # Training, validation, test
     x = np.atleast_2d(np.arange(0, n)).T
     xt = np.atleast_2d(np.arange(0, int(n/2))).T
-    xv = np.atleast_2d(np.arange(int(n/2), int(n/2)+nval)).T
-    xp = np.atleast_2d(np.arange(int(n/2)+nval, n)).T
+    xp = np.atleast_2d(np.arange(int(n/2), n)).T
 
-    Nt, Nv, Np = xt.shape[0], xv.shape[0], xp.shape[0]
+    Nt, Np = xt.shape[0], xp.shape[0]
     f = Y[1:19, xt].mean(axis=0).ravel()
 
     for rank, lbd, tsi in it.product(rank_range, lambda_range, inxs):
         y = Y[tsi, :].reshape((n, 1))
         yt = Y[tsi, xt].reshape((Nt, 1))
-        yv = Y[tsi, xv].reshape((Nv, 1))
         yp = Y[tsi, xp].reshape((Np, 1))
 
         # Sum and List of kernels
@@ -112,10 +110,6 @@ def process(dataset, kernel, outdir):
         # Fit models and plot signal
         # Remove True anchors, as they are non-existent
         try:
-            models_val = test(Ksum=Ksum, Klist=Klist,
-                              inxs=range(rank),
-                              X=xt, Xp=xv, y=yt, f=f,  delta=delta, lbd=lbd,
-                              methods=methods)
             models = test(Ksum=Ksum, Klist=Klist,
                           inxs=range(rank),
                           X=xt, Xp=xp, y=yt, f=f, delta=delta, lbd=lbd,
@@ -130,13 +124,12 @@ def process(dataset, kernel, outdir):
             plot_signal_subplots(X=x, Xp=xp, y=y, f=None, models=models, f_out=fname)
 
             for ky in models.keys():
-                mse_yv = mse(models_val[ky]["yp"].ravel(), yv.ravel())
                 mse_yp = mse(models[ky]["yp"].ravel(), yp.ravel())
 
                 time = models[ky]["time"]
                 row = {"experiment": kernel,
                        "signal": dataset, "tsi": tsi, "method": ky,
-                       "mse_f": 0, "mse_y": mse_yp, "mse_val": mse_yv,
+                       "mse_f": 0, "mse_y": mse_yp,
                        "rank": rank, "lbd": lbd, "n": n, "time": time}
                 writer.writerow(row)
         except Exception as e:
