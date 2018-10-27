@@ -23,8 +23,8 @@ from examples.inducing_points.inducing_points import plot_signal_subplots, test
 # Hyperparameters
 delta = 10                                          # Look-ahead parameter
 nval = 20                                           # Number of validation points
-rank_range   = (7, )                                # Tested rank range
-lambda_range = [0] + list(np.logspace(-1, 1, 5))    # L2-regularization parameter range
+rank_range = (7, )                                  # Tested rank range
+lambda_range = list(np.logspace(-1, 2, 13))         # L2-regularization parameter range
 
 
 def process(dataset, kernel, outdir):
