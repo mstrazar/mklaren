@@ -57,11 +57,25 @@ class Arima:
         """ Predict values Tau steps in the future. """
         rank = self.rank
         tau_max = max(self.models.keys())
-        Tau = np.minimum(X - self.X[-1], tau_max).astype(int)
-        m = self.y[-rank:].reshape((1, rank))
-        yp = np.zeros((len(Tau),))
-        for ti, tau in enumerate(Tau.ravel()):
-            yp[ti] = self.models[tau].predict(m)
+        yp = np.zeros((len(X),))
+        for xi, x in enumerate(X):
+            tau = np.min(np.absolute(x - self.X))
+            if tau == 0:
+                # Interpolation
+                i = int(np.where(self.X == x)[0])
+                if i < rank:
+                    yp[xi] = self.y[i]
+                else:
+                    eff_tau = 1
+                    m = self.y[i - rank + 1:i + 1].reshape((1, rank))
+                    yp[xi] = self.models[eff_tau].predict(m)
+            elif tau > 0:
+                # Extrapolation
+                m = self.y[-rank:].reshape((1, rank))
+                eff_tau = min(tau, tau_max)
+                yp[xi] = self.models[eff_tau].predict(m)
+            else:
+                raise ValueError("X=%d is not in range" % x)
         return yp
 
 
@@ -73,14 +87,12 @@ def test_arima():
     y = np.sin(0.3 * X) + noise * np.random.rand(n, 1) + 0.2 * X
     X_tr = X[:120]
     y_tr = y[:120]
-    X_te = X[120:]
-    model = Arima(rank=7, alpha=0)
+    model = Arima(rank=7, alpha=0.1)
     model.fit(X_tr, y_tr)
-    yp = model.predict(X_te)
+    yp = model.predict(X)
     plt.figure()
     plt.plot(X, y, ".")
-    plt.plot(X_tr, y_tr, "-")
-    plt.plot(X_te, yp, "-", color="red")
+    plt.plot(X, yp, "-", color="red")
     plt.show()
 
 
