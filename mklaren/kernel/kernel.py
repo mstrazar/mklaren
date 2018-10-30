@@ -54,6 +54,32 @@ def linear_kernel(x, y, b=0):
             return b + x.dot(y.T)
 
 
+def linear_kernel_noise(x, y, b=1, noise=1):
+    """
+    The linear kernel (the usual dot product in n-dimensional space).
+
+    .. math::
+        k(\mathbf{x}, \mathbf{y}) = \mathbf{x}^T \mathbf{y}
+
+    :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+    :param y: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+    :param b: (``float``) Bias term.
+
+    :param noise: (``float``) Noise term.
+
+    :return: (``numpy.ndarray``) Kernel value/matrix between data points.
+    """
+    D = cdist(x, y, metric="euclidean")
+    if isinstance(x, int):
+        return x * y
+    if sp.isspmatrix(x):
+        return b + np.array(x.dot(y.T).todense()) + noise * (D == 0)
+    else:
+        return b + x.dot(y.T) + noise * (D == 0)
+
+
 def poly_kernel(x, y, degree=2, b=0):
         """
         The polynomial kernel.
