@@ -43,7 +43,7 @@ pc          = 0.1               # Pseudocount; prevents inf in KL-divergence.
 repeats     = 500               # Sampling repeats to compare distributions
 
 # Method print ordering
-meth_order = ["Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "Arima", "SPGP", "True"]
+meth_order = ["Mklaren", "Arima", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP", "True"]
 
 # Color mappings
 meth2color = {"Mklaren": "green",

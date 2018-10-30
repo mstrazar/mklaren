@@ -13,7 +13,7 @@ import csv
 import os
 import numpy as np
 import itertools as it
-from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern32_gpy, periodic_kernel
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern32_gpy, periodic_kernel, linear_kernel, linear_kernel_noise
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.regression.spgp import SPGP
 from sklearn.metrics import mean_squared_error as mse
@@ -24,7 +24,9 @@ from examples.inducing_points.inducing_points import plot_signal_subplots, test
 delta = 10                                          # Look-ahead parameter
 nval = 20                                           # Number of validation points
 rank_range = (7, )                                  # Tested rank range
-lambda_range = list(np.logspace(-1, 2, 13))         # L2-regularization parameter range
+linear_bias = 1                                     # Bias for linear kernel
+linear_noise = 100                                  # Noise term
+lambda_range = [0] + list(np.logspace(-5, -1, 5))   # L2-regularization parameter range
 
 
 def process(dataset, kernel, outdir):
@@ -52,10 +54,11 @@ def process(dataset, kernel, outdir):
         methods = ("Mklaren", "ICD", "CSI", "Nystrom", "SPGP")
 
     elif kernel == "periodic":
+        # Methods that support periodicity
         kernel_function = periodic_kernel
-        pars = {"sigma": np.logspace(-2, 2, 5),
-                "per": np.logspace(1, 3, 10)}
-        methods = ("Mklaren", "ICD", "CSI", "Nystrom", "Arima")
+        pars = {"l": np.logspace(-1, 3, 5),
+                "per": np.logspace(2, 3, 10)}
+        methods = ("Mklaren", "Arima", "ICD", "CSI", "Nystrom", )
 
     # Data parameters
     signals = ["T%d" % i for i in range(1, 10)]
@@ -101,12 +104,18 @@ def process(dataset, kernel, outdir):
         # Sum and List of kernels
         vals = list(it.product(*pars.values()))
         names = pars.keys()
-        Klist = [Kinterface(data=xt, kernel=kernel_function, row_normalize=True,
+        Klist = [Kinterface(data=xt, kernel=kernel_function, row_normalize=False,
                             kernel_args=dict([(nam, v) for nam, v in zip(names, vlist)])) for vlist in vals]
+        Klist += [Kinterface(data=xt, kernel=linear_kernel_noise,
+                             kernel_args={"b": linear_bias, "noise": linear_noise}, row_normalize=False)]
+
+        kernels = [linear_kernel] + [kernel_function] * len(vals)
+        kargs = [{"b": linear_bias}] \
+                + [dict([(nam, v) for nam, v in zip(names, vlist)]) for vlist in vals]
         Ksum = Kinterface(data=xt, kernel=kernel_sum, row_normalize=True,
-                          kernel_args={"kernels": [kernel_function] * len(vals),
-                                       "kernels_args": [dict([(nam, v) for nam, v in zip(names, vlist)])
-                                                        for vlist in vals]})
+                          kernel_args={"kernels": kernels,
+                                       "kernels_args": kargs})
+
         # Fit models and plot signal
         # Remove True anchors, as they are non-existent
         try:
@@ -117,10 +126,10 @@ def process(dataset, kernel, outdir):
             del models["True"]
 
             # Store file as pdf + eps
-            fname = os.path.join(subdname, "plot_multi-%s_tsi-%d_lbd-%.3f_rank-%d.pdf" % (dataset, tsi, lbd, rank))
+            fname = os.path.join(subdname, "plot_multi-%s_tsi-%d_lbd-%.6f_rank-%d.pdf" % (dataset, tsi, lbd, rank))
             plot_signal_subplots(X=x, Xp=xp, y=y, f=None, models=models, f_out=fname)
 
-            fname = os.path.join(subdname, "plot_multi-%s_tsi-%d_lbd-%.3f_rank-%d.eps" % (dataset, tsi, lbd, rank))
+            fname = os.path.join(subdname, "plot_multi-%s_tsi-%d_lbd-%.6f_rank-%d.eps" % (dataset, tsi, lbd, rank))
             plot_signal_subplots(X=x, Xp=xp, y=y, f=None, models=models, f_out=fname)
 
             for ky in models.keys():
