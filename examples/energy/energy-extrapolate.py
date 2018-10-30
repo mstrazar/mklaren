@@ -92,8 +92,7 @@ def process(dataset, kernel, outdir):
     # Training, validation, test
     x = np.atleast_2d(np.arange(0, n)).T
     xt = np.atleast_2d(np.arange(0, int(2*n/3))).T
-    # xp = np.atleast_2d(np.arange(int(n/2), n)).T
-    xp = np.atleast_2d(np.arange(0, n)).T
+    xp = np.atleast_2d(np.arange(int(2*n/3), n)).T
 
     Nt, Np = xt.shape[0], xp.shape[0]
     f = Y[1:19, xt].mean(axis=0).ravel()
