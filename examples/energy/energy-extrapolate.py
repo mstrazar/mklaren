@@ -19,13 +19,14 @@ from mklaren.regression.spgp import SPGP
 from sklearn.metrics import mean_squared_error as mse
 from datasets.energy import load_energy
 from examples.inducing_points.inducing_points import plot_signal_subplots, test
+from scipy.stats import pearsonr
 
 # Hyperparameters
 delta = 10                                          # Look-ahead parameter
 nval = 20                                           # Number of validation points
 rank_range = (7, )                                  # Tested rank range
 linear_bias = 1                                     # Bias for linear kernel
-linear_noise = 100                                  # Noise term
+linear_noise = 1                                    # Noise term
 lambda_range = [0] + list(np.logspace(-5, -1, 5))   # L2-regularization parameter range
 
 
@@ -73,7 +74,7 @@ def process(dataset, kernel, outdir):
         os.makedirs(subdname)
 
     header = ["experiment", "signal",  "tsi", "method",
-              "mse_f", "mse_y", "rank", "lbd", "n", "time"]
+              "mse_f", "mse_y", "corr_y", "rank", "lbd", "n", "time"]
     writer = csv.DictWriter(open(fname, "w", buffering=0), fieldnames=header)
     writer.writeheader()
 
@@ -90,8 +91,9 @@ def process(dataset, kernel, outdir):
 
     # Training, validation, test
     x = np.atleast_2d(np.arange(0, n)).T
-    xt = np.atleast_2d(np.arange(0, int(n/2))).T
-    xp = np.atleast_2d(np.arange(int(n/2), n)).T
+    xt = np.atleast_2d(np.arange(0, int(2*n/3))).T
+    # xp = np.atleast_2d(np.arange(int(n/2), n)).T
+    xp = np.atleast_2d(np.arange(0, n)).T
 
     Nt, Np = xt.shape[0], xp.shape[0]
     f = Y[1:19, xt].mean(axis=0).ravel()
@@ -109,10 +111,10 @@ def process(dataset, kernel, outdir):
         Klist += [Kinterface(data=xt, kernel=linear_kernel_noise,
                              kernel_args={"b": linear_bias, "noise": linear_noise}, row_normalize=False)]
 
-        kernels = [linear_kernel] + [kernel_function] * len(vals)
-        kargs = [{"b": linear_bias}] \
+        kernels = [linear_kernel_noise] + [kernel_function] * len(vals)
+        kargs = [{"b": linear_bias, "noise": 1e-3}] \
                 + [dict([(nam, v) for nam, v in zip(names, vlist)]) for vlist in vals]
-        Ksum = Kinterface(data=xt, kernel=kernel_sum, row_normalize=True,
+        Ksum = Kinterface(data=xt, kernel=kernel_sum, row_normalize=False,
                           kernel_args={"kernels": kernels,
                                        "kernels_args": kargs})
 
@@ -134,11 +136,12 @@ def process(dataset, kernel, outdir):
 
             for ky in models.keys():
                 mse_yp = mse(models[ky]["yp"].ravel(), yp.ravel())
+                corr_yp = pearsonr(models[ky]["yp"].ravel(), yp.ravel())[0]
 
                 time = models[ky]["time"]
                 row = {"experiment": kernel,
                        "signal": dataset, "tsi": tsi, "method": ky,
-                       "mse_f": 0, "mse_y": mse_yp,
+                       "mse_f": 0, "mse_y": mse_yp, "corr_y": corr_yp,
                        "rank": rank, "lbd": lbd, "n": n, "time": time}
                 writer.writerow(row)
         except Exception as e:
