@@ -4,67 +4,84 @@ from sklearn.linear_model.ridge import Ridge
 
 class Arima:
 
-    """ Learn an average of rank number of previous points."""
+    """ Learn an average of rank number of previous points.
 
-    @staticmethod
-    def find_closest_vals(X, x, y, r):
-        """ Values of r closest points to x in X, s.t. x < X."""
-        ret = np.zeros((r,))
-        diffs = (X - x).ravel().astype(float)
-        diffs[diffs >= 0] = np.inf
-        diffs = np.abs(diffs)
-        count = 0
-        while count < r:
-            v, i = np.min(diffs), np.argmin(diffs)
-            ret[count] = y[i] if np.isfinite(v) else 0
-            diffs[i] = np.inf
-            count += 1
-        return ret
+        Allow for different modes of planting the inducing points:
+            recent: most recent points
+            linear: equally-spread points.
+            log: logarithmic spread with emphasis on more recent points.
+
+        The burden to input a sensible dataset (enough history to predict all points)
+        is placed on the user.
+    """
 
     def __init__(self, rank, **kwargs):
         self.rank = rank
         self.kwargs = kwargs
-        self.ridge = None
         self.X = None
         self.y = None
-        self.bias = None
+        self.models = dict()
 
     def fit(self, X, y):
         """
-        X is an arbitrary 1D signal.
-        For each x in X, take up to 7 previous values and fit using Ridge regression.
-        Assume the mean is 0.
+        X are indices from 0 ... n.
+        Extrapolation works for points up to n + tau_max.
         """
-        self.bias = y.mean()
-        y = y - self.bias
+        assert X.dtype == np.dtype("int")
+        rank = self.rank
 
+        # Sort if not sorted
+        inxs = np.argsort(X.ravel())
+        X = X[inxs]
+        y = y[inxs]
         self.X = X
         self.y = y
-        M = np.zeros((X.shape[0], self.rank))
-        for xi, x in enumerate(X):
-            M[xi, :] = Arima.find_closest_vals(X, x, y, r=self.rank)
-        self.ridge = Ridge(**self.kwargs)
-        self.ridge.fit(M, y)
+
+        # Extract statistics
+        n = len(X)
+        tau_max = n - 2 * rank
+
+        # Construct design matrix and model for each tau
+        for tau in range(1, tau_max + 1):
+            M = np.zeros((n - tau - rank, rank))
+            Y = np.zeros((n - tau - rank,))
+            for i, end in enumerate(range(rank, n - tau)):
+                start = end - rank
+                M[i] = y[X[start:end]].ravel()
+                Y[i] = y[X[end] + tau]
+            tau_model = Ridge(**self.kwargs)
+            tau_model.fit(M, Y)
+            self.models[tau] = tau_model
 
     def predict(self, X):
-        """ Predict from closest vals. """
-        M = np.zeros((X.shape[0], self.rank))
-        for xi, x in enumerate(X):
-            M[xi, :] = Arima.find_closest_vals(self.X, x, self.y, r=self.rank)
-        return self.bias + self.ridge.predict(M)
+        """ Predict values Tau steps in the future. """
+        rank = self.rank
+        tau_max = max(self.models.keys())
+        Tau = np.minimum(X - self.X[-1], tau_max).astype(int)
+        m = self.y[-rank:].reshape((1, rank))
+        yp = np.zeros((len(Tau),))
+        for ti, tau in enumerate(Tau.ravel()):
+            yp[ti] = self.models[tau].predict(m)
+        return yp
+
 
 def test_arima():
     import matplotlib.pyplot as plt
-    n = 100
-    noise = 0.7
-    X = np.linspace(-10, 10, n).reshape((n, 1))
-    y = np.sin(X) + noise * np.random.rand(n, 1)
-    model = Arima(rank=7)
-    model.fit(X, y)
-    yp = model.predict(X)
+    n = 200
+    noise = 1.0
+    X = np.arange(0, n, dtype=int).reshape((n, 1))
+    y = np.sin(0.3 * X) + noise * np.random.rand(n, 1) + 0.2 * X
+    X_tr = X[:120]
+    y_tr = y[:120]
+    X_te = X[120:]
+    model = Arima(rank=7, alpha=0)
+    model.fit(X_tr, y_tr)
+    yp = model.predict(X_te)
     plt.figure()
     plt.plot(X, y, ".")
-    plt.plot(X, yp, "-")
+    plt.plot(X_tr, y_tr, "-")
+    plt.plot(X_te, yp, "-", color="red")
+    plt.show()
 
 
 if __name__ == "__main__":
