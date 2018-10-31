@@ -74,7 +74,7 @@ def process(dataset, kernel, outdir):
         os.makedirs(subdname)
 
     header = ["experiment", "signal",  "tsi", "method",
-              "mse_f", "mse_y", "corr_y", "rank", "lbd", "n", "time"]
+              "mse_f", "mse_y", "corr_y", "mse_val", "rank", "lbd", "n", "time"]
     writer = csv.DictWriter(open(fname, "w", buffering=0), fieldnames=header)
     writer.writeheader()
 
@@ -91,15 +91,18 @@ def process(dataset, kernel, outdir):
 
     # Training, validation, test
     x = np.atleast_2d(np.arange(0, n)).T
-    xt = np.atleast_2d(np.arange(0, int(2*n/3))).T
-    xp = np.atleast_2d(np.arange(int(2*n/3), n)).T
+    xt = np.atleast_2d(np.arange(0, int(n/2))).T
+    xv = np.atleast_2d(np.arange(int(n/2), int(3 * n / 4))).T
+    xp = np.atleast_2d(np.arange(int(3*n/4), n)).T
 
     Nt, Np = xt.shape[0], xp.shape[0]
+    Nv = xv.shape[0]
     f = Y[1:19, xt].mean(axis=0).ravel()
-
+    
     for rank, lbd, tsi in it.product(rank_range, lambda_range, inxs):
         y = Y[tsi, :].reshape((n, 1))
         yt = Y[tsi, xt].reshape((Nt, 1))
+        yv = Y[tsi, xv].reshape((Nv, 1))
         yp = Y[tsi, xp].reshape((Np, 1))
 
         # Sum and List of kernels
@@ -124,7 +127,12 @@ def process(dataset, kernel, outdir):
                           inxs=range(rank),
                           X=xt, Xp=xp, y=yt, f=f, delta=delta, lbd=lbd,
                           methods=methods)
+            models_val = test(Ksum=Ksum, Klist=Klist,
+                              inxs=range(rank),
+                              X=xt, Xp=xv, y=yt, f=f, delta=delta, lbd=lbd,
+                              methods=methods)
             del models["True"]
+            del models_val["True"]
 
             # Store file as pdf + eps
             fname = os.path.join(subdname, "plot_multi-%s_tsi-%d_lbd-%.6f_rank-%d.pdf" % (dataset, tsi, lbd, rank))
@@ -135,12 +143,13 @@ def process(dataset, kernel, outdir):
 
             for ky in models.keys():
                 mse_yp = mse(models[ky]["yp"].ravel(), yp.ravel())
+                mse_val = mse(models_val[ky]["yp"].ravel(), yv.ravel())
                 corr_yp = pearsonr(models[ky]["yp"].ravel(), yp.ravel())[0]
 
                 time = models[ky]["time"]
                 row = {"experiment": kernel,
                        "signal": dataset, "tsi": tsi, "method": ky,
-                       "mse_f": 0, "mse_y": mse_yp, "corr_y": corr_yp,
+                       "mse_f": 0, "mse_y": mse_yp, "corr_y": corr_yp, "mse_val": mse_val,
                        "rank": rank, "lbd": lbd, "n": n, "time": time}
                 writer.writerow(row)
         except Exception as e:
