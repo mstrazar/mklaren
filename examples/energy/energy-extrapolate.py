@@ -57,8 +57,8 @@ def process(dataset, kernel, outdir):
     elif kernel == "periodic":
         # Methods that support periodicity
         kernel_function = periodic_kernel
-        pars = {"l": np.logspace(-1, 3, 5),
-                "per": np.logspace(2, 3, 10)}
+        pars = {"l": np.logspace(-3, 3, 13),
+                "per": np.logspace(-3, 3, 13)}
         methods = ("Mklaren", "Arima", "ICD", "CSI", "Nystrom", )
     elif kernel == "cosine":
         # Methods that support periodicity
