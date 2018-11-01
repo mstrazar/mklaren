@@ -166,7 +166,43 @@ def exponential_kernel(x, y, sigma=2.0, gamma=None):
         return np.exp(-gamma  * (x - y)**2)
     if len(x.shape) >= 2 or len(y.shape) >= 2:
         return np.exp(-gamma * cdist(x, y, metric="euclidean")**2)
-    return np.exp(-gamma  * np.linalg.norm(x - y, ord=2)**2)
+    return np.exp(-gamma * np.linalg.norm(x - y, ord=2)**2)
+
+
+def exponential_cosine_kernel(x, y, gamma=1, omega=1):
+    """
+    The exponential quadratic / radial basis kernel (RBF) kernel.
+
+        .. math::
+            k(\mathbf{x}, \mathbf{y}) = exp\{\dfrac{\|\mathbf{x} - \mathbf{y}\|^2}{\sigma^2} \}
+
+        or
+
+        .. math::
+            k(\mathbf{x}, \mathbf{y}) = exp\{\gamma \|\mathbf{x} - \mathbf{y}\|^2 \}
+
+        :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+        :param y: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
+
+        :param omega: (``float``) Frequency of the oscillation.
+
+        :param gamma: (``float``) Scale.
+
+        :return: (``numpy.ndarray``) Kernel value/matrix between data points.
+    """
+    if sp.isspmatrix(x) and sp.isspmatrix(y):
+        x = np.array(x.todense())
+        y = np.array(y.todense())
+    if not hasattr(x, "shape"):
+        D = np.linalg.norm(x - y, ord=2)
+    elif np.asarray(x).ndim == 0:
+        D = np.abs(x - y)
+    elif len(x.shape) >= 2 or len(y.shape) >= 2:
+        D = cdist(x, y, metric="euclidean")
+    else:
+        D = np.linalg.norm(x - y, ord=2)
+    return 0.5 * np.exp(-gamma * D**2) + 0.5 * np.cos(omega * D**2)
 
 
 def exponential_absolute(x, y, sigma=2.0, gamma=None):
@@ -199,10 +235,10 @@ def exponential_absolute(x, y, sigma=2.0, gamma=None):
     if not hasattr(x, "shape"):
         return np.exp(-gamma  * np.linalg.norm(x - y, ord=1))
     if np.asarray(x).ndim == 0:
-        return np.exp(-gamma  * np.absolute(x - y))
+        return np.exp(-gamma * np.absolute(x - y))
     if len(x.shape) >= 2 or len(y.shape) >= 2:
         return np.exp(-gamma * cdist(x, y, metric="cityblock"))
-    return np.exp(-gamma  * np.linalg.norm(x - y, ord=1))
+    return np.exp(-gamma * np.linalg.norm(x - y, ord=1))
 
 
 rbf_kernel = exponential_kernel
