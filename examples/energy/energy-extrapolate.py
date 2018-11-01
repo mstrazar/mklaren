@@ -13,7 +13,8 @@ import csv
 import os
 import numpy as np
 import itertools as it
-from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern32_gpy, periodic_kernel, linear_kernel, linear_kernel_noise
+from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern32_gpy, periodic_kernel, \
+    linear_kernel, linear_kernel_noise, exponential_cosine_kernel
 from mklaren.kernel.kinterface import Kinterface
 from mklaren.regression.spgp import SPGP
 from sklearn.metrics import mean_squared_error as mse
@@ -22,8 +23,7 @@ from examples.inducing_points.inducing_points import plot_signal_subplots, test
 from scipy.stats import pearsonr
 
 # Hyperparameters
-delta = 10                                          # Look-ahead parameter
-nval = 20                                           # Number of validation points
+delta = 70                                          # Look-ahead parameter
 rank_range = (7, )                                  # Tested rank range
 linear_bias = 1                                     # Bias for linear kernel
 linear_noise = 1                                    # Noise term
@@ -59,6 +59,12 @@ def process(dataset, kernel, outdir):
         kernel_function = periodic_kernel
         pars = {"l": np.logspace(-1, 3, 5),
                 "per": np.logspace(2, 3, 10)}
+        methods = ("Mklaren", "Arima", "ICD", "CSI", "Nystrom", )
+    elif kernel == "cosine":
+        # Methods that support periodicity
+        kernel_function = exponential_cosine_kernel
+        pars = {"gamma": np.logspace(-5, -1, 6),
+                "omega": np.logspace(-7, -3, 6)}
         methods = ("Mklaren", "Arima", "ICD", "CSI", "Nystrom", )
 
     # Data parameters
