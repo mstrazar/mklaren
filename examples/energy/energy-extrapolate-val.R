@@ -27,19 +27,16 @@ dir.create(out_dir, showWarnings = FALSE)
 alldata = read.csv(in_file, header = TRUE, stringsAsFactors = FALSE) 
 methods = unique(alldata$method)
 
-# Select optimal lambda for each individual time series
-af_val = aggregate(alldata$mse_y, by=list(method=alldata$method, 
-                                           signal=alldata$signal, 
-                                           tsi=alldata$tsi,
-                                           rank=alldata$rank, 
-                                           lbd=alldata$lbd), mean)
-af_val = af_val[order(af_val$method, af_val$signal, af_val$tsi, af_val$x),]
+# Select best lambda
+af_val = alldata[order(alldata$method, alldata$signal, alldata$tsi, alldata$mse_val),]
 af_best = af_val[!duplicated(af_val[,c("method", "signal", "tsi")]),]
 
 # Select best method for each time series and compute win percentage
-af_ranking = af_best[order(af_best$signal, af_best$tsi, af_best$x),]
+af_ranking = af_best[order(af_best$signal, af_best$tsi, af_best$mse_y),]
 af_top = af_ranking[!duplicated(af_ranking[,c("signal", "tsi")]),]
-af_top_count = aggregate(af_top$method, by=list(method=af_top$method), function(x) length(x) / nrow(af_top))
+af_top_count = aggregate(af_top$method, 
+                         by=list(method=af_top$method), 
+                         function(x) length(x) / nrow(af_top))
 af_top_count = af_top_count[rev(order(af_top_count$x)),]
 message("Win percentage")
 print(af_top_count)
@@ -53,7 +50,7 @@ row.names(M) = methods
 colnames(M) = combs
 for (i in 1:nrow(af_best)){
   row = af_best[i,]
-  M[row$method, row$signal.tsi] = row$x
+  M[row$method, row$signal.tsi] = row$mse_y
 }
 
 # Store CD plot to disk
