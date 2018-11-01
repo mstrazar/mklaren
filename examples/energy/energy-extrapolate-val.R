@@ -27,6 +27,10 @@ dir.create(out_dir, showWarnings = FALSE)
 alldata = read.csv(in_file, header = TRUE, stringsAsFactors = FALSE) 
 methods = unique(alldata$method)
 
+# Generate file names
+alldata$file = sprintf("%s/_%s/plot_multi-%s_tsi-%d_lbd-%0.6f_rank-%d.pdf", 
+                       out_dir, alldata$signal,alldata$signal, alldata$tsi, alldata$lbd, alldata$rank)
+
 # Select best lambda
 af_val = alldata[order(alldata$method, alldata$signal, alldata$tsi, alldata$mse_val),]
 af_best = af_val[!duplicated(af_val[,c("method", "signal", "tsi")]),]
@@ -58,4 +62,4 @@ fname = file.path(out_dir, sprintf("cd_extrapolate_val.pdf"))
 pdf(fname, width=8, height=5)
 plotCD(t(-M), alpha=.05)
 message(sprintf("Written %s", fname))
-dev.off()  
+dev.off()
