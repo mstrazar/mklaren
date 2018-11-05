@@ -132,11 +132,22 @@ for (i in 1:nrow(Rn)){
   Rt[i,minn] = sprintf("\\textbf{%s}", Rn[i, minn]) 
 }
 
+# Reformat table
+Rt[which(Rt == "Inf")] = "-"
+
+# Approximate saving
+r = Rn[row.names(R),"Mklaren"]
+saving = n*r^2 / n^3
+e = floor(log10(saving))
+num = saving * 10^(-e)
+ratio = sprintf("$%.1f \\times 10^{%d}$", num, e)
+Rout = cbind(Rt, ratio)
+
 # Write to output
 fname = file.path(out_dir, "ranks.tex")
-tab = xtable(Rt)
+tab = xtable(Rout)
 align(tab) = c("r", "l", "|", "|", "l", "l", "l", "l", "|", 
-               "l", "l", "l", "|", "l", "l", "|", "l")
+               "l", "l", "l", "|", "l", "l", "|", "l", "|", "|", "l")
 sink(fname)
 print(tab, sanitize.text.function = identity)
 sink()
