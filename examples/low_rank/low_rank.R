@@ -19,12 +19,18 @@ out_dir = opt$output
 target = "L2KRR" 
 
 # Low rank approximations
-lowranks = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*", "RFF", "RFF-NS", "SPGP")
-matrices = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*")
+# lowranks = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*", "RFF", "RFF-NS", "SPGP")
+# matrices = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*")
+lowranks = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP")
+matrices = c("Mklaren", "CSI", "ICD", "Nystrom")
+
 fullranks = c("L2KRR", "uniform", "Mklaren2")
 
 # Load
 alldata = read.csv(in_file, header=TRUE, stringsAsFactors = FALSE)
+
+# Filter methods 
+alldata = alldata[alldata$method %in% c(lowranks, fullranks),]
 
 # Aggregate results 
 meths = sort(setdiff(unique(alldata$method), fullranks))
@@ -146,8 +152,7 @@ Rout = cbind(Rt, ratio)
 # Write to output
 fname = file.path(out_dir, "ranks.tex")
 tab = xtable(Rout)
-align(tab) = c("r", "l", "|", "|", "l", "l", "l", "l", "|", 
-               "l", "l", "l", "|", "l", "l", "|", "l", "|", "|", "l")
+align(tab) = c("r", "l", "|", "|", "l", "l", "l", "l", "|", "l", "l", "|", "l", "|", "|", "l")
 sink(fname)
 print(tab, sanitize.text.function = identity)
 sink()
