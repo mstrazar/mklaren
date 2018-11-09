@@ -1,177 +1,48 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Multiple kernel regression &mdash; mklaren 1.0.0 documentation</title>
-    
+    <title>Multiple kernel regression &#8212; mklaren 1.0.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
         VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="mklaren 1.0.0 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Linear algebra utility functions" href="la.html" />
     <link rel="prev" title="Multiple kernel learning methods" href="mkl.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body>
+  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="module-mklaren.regression.ridge">
-<span id="multiple-kernel-regression"></span><h1>Multiple kernel regression<a class="headerlink" href="#module-mklaren.regression.ridge" title="Permalink to this headline">¶</a></h1>
-<p>A Ridge regression in the feature space induced by multiple kernel low-rank approximations.</p>
-<p>Implemented for Nystrom and Cholesky-type decompositions.</p>
-<dl class="class">
-<dt id="mklaren.regression.ridge.RidgeLowRank">
-<em class="property">class </em><code class="descclassname">mklaren.regression.ridge.</code><code class="descname">RidgeLowRank</code><span class="sig-paren">(</span><em>method_init_args=None</em>, <em>method='icd'</em>, <em>lbd=0</em>, <em>rank=10</em>, <em>normalize=False</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.regression.ridge.RidgeLowRank" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><strong>reg_model</strong> &#8211; (<code class="docutils literal"><span class="pre">sklearn.linear_model.Ridge</span></code>) regression model from Scikit.</td>
-</tr>
-</tbody>
-</table>
-<dl class="method">
-<dt id="mklaren.regression.ridge.RidgeLowRank.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>method_init_args=None</em>, <em>method='icd'</em>, <em>lbd=0</em>, <em>rank=10</em>, <em>normalize=False</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.regression.ridge.RidgeLowRank.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize object.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>method</strong> &#8211; (<code class="docutils literal"><span class="pre">string</span></code>) &#8220;icd&#8221;, &#8220;csi&#8221;, or &#8220;nystrom&#8221;, low-rank method to be used.</li>
-<li><strong>rank</strong> &#8211; (<code class="docutils literal"><span class="pre">int</span></code>) Maximal decomposition rank.</li>
-<li><strong>normalize</strong> &#8211; (<code class="docutils literal"><span class="pre">bool</span></code>) Normalize data in Ridge model.</li>
-<li><strong>method_init_args</strong> &#8211; (<code class="docutils literal"><span class="pre">dict</span></code>) Initialization arguments for the low-rank approximation models.</li>
-<li><strong>lbd</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) L2-regularization.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="mklaren.regression.ridge.RidgeLowRank.fit">
-<code class="descname">fit</code><span class="sig-paren">(</span><em>Ks</em>, <em>y</em>, <em>*method_args</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.regression.ridge.RidgeLowRank.fit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Fit multiple kernel functions.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>Ks</strong> &#8211; (<code class="docutils literal"><span class="pre">list</span></code>) of (<code class="docutils literal"><span class="pre">Kinterface</span></code>): List of kernel interfaces.</li>
-<li><strong>y</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Class labels <span class="math">\(y_i \in {-1, 1}\)</span> or regression targets.</li>
-<li><strong>method_args</strong> &#8211; (<code class="docutils literal"><span class="pre">dict</span></code>) Arguments to the fit method of the kernel approximation method.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="mklaren.regression.ridge.RidgeLowRank.predict">
-<code class="descname">predict</code><span class="sig-paren">(</span><em>Xs</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.regression.ridge.RidgeLowRank.predict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Predict responses for test samples.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Xs</strong> &#8211; (<code class="docutils literal"><span class="pre">list</span></code>) of (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Input space representation for each kernel in <code class="docutils literal"><span class="pre">self.Ks</span></code>.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Vector of prediction of regression targets.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="mklaren.regression.ridge.RidgeMKL">
-<em class="property">class </em><code class="descclassname">mklaren.regression.ridge.</code><code class="descname">RidgeMKL</code><span class="sig-paren">(</span><em>lbd=0</em>, <em>method='align'</em>, <em>method_init_args={}</em>, <em>low_rank=False</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.regression.ridge.RidgeMKL" title="Permalink to this definition">¶</a></dt>
-<dd><p>A MKL model in a transductive setting (test points are presented at training time).</p>
-<dl class="method">
-<dt id="mklaren.regression.ridge.RidgeMKL.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>lbd=0</em>, <em>method='align'</em>, <em>method_init_args={}</em>, <em>low_rank=False</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.regression.ridge.RidgeMKL.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>method</strong> &#8211; (<code class="docutils literal"><span class="pre">string</span></code>) &#8220;align&#8221;, &#8220;alignf&#8221;, or &#8220;uniform&#8221;, MKL method to be used.</li>
-<li><strong>low_rank</strong> &#8211; (<code class="docutils literal"><span class="pre">bool</span></code>) Use low-rank approximations.</li>
-<li><strong>method_init_args</strong> &#8211; (<code class="docutils literal"><span class="pre">dict</span></code>) Initialization arguments for the MKL methods.</li>
-<li><strong>lbd</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) L2-regularization.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="mklaren.regression.ridge.RidgeMKL.fit">
-<code class="descname">fit</code><span class="sig-paren">(</span><em>Ks</em>, <em>y</em>, <em>holdout=None</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.regression.ridge.RidgeMKL.fit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Learn weights for kernel matrices or Kinterfaces.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>Ks</strong> &#8211; (<code class="docutils literal"><span class="pre">list</span></code>) of (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) or of (<code class="docutils literal"><span class="pre">Kinterface</span></code>) to be aligned.</li>
-<li><strong>y</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Class labels <span class="math">\(y_i \in {-1, 1}\)</span> or regression targets.</li>
-<li><strong>holdout</strong> &#8211; (<code class="docutils literal"><span class="pre">list</span></code>) List of indices to exlude from alignment.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="mklaren.regression.ridge.RidgeMKL.predict">
-<code class="descname">predict</code><span class="sig-paren">(</span><em>inxs</em><span class="sig-paren">)</span><a class="headerlink" href="#mklaren.regression.ridge.RidgeMKL.predict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Predict values for data on indices inxs (transcductive setting).</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>inxs</strong> &#8211; (<code class="docutils literal"><span class="pre">list</span></code>) Indices of samples to be used for prediction.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Vector of prediction of regression targets.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
+  <div class="section" id="multiple-kernel-regression">
+<h1>Multiple kernel regression<a class="headerlink" href="#multiple-kernel-regression" title="Permalink to this headline">¶</a></h1>
 </div>
 
 
@@ -191,15 +62,15 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/regression.txt"
+      <li><a href="_sources/regression.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -213,11 +84,11 @@
       &copy;2016, Martin Stražar.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
-      <a href="_sources/regression.txt"
+      <a href="_sources/regression.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 
