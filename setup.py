@@ -4,7 +4,7 @@ setup(
   name = 'mklaren',
   packages = ['mklaren', 'mklaren.kernel', 'mklaren.mkl', 'mklaren.projection', 'mklaren.regression',
               'mklaren.util'],
-  version = '1.1',
+  version = '1.2',
   description = 'The Multiple Kernel Learning Python Library.',
   author = 'Martin Strazar',
   author_email = 'martin.strazar@gmail.com',
