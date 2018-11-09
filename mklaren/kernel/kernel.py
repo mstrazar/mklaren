@@ -12,11 +12,16 @@ try:
 except ImportError:
     pass
 
+
 def correct_xy(x, y):
     """
-    :param x: 2D or 1D array
-    :param y: 2D or 1D array
-    :return: Convert x, y to dense, 2D arrays.
+    Convert matrices to dense and correct shapes.
+
+    :param x: (``numpy.ndarray``) 2D or 1D array
+
+    :param y: (``numpy.ndarray``) 2D or 1D array
+
+    :return:  (``numpy.ndarray``) Convert x, y to dense, 2D arrays.
     """
     if sp.isspmatrix(x) and sp.isspmatrix(y):
         x = np.array(x.todense())
@@ -36,7 +41,7 @@ def linear_kernel(x, y, b=0):
         The linear kernel (the usual dot product in n-dimensional space).
 
         .. math::
-            k(\mathbf{x}, \mathbf{y}) = \mathbf{x}^T \mathbf{y}
+            k(\mathbf{x}, \mathbf{y}) = b + \mathbf{x}^T \mathbf{y}
 
         :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
 
@@ -56,10 +61,11 @@ def linear_kernel(x, y, b=0):
 
 def linear_kernel_noise(x, y, b=1, noise=1):
     """
-    The linear kernel (the usual dot product in n-dimensional space).
+    The linear kernel (the usual dot product in n-dimensional space). A noise term is
+    added explicitly to avoid singular kernel matrices
 
     .. math::
-        k(\mathbf{x}, \mathbf{y}) = \mathbf{x}^T \mathbf{y}
+        k(\mathbf{x}, \mathbf{y}) = b + \mathbf{x}^T \mathbf{y} + noise \cdot (\mathbf{x} == \mathbf{y})
 
     :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
 
@@ -118,7 +124,7 @@ def sigmoid_kernel(x, y, c=1, b=0):
 
         :param c: (``float``) Scale.
 
-        :param b: (``float``) Bias term.
+        :param b: (``float``) Bias.
 
         :return: (``numpy.ndarray``) Kernel value/matrix between data points.
         """
@@ -171,15 +177,13 @@ def exponential_kernel(x, y, sigma=2.0, gamma=None):
 
 def exponential_cosine_kernel(x, y, gamma=1, omega=1):
     """
-    The exponential quadratic / radial basis kernel (RBF) kernel.
+    A sum of exponential quadratic and a cosine kernel.
 
         .. math::
-            k(\mathbf{x}, \mathbf{y}) = exp\{\dfrac{\|\mathbf{x} - \mathbf{y}\|^2}{\sigma^2} \}
-
-        or
-
+            d = \|\mathbf{x} - \mathbf{y}\|
         .. math::
-            k(\mathbf{x}, \mathbf{y}) = exp\{\gamma \|\mathbf{x} - \mathbf{y}\|^2 \}
+            k(\mathbf{x}, \mathbf{y}) = \dfrac{1}{2} exp\{\dfrac{d^2}{\sigma^2}\} + \dfrac{1}{2} cos(\omega d^2)
+
 
         :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.
 
@@ -250,7 +254,7 @@ def periodic_kernel(x, y, sigma=1, per=1, l=1):
     Defined as in http://www.cs.toronto.edu/~duvenaud/cookbook/index.html.
 
         .. math::
-            k(\mathbf{x}, \mathbf{y}) = \sigma^2 exp\{-2 \pi \dfrac{np.sin(\|\mathbf{x} - \mathbf{y}\|)}{p}/l \}
+            k(\mathbf{x}, \mathbf{y}) = \sigma^2 exp\{-2 \pi sin(\dfrac{\|\mathbf{x} - \mathbf{y}\|}{per})/l \}
 
 
         :param x: (``numpy.ndarray``) Data point(s) of shape ``(n_samples, n_features)`` or ``(n_features, )``.

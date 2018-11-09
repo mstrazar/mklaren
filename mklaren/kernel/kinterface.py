@@ -1,6 +1,7 @@
 from numpy import array, atleast_2d, ndarray, diag, sqrt, outer
 from scipy.sparse import isspmatrix
 
+
 class Kinterface:
         """
         Interface to invoke kernels. Acts as a wrapper for a unified use of
@@ -19,6 +20,8 @@ class Kinterface:
             :param kernel_args: (``dict``) Dictionary of kernel hyperparameters (``**kwargs``).
 
             :param data_labels: (``list``) Data labels.
+
+            :param row_normalize (``bool``) Normalize matrix diagonal to equal a vector of 1s.
             """
             self.data   = data
             self.kernel = kernel
@@ -29,7 +32,6 @@ class Kinterface:
                 self.shape  = (data.shape[0], data.shape[0])
             self.data_labels = data_labels
             self.row_normalize = row_normalize
-
 
         def __getitem__(self, item):
             """
@@ -77,7 +79,6 @@ class Kinterface:
                 r = r.ravel()
             return r
 
-
         def __call__(self, x, y):
             """
             Mimic a callable kernel function.
@@ -95,7 +96,6 @@ class Kinterface:
                 K = K / sqrt(outer(x_norm, y_norm))
             return K
 
-
         def diag(self):
             """
             Diagonal of the kernel matrix.
@@ -107,8 +107,6 @@ class Kinterface:
             """
             return array([self[i, i] for i in xrange(self.shape[0])]).ravel()
 
-
         def diagonal(self):
             """ Diagonal of the kernel matrix (alias). """
             return self.diag()
-        

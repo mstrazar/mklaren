@@ -13,10 +13,8 @@ import csv
 import os
 import numpy as np
 import itertools as it
-from mklaren.kernel.kernel import exponential_kernel, kernel_sum, matern32_gpy, periodic_kernel, \
-    linear_kernel, linear_kernel_noise, exponential_cosine_kernel
+from mklaren.kernel.kernel import kernel_sum, periodic_kernel, linear_kernel_noise
 from mklaren.kernel.kinterface import Kinterface
-from mklaren.regression.spgp import SPGP
 from sklearn.metrics import mean_squared_error as mse
 from datasets.energy import load_energy
 from examples.inducing_points.inducing_points import plot_signal_subplots, test
@@ -30,42 +28,19 @@ linear_noise = 1                                    # Noise term
 lambda_range = [0] + list(np.logspace(-5, -1, 5))   # L2-regularization parameter range
 
 
-def process(dataset, kernel, outdir):
+def process(dataset, outdir):
     """
     Run experiments with epcified parameters.
     :param dataset: Dataset key.
-    :param kernel: Kernel function name.
     :param outdir: Output directory.
     :return:
     """
 
-    kernel_function = None
-    pars = dict()
-    methods = []
-
-    # Experiment parameters
-    if kernel == "exponential":
-        kernel_function = exponential_kernel
-        pars = {"gamma": np.logspace(-4, 4, 5)}
-        methods = ("Mklaren", "ICD", "CSI", "Nystrom", "SPGP", "RFF", "RFF-NS")
-
-    elif kernel == "matern":
-        kernel_function = matern32_gpy
-        pars = {"lengthscale": SPGP.gamma2lengthscale(np.logspace(-4, 4, 5))}
-        methods = ("Mklaren", "ICD", "CSI", "Nystrom", "SPGP")
-
-    elif kernel == "periodic":
-        # Methods that support periodicity
-        kernel_function = periodic_kernel
-        pars = {"l": np.logspace(-3, 3, 13),
-                "per": np.logspace(-3, 3, 13)}
-        methods = ("Mklaren", "Arima", "ICD", "CSI", "Nystrom", )
-    elif kernel == "cosine":
-        # Methods that support periodicity
-        kernel_function = exponential_cosine_kernel
-        pars = {"gamma": np.logspace(-5, -1, 6),
-                "omega": np.logspace(-7, -3, 6)}
-        methods = ("Mklaren", "Arima", "ICD", "CSI", "Nystrom", )
+    # Methods that support periodicity
+    kernel_function = periodic_kernel
+    pars = {"l": np.logspace(-3, 3, 13),
+            "per": np.logspace(-3, 3, 13)}
+    methods = ("Mklaren", "Arima", "ICD", "CSI", "Nystrom", )
 
     # Data parameters
     signals = ["T%d" % i for i in range(1, 10)]
@@ -153,7 +128,7 @@ def process(dataset, kernel, outdir):
                 corr_yp = pearsonr(models[ky]["yp"].ravel(), yp.ravel())[0]
 
                 time = models[ky]["time"]
-                row = {"experiment": kernel,
+                row = {"experiment": "cosine",
                        "signal": dataset, "tsi": tsi, "method": ky,
                        "mse_f": 0, "mse_y": mse_yp, "corr_y": corr_yp, "mse_val": mse_val,
                        "rank": rank, "lbd": lbd, "n": n, "time": time}
@@ -167,12 +142,8 @@ if __name__ == "__main__":
     # Input arguments
     parser = argparse.ArgumentParser(description=hlp)
     parser.add_argument("dataset", help="Time series. One of {T1-T9}.")
-    parser.add_argument("kernel",  help="Kernel function used for modelling. One of {exponential, periodic, matern}.")
     parser.add_argument("output",  help="Output directory.")
     args = parser.parse_args()
 
     # Output directory
-    data_set = args.dataset
-    kern = args.kernel
-    out_dir = args.output
-    process(data_set, kern, out_dir)
+    process(args.dataset, args.output)
