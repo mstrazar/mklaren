@@ -62,3 +62,10 @@ The Python interface to octave is installed separately.
 The FITC method is borrowed from the GPy package:
 
     pip install GPy
+
+
+#### Building documentation
+
+Run Sphinx inside `docs`
+
+    sphinx-build -b html source/ build/
