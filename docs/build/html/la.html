@@ -1,37 +1,39 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Linear algebra utility functions &mdash; mklaren 1.0.0 documentation</title>
-    
+    <title>Linear algebra utility functions &#8212; mklaren 1.0.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
         VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="mklaren 1.0.0 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Multiple kernel regression" href="regression.html" />
    
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">  
+  <body>
+  
 
     <div class="document">
       <div class="documentwrapper">
@@ -52,8 +54,8 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
-<li><strong>B</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+<li><strong>A</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+<li><strong>B</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
 </ul>
 </td>
 </tr>
@@ -93,8 +95,8 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>G</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Low-rank matrix.</li>
-<li><strong>y</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Column vector.</li>
+<li><strong>G</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Low-rank matrix.</li>
+<li><strong>y</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Column vector.</li>
 </ul>
 </td>
 </tr>
@@ -116,8 +118,8 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>K</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Kernel matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</li>
-<li><strong>sigma2</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) Added covariance.</li>
+<li><strong>K</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Kernel matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</li>
+<li><strong>sigma2</strong> – (<code class="docutils literal"><span class="pre">float</span></code>) Added covariance.</li>
 </ul>
 </td>
 </tr>
@@ -136,7 +138,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>K</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Kernel matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>K</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Kernel matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Correction to C up to symmetry.</td>
 </tr>
@@ -155,8 +157,8 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
-<li><strong>B</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+<li><strong>A</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+<li><strong>B</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
 </ul>
 </td>
 </tr>
@@ -179,8 +181,8 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
-<li><strong>B</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+<li><strong>A</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
+<li><strong>B</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) a matrix.</li>
 </ul>
 </td>
 </tr>
@@ -199,7 +201,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>X</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Data matrix.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>X</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Data matrix.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Normalize matrix.</td>
 </tr>
@@ -216,8 +218,8 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>a</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) column vector.</li>
-<li><strong>b</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) column vector.</li>
+<li><strong>a</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) column vector.</li>
+<li><strong>b</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) column vector.</li>
 </ul>
 </td>
 </tr>
@@ -236,7 +238,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  A matrix of shape <code class="docutils literal"><span class="pre">(m,</span> <span class="pre">n)</span></code>.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>A</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  A matrix of shape <code class="docutils literal"><span class="pre">(m,</span> <span class="pre">n)</span></code>.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(<code class="docutils literal"><span class="pre">tuple</span></code>) of (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) orthonormal vectors (Q)  and (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) upper triangular matrix (R).</td>
 </tr>
@@ -253,8 +255,8 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>A</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Scalar / Matrix.</li>
-<li><strong>b</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Scalar / Matrix.</li>
+<li><strong>A</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Scalar / Matrix.</li>
+<li><strong>b</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Scalar / Matrix.</li>
 </ul>
 </td>
 </tr>
@@ -274,9 +276,9 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>x</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) a value.</li>
-<li><strong>f</strong> &#8211; (<code class="docutils literal"><span class="pre">callable</span></code>) Function to evaluate.</li>
-<li><strong>val</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) Return value when <code class="docutils literal"><span class="pre">x</span></code> is out of domain.</li>
+<li><strong>x</strong> – (<code class="docutils literal"><span class="pre">float</span></code>) a value.</li>
+<li><strong>f</strong> – (<code class="docutils literal"><span class="pre">callable</span></code>) Function to evaluate.</li>
+<li><strong>val</strong> – (<code class="docutils literal"><span class="pre">float</span></code>) Return value when <code class="docutils literal"><span class="pre">x</span></code> is out of domain.</li>
 </ul>
 </td>
 </tr>
@@ -299,8 +301,8 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>G</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Low-rank matrix.</li>
-<li><strong>sigma2</strong> &#8211; (<code class="docutils literal"><span class="pre">float</span></code>) Noise / nugget term / sigma squared.</li>
+<li><strong>G</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>) Low-rank matrix.</li>
+<li><strong>sigma2</strong> – (<code class="docutils literal"><span class="pre">float</span></code>) Noise / nugget term / sigma squared.</li>
 </ul>
 </td>
 </tr>
@@ -322,10 +324,10 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>Ai</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Inverse of a square matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</li>
-<li><strong>U</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">k)</span></code>.</li>
-<li><strong>Ci</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Inverse of square matrix of shape <code class="docutils literal"><span class="pre">(k,</span> <span class="pre">k)</span></code>.</li>
-<li><strong>V</strong> &#8211; (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Matrix of shape <code class="docutils literal"><span class="pre">(k,</span> <span class="pre">n)</span></code>.</li>
+<li><strong>Ai</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Inverse of a square matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">n)</span></code>.</li>
+<li><strong>U</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Matrix of shape <code class="docutils literal"><span class="pre">(n,</span> <span class="pre">k)</span></code>.</li>
+<li><strong>Ci</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Inverse of square matrix of shape <code class="docutils literal"><span class="pre">(k,</span> <span class="pre">k)</span></code>.</li>
+<li><strong>V</strong> – (<code class="docutils literal"><span class="pre">numpy.ndarray</span></code>)  Matrix of shape <code class="docutils literal"><span class="pre">(k,</span> <span class="pre">n)</span></code>.</li>
 </ul>
 </td>
 </tr>
@@ -354,15 +356,15 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/la.txt"
+      <li><a href="_sources/la.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
@@ -376,11 +378,11 @@
       &copy;2016, Martin Stražar.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
       
       |
-      <a href="_sources/la.txt"
+      <a href="_sources/la.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 
