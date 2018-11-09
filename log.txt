@@ -173,7 +173,7 @@ Repeat Delve regression with varying number of kernels 5-100.
 
 Sun 2 Jul 2017
 ==============
-delve_regression2: Fix issues with CSI, add RFF, add two more datasets.
+delve_regression2: Fix issues with CSI, add RFF_KMP, add two more datasets.
 2017-7-2/results_0.csv
 ...
 2017-7-2/results_7.csv
@@ -275,7 +275,7 @@ results 0-8.csv
 
 Merge results into one file depending on kernel used:
     # Running periodic kernels for ICD, CSI, Nystrom, Mklaren
-    (not implemented for FITC (no support in GPy, not our fault!), RFF)
+    (not implemented for FITC (no support in GPy, not our fault!), RFF_KMP)
     [detached from 4407.mklaren_periodic]
 
     # Additional tests for Matern due to a different hyperparameter range.
@@ -387,3 +387,58 @@ Fri 25 Aug 2017
 ===============
 ../output/snr/timings/2017-8-25/results_0.csv
 Repeating due to errors.
+
+
+----------------------------------- Re-run revision 2
+
+Thu 12 Apr 2018
+===============
+d4: [detached from 348589.mklaren]
+OUT=results/regr_mkl_cv_d4/
+$PY regr_mkl_cv.py $OUT
+
+
+Sun 29 Apr 2018
+===============
+# Repeating low-rank experiments including RFF non-stationary kernels.
+d5:[detached from 307585.env]
+OUT=./results-rffns/
+/home/martins/Dev/py2/bin/python low_rank.py ANACALT ./results-rffns/ANACALT/
+
+
+# Repeat experiments with time series
+d5: [detached from 371696.B-env]
+OUT=./results-matern
+/home/martins/Dev/py2/bin/python energy.py T1 matern results-matern
+
+Mon 30 Apr 2018
+===============
+# Repeat by fixing the lengthscales
+d5: [detached from 371696.B-env]
+OUT=./results-matern-scales
+/home/martins/Dev/py2/bin/python energy.py T1 matern results-matern-scales
+
+
+# Repeating low-rank experiments only with RFF non-stationary kernels.
+d5:[detached from 307585.env]
+OUT=./results-rff/
+/home/martins/Dev/py2/bin/python low_rank.py ANACALT ./results-rff/ANACALT/
+
+
+----------------------------------- Re-run revision-neuro
+
+Fri 26 Oct 2018
+===============
+Re-run experiments for Neurocomputing revision.
+
+Branch: revision-neuro
+Continues from latest thesis updates.
+
+# Add L2-KRR to MKL experiments
+tag: l2krr_blitzer
+d5: ./results-new
+
+# Add Extrapolation experiment and Arima.
+tag: arima_extrapolate
+d5: ./results-extrapolate
+

@@ -20,7 +20,7 @@ data = read.csv(in_file, header = TRUE, stringsAsFactors = FALSE)
 
 # Create a LaTeX table
 to.latex <- function(fname, df){
-  rows = c("uniform", "align", "alignf", "alignfc", "Mklaren") 
+  rows = c("uniform", "align", "alignf", "alignfc", "l2krr", "Mklaren") 
   cols = unique(df$rank)
   M = matrix("", ncol=length(cols), nrow=length(rows))
   row.names(M) = rows

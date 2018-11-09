@@ -14,6 +14,7 @@ class TestRidge(unittest.TestCase):
         self.trials = 5
 
     def testPrediction(self):
+        np.random.seed(42)
         for t in range(self.trials):
             X = np.random.rand(self.n, self.m)
             tr = np.arange(self.n/2).astype(int)    # necessarily int 1D array
@@ -75,8 +76,6 @@ class TestRidgeLowRank(unittest.TestCase):
             X_te = np.random.rand(10, self.m)
             Ls_te = [K(X_te, X) for K in Ks]
             for method in ["icd", "csi", "nystrom"]:
-                print method
-
                 # Kinterface model
                 model0 = RidgeLowRank(method=method, lbd=0.01)
                 model0.fit(Ks, y)
@@ -91,3 +90,23 @@ class TestRidgeLowRank(unittest.TestCase):
 
                 self.assertAlmostEqual(np.linalg.norm(y0-y1), 0, places=3)
                 self.assertAlmostEqual(np.linalg.norm(yp0-yp1), 0, places=3)
+
+    def testPredictPath(self):
+        """ Test consistency of predicted path. """
+        X = np.random.rand(self.n, self.m)
+        Ks = [Kinterface(kernel=exponential_kernel, data=X, kernel_args={"gamma": 0.1}),
+              Kinterface(kernel=exponential_kernel, data=X, kernel_args={"gamma": 0.2}), ]
+        y = X[:, :3].sum(axis=1)
+        y = y - y.mean()
+        for method in ["icd", "csi", "nystrom"]:
+            model0 = RidgeLowRank(method=method, lbd=0.0, rank=20)
+            model0.fit(Ks, y)
+            A = model0.transform([X, X])
+            ypath = model0.predict_path([X, X])
+            norms = np.linalg.norm(ypath, axis=0)
+            assert np.all(norms[1:] > norms[:-1])
+            assert np.linalg.norm(A.T.dot(y - ypath[:, -1])) < 1e-5
+
+
+
+

@@ -19,6 +19,8 @@ try:
     from oct2py import octave
 except ImportError:
     warnings.warn("Install module 'oct2py' to use the CSI method.")
+except OSError:
+    warnings.warn("Set OCTAVE_EXECUTABLE to use the CSI method.")
 from os.path import join, dirname, realpath
 import numpy as np
 

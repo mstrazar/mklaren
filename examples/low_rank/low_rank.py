@@ -14,8 +14,8 @@ import argparse
 # Low-rank approximation methods
 from mklaren.regression.ridge import RidgeLowRank
 from mklaren.regression.ridge import RidgeMKL
-from mklaren.regression.fitc import FITC
-from mklaren.projection.rff import RFF
+from mklaren.regression.spgp import SPGP
+from mklaren.projection.rff import RFF_KMP, RFF_TYP_STAT, RFF_TYP_NS
 from mklaren.mkl.mklaren import Mklaren
 
 # Kernels
@@ -51,8 +51,9 @@ methods = {
     "ICD*" :       (RidgeLowRank, {"method": "icd"}),
     "Nystrom*":    (RidgeLowRank, {"method": "nystrom"}),
     "Mklaren":     (Mklaren,      {"delta": delta}),
-    "RFF":         (RFF,          {"delta": delta}),
-    "FITC":        (FITC,         {}),
+    "RFF":         (RFF_KMP, {"delta": delta, "typ": RFF_TYP_STAT}),
+    "RFF-NS":      (RFF_KMP, {"delta": delta, "typ": RFF_TYP_NS}),
+    "SPGP":        (SPGP, {}),
     "uniform":     (RidgeMKL,     {"method": "uniform"}),
     "L2KRR":       (RidgeMKL,     {"method": "l2krr"}),
 }
@@ -128,7 +129,7 @@ def process(dataset, outdir):
                             yptr    = model.predict([X_tr] * len(Ks)).ravel()
                             ypva    = model.predict([X_val] * len(Ks)).ravel()
                             ypte    = model.predict([X_te] * len(Ks)).ravel()
-                        elif mname == "RFF":
+                        elif mname.startswith("RFF"):
                             effective_rank = rank
                             model = Mclass(rank=rank, lbd=lbd,
                                            gamma_range=gam_range, **kwargs)
@@ -136,7 +137,7 @@ def process(dataset, outdir):
                             yptr = model.predict(X_tr).ravel()
                             ypva = model.predict(X_val).ravel()
                             ypte = model.predict(X_te).ravel()
-                        elif mname == "FITC":
+                        elif mname == "SPGP":
                             effective_rank = rank
                             model = Mclass(rank=rank, **kwargs)
                             model.fit(Ks, y_tr)
@@ -187,10 +188,10 @@ def process(dataset, outdir):
                            "gmin": min(gam_range), "gmax": max(gam_range), "p": len(gam_range)}
                     writer.writerow(row)
 
-                    # Break for FITC / no lambda
-                    if mname == "FITC": break
+                    # Break for SPGP / no lambda
+                    if mname == "SPGP": break
 
-                # Break for FITC / no rank
+                # Break for SPGP / no rank
                 if mname in ("uniform", "L2KRR"): break
 
 

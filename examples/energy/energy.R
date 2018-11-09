@@ -5,6 +5,9 @@ require(ggplot2)
 require(scmamp)
 require(xtable)
 
+# Defined order of methods
+row.order = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP", "Arima")
+
 # Parse input arguments
 option_list = list(
   make_option(c("-i", "--input"), type="character", help="Results file (.csv)"),
@@ -17,8 +20,9 @@ out_dir = opt$output
 dir.create(out_dir, showWarnings = FALSE)
 
 # Selection of methods
-methods = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "FITC")
 alldata = read.csv(in_file, header = TRUE, stringsAsFactors = FALSE) 
+methods = unique(alldata$method)
+
 
 # Select scores via cross-validation
 alldata$name = sprintf("%s.%s.%s.%s", alldata$method, alldata$tsi, 
@@ -62,12 +66,23 @@ for (r in unique(data$rank)){
   colnames(M) = signals
   row.names(S) = methods
   colnames(S) = signals
-  for (i in 1:nrow(agg.m)) M[agg.m[i,"method"], agg.m[i,"dataset"]] = agg.m[i, "x"]
+  for
+  (i in 1:nrow(agg.m)) M[agg.m[i,"method"], agg.m[i,"dataset"]] = agg.m[i, "x"]
   for (i in 1:nrow(agg.s)) S[agg.s[i,"method"], agg.s[i,"dataset"]] = agg.s[i, "x"]
   
+  # Ranks 
+  fname = file.path(out_dir, sprintf("cd_kernel-%s_rank-%02d.pdf", k, r))
+  pdf(fname, width=8, height=5)
+  plotCD(t(-M), alpha=.05)
+  message(sprintf("Written %s", fname))
+  
+  # Friedman test on ranks
+  message("Friedman test on ranks:")
+  print(friedman.test(-M))
+  
   # Text matrix 
-  R = matrix("", ncol=length(signals), nrow=length(methods))
-  row.names(R) = methods
+  R = matrix("-", ncol=length(signals), nrow=length(row.order))
+  row.names(R) = row.order
   colnames(R) = signals
   for(j in 1:ncol(M)){
     R[names(M[,j]), colnames(M)[j]] = sprintf("%.2f$\\pm$%.2f", M[,j], S[,j])

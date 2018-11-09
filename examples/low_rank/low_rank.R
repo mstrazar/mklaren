@@ -19,12 +19,18 @@ out_dir = opt$output
 target = "L2KRR" 
 
 # Low rank approximations
-lowranks = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*", "RFF", "FITC")
-matrices = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*")
+# lowranks = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*", "RFF", "RFF-NS", "SPGP")
+# matrices = c("Mklaren", "CSI", "ICD", "Nystrom", "CSI*", "ICD*",  "Nystrom*")
+lowranks = c("Mklaren", "CSI", "ICD", "Nystrom", "RFF", "RFF-NS", "SPGP")
+matrices = c("Mklaren", "CSI", "ICD", "Nystrom")
+
 fullranks = c("L2KRR", "uniform", "Mklaren2")
 
 # Load
 alldata = read.csv(in_file, header=TRUE, stringsAsFactors = FALSE)
+
+# Filter methods 
+alldata = alldata[alldata$method %in% c(lowranks, fullranks),]
 
 # Aggregate results 
 meths = sort(setdiff(unique(alldata$method), fullranks))
@@ -132,11 +138,21 @@ for (i in 1:nrow(Rn)){
   Rt[i,minn] = sprintf("\\textbf{%s}", Rn[i, minn]) 
 }
 
+# Reformat table
+Rt[which(Rt == "Inf")] = "-"
+
+# Approximate saving
+r = Rn[row.names(R),"Mklaren"]
+saving = n*r^2 / n^3
+e = floor(log10(saving))
+num = saving * 10^(-e)
+ratio = sprintf("$%.1f \\times 10^{%d}$", num, e)
+Rout = cbind(Rt, ratio)
+
 # Write to output
 fname = file.path(out_dir, "ranks.tex")
-tab = xtable(Rt)
-align(tab) = c("r", "l", "|", "|", "l", "l", "l", "l", "|", 
-               "l", "l", "l", "|", "l", "|", "l")
+tab = xtable(Rout)
+align(tab) = c("r", "l", "|", "|", "l", "l", "l", "l", "|", "l", "l", "|", "l", "|", "|", "l")
 sink(fname)
 print(tab, sanitize.text.function = identity)
 sink()

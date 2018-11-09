@@ -61,3 +61,7 @@ class TestNystrom(unittest.TestCase):
         rand_win = np.sum(errors_lev > errors_rand)
         print("Leverage win: %d, random win: %d" % (lev_win, rand_win))
         self.assertTrue(lev_win > rand_win)
+
+
+if __name__ == "__main__":
+    unittest.main()

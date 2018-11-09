@@ -50,3 +50,7 @@ class TestICD(unittest.TestCase):
 
             self.assertTrue(np.all(errors[:-1] > errors[1:]))
             self.assertAlmostEqual(errors[-1], 0, delta=3)
+
+
+if __name__ == "__main__":
+    unittest.main()

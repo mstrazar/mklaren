@@ -3,10 +3,10 @@ try:
     import GPy
     from mklaren.kernel.kernel import exponential_kernel, matern32_gpy, matern52_gpy, periodic_gpy
 except ImportError:
-    warnings.warn("Install module 'GPy' to use the FITC method.")
+    warnings.warn("Install module 'GPy' to use the SPGP method.")
 import numpy as np
 
-class FITC:
+class SPGP:
     """
     Fit a Sparse GP using the variational approximation.
     Locations of the inducing points are optimized in the continuous domain.
@@ -31,7 +31,7 @@ class FITC:
         try:
             GPy.__version__
         except NameError:
-            raise NameError("Install module 'GPy' to use the FITC method.")
+            raise NameError("Install module 'GPy' to use the SPGP method.")
 
         self.rank = rank
         self.anchors_ = None

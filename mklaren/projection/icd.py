@@ -13,6 +13,7 @@ Given a kernel matrix :math:`\mathbf{K} \in \mathbb{R}^{n\ x\ n}` find a low-ran
 """
 
 from ..kernel.kinterface import Kinterface
+from warnings import warn
 import numpy as np
 
 
@@ -22,7 +23,10 @@ class ICD:
     :ivar G: (``numpy.ndarray``) Low-rank approximation.
     """
 
-    def __init__(self, rank, eps=1e-10):
+    MODE_NORM = "norm_bound"
+    MODE_RANDOM = "random"
+
+    def __init__(self, rank, eps=1e-10, mode=MODE_NORM):
         """
         :param rank: (``int``) Maximal decomposition rank.
 
@@ -32,6 +36,8 @@ class ICD:
         self.eps = eps
         self.G = None
         self.trained = False
+        self.D = None
+        self.mode = mode
 
     def fit(self, K):
         """Learn a low-rank kernel approximation.
@@ -40,6 +46,7 @@ class ICD:
         """
         n = K.shape[0]
         G = np.zeros((n, self.rank))
+        self.D = np.zeros((n, self.rank))
         if isinstance(K, Kinterface):
             D = K.diag().copy()
         else:
@@ -48,7 +55,9 @@ class ICD:
         I = list()
         for k in range(self.rank):
             # select pivot d
-            i = np.argmax(D)
+            self.D[:, k] = D.ravel()
+            i = np.argmax(D) if self.mode == self.MODE_NORM \
+                else np.random.choice(np.array(list(J)))
             I.append(i)
             J.remove(i)
             j = list(J)
@@ -60,7 +69,9 @@ class ICD:
             D[i] = 0
 
             # check residual lower bound and maximum rank
-            if np.max(D) < self.eps or k + 1 == self.rank:
+            if np.max(D) < self.eps:
+                msg = "Iterations ended prematurely at step = %d < %d" % (k, self.rank)
+                warn(msg)
                 break
 
         self.active_set_ = I

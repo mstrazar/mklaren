@@ -106,3 +106,9 @@ class Kinterface:
             :return (``numpy.ndarray``) diagonal values of the kernel matrix.
             """
             return array([self[i, i] for i in xrange(self.shape[0])]).ravel()
+
+
+        def diagonal(self):
+            """ Diagonal of the kernel matrix (alias). """
+            return self.diag()
+        

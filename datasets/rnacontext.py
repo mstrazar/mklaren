@@ -8,7 +8,7 @@ from os.path import join, realpath, dirname, basename
 
 # RNA_PATH = join(dirname(realpath(__file__)), "rnacontext", "full")
 RNA_PATH = join(dirname(realpath(__file__)), "rnacontext", "weak")
-RNA_DATASETS = map(lambda p: basename(p), glob(join(RNA_PATH, "*")))
+RNA_DATASETS = map(lambda p: basename(p), glob(join(RNA_PATH, "*.txt.gz")))
 RNA_ALPHABET = {"A": 0, "C": 1, "G": 2, "T": 3}
 
 # Optimal K as listed in RNAcontext article

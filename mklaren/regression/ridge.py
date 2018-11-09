@@ -21,7 +21,7 @@ from sklearn.linear_model import Ridge
 
 from numpy import array, hstack, sqrt, where, isnan, zeros, cumsum
 from numpy import hstack, array, absolute
-from numpy.linalg import inv, norm
+from numpy.linalg import inv, norm, lstsq
 
 
 class RidgeMKL:
@@ -130,7 +130,6 @@ class RidgeMKL:
             self.ridge.fit(inxs, y[inxs])
             self.trained = True
 
-
     def predict(self, inxs):
         """
         Predict values for data on indices inxs (transcductive setting).
@@ -156,6 +155,7 @@ class RidgeLowRank:
     """
 
     # Static list of methods and their types
+    METHODS = ["csi", "icd", "nystrom"]
     CHOLESKY = "chol"
     NYSTROM  = "nystrom"
     methods  = {
@@ -164,7 +164,6 @@ class RidgeLowRank:
         NYSTROM: {"nystrom": Nystrom, }
     }
     supervised = ["csi"]
-
 
     def __init__(self, method_init_args=None,
                  method="icd", lbd=0, rank=10, normalize=False):
@@ -204,9 +203,11 @@ class RidgeLowRank:
         self.rank       = rank
         self.mu         = None
         self.lr_models  = list()
-        self.reg_model  = Ridge(alpha=lbd, normalize=normalize)
+        self.lbd = lbd
+        self.normalize = normalize
+        self.reg_model  = Ridge(alpha=self.lbd, normalize=normalize)
         self.beta = None
-
+        self.model_path = None
 
     def fit(self, Ks, y, *method_args):
         """
@@ -272,7 +273,8 @@ class RidgeLowRank:
         for ki in range(len(self.mu)):
             self.mu[ki] = norm(self.Gs[ki].dot(self.beta[se[ki][0]:se[ki][1]]))
 
-        self.trained = True
+        # Fit regularization path
+        self.fit_path(Xs=None, y=y, Ks=Ks)
 
     def transform(self, Xs, Ks=None):
         """Transform inputs to low-rank feature space.
@@ -283,7 +285,6 @@ class RidgeLowRank:
 
         :return: (``numpy.ndarray``) Vector of prediction of regression targets.
         """
-        assert self.trained
         Gs = []
         XT = None
         if Ks is None:
@@ -294,11 +295,10 @@ class RidgeLowRank:
             XT = hstack(Gs)
         else:
             for Kt, Trn, active in zip(Ks, self.Ts, self.As):
-                G = Kt[:, active].dot(Trn.T)
+                G = Kt[:, active].reshape(Ks[0].shape[0], len(active)).dot(Trn.T)
                 Gs.append(G.reshape(Kt.shape[0], self.rank))
             XT = hstack(Gs)
         return XT
-
 
     def predict(self, Xs, Ks=None):
         """Predict responses for test samples.
@@ -312,6 +312,42 @@ class RidgeLowRank:
         XT = self.transform(Xs, Ks)
         return self.reg_model.predict(X=XT).ravel()
 
+    def fit_path(self, Xs, y, Ks=None):
+        """ Compute regularized least-squares regularization path (weights).
+
+        :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
+
+        :param y: (``numpy.ndarray``) Class labels :math:`y_i \in {-1, 1}` or regression targets.
+
+        :param Ks: (``list``) of (``numpy.ndarray``) Values of the kernel against K[test set, training set]. Optional.
+        """
+        XT = self.transform(Xs, Ks)
+        models = []
+        for j in range(XT.shape[1]):
+            model = Ridge(alpha=self.lbd,
+                          normalize=self.normalize,
+                          fit_intercept=False).fit(X=XT[:, :j+1], y=y)
+            models.append(model)
+        self.model_path = models
+        return
+
+    def predict_path(self, Xs, Ks=None):
+        """ Predict values for all possible weights on the regularization path.
+
+        :param Xs: (``list``) of (``numpy.ndarray``) Input space representation for each kernel in ``self.Ks``.
+
+        :param Ks: (``list``) of (``numpy.ndarray``) Values of the kernel against K[test set, training set]. Optional.
+
+        :return (``numpy.ndarray``) Predited values for each element in the path.
+        """
+        assert self.model_path is not None
+        XT = self.transform(Xs, Ks)
+        rank = len(self.model_path)
+        path = zeros((Xs[0].shape[0], rank))
+        for j in range(XT.shape[1]):
+            yp = self.model_path[j].predict(XT[:, :j+1])
+            path[:, j] = yp
+        return path
 
     def __getitem__(self, item):
         """
