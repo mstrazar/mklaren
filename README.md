@@ -68,4 +68,4 @@ The FITC method is borrowed from the GPy package:
 
 Run Sphinx inside `docs`
 
-    sphinx-build -b html source/ build/
+    sphinx-build -b html source/ build/html/
