@@ -106,7 +106,7 @@ print(wilcox.test(R[,c("Mklaren")], R[,c("CSI")], paired=TRUE, alternative="less
 
 # Store CD
 fname = file.path(out_dir, "rank_CD.pdf")
-pdf(fname)                                           
+pdf(fname, width=8, height=5)                                           
 plotCD(-R, alpha = 0.05)
 dev.off()
 message(sprintf("Written %s", fname))
