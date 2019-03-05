@@ -106,7 +106,7 @@ print(wilcox.test(R[,c("Mklaren")], R[,c("CSI")], paired=TRUE, alternative="less
 
 # Store CD
 fname = file.path(out_dir, "rank_CD.pdf")
-pdf(fname)
+pdf(fname)                                           
 plotCD(-R, alpha = 0.05)
 dev.off()
 message(sprintf("Written %s", fname))
@@ -142,7 +142,8 @@ for (i in 1:nrow(Rn)){
 Rt[which(Rt == "Inf")] = "-"
 
 # Approximate saving
-r = Rn[row.names(R),"Mklaren"]
+r = Rn[row.names(Rt), "Mklaren"]
+n = Rn[row.names(Rt), "n"]
 saving = n*r^2 / n^3
 e = floor(log10(saving))
 num = saving * 10^(-e)
